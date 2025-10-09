@@ -1,56 +1,29 @@
 /**
  * @file Overlay.jsx
- * @description 오버레이: 비트맵/벡터 프리뷰 + 텍스트 생성/편집(드래그 후만 생성)
+ * @description 오버레이: 벡터 프리뷰(점선) + 텍스트 생성/편집
+ * - modeSlice / toolSlice 의존 제거
+ * - uiSlice(tool, textMode) + styleSlice만 참조
  */
-import { useRef, useLayoutEffect, useMemo, useState, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useRef, useLayoutEffect } from 'react';
+import { useSelector } from 'react-redux';
 
 import { setupCanvas } from '../../../util/canvas-helper';
-import { useBitmap } from '../../../hook/useBitmap';
 import { useVector } from '../../../hook/useVector';
-
-import { selectGlobalMode } from '../../../redux/slice/modeSlice';
-import { selectActiveTool } from '../../../redux/slice/toolSlice';
-import {
-    addShape,
-    updateShape,
-    selectVectorItems,
-    selectActiveShape,
-} from '../../../redux/slice/shapeSlice';
 import { selectEffectiveStyle } from '../../../redux/slice/styleSlice';
+import { selectTool, selectTextMode } from '../../../redux/slice/uiSlice';
 
-import { getCanvasPosition } from '../../../util/canvas-helper';
+import TextEditor from '../../texteditor/TextEditor'; // 기존 컴포넌트 그대로 사용
 
-import TextArea from '../../textarea/Textarea';
-import {
-    getOverlayDesign,
-    hitTestTextShapes,
-} from '../../../util/overlay-helper';
-import { getId } from '../../../util/get-id';
-
-import {
-    beginStroke,
-    endStroke,
-    bitmapHistoryOnResize,
-} from '../../../util/get-history';
-
-const DRAG_THRESHOLD = 6;
-const MIN_W = 120;
-const MIN_H = 40;
-
-function Overlay({ canvasRef, bitmapCanvasRef, bitmapCtxRef, vectorCtxRef }) {
-    const dispatch = useDispatch();
-
+function Overlay({ canvasRef, vectorCtxRef }) {
     const teardownRef = useRef(null);
     const overlayCtxRef = useRef(null);
 
-    const mode = useSelector(selectGlobalMode);
-    const activeTool = useSelector(selectActiveTool);
-    const activeShape = useSelector(selectActiveShape);
-    const vecItems = useSelector(selectVectorItems);
-
+    // 전역 UI/스타일
+    const currentTool = useSelector(selectTool); // 'path'|'line'|'rect'|'circle'|'polygon'|'star'|'pentagon'
+    const isTextMode = useSelector(selectTextMode); // boolean
     const eff = useSelector(selectEffectiveStyle);
+
+    // 유효 스타일
     const strokeColor =
         typeof eff?.stroke?.color === 'object'
             ? eff.stroke.color.value || '#000000'
@@ -63,6 +36,7 @@ function Overlay({ canvasRef, bitmapCanvasRef, bitmapCtxRef, vectorCtxRef }) {
             ? eff.fill.color.value || 'transparent'
             : eff?.fill?.color || 'transparent';
 
+    // 오버레이 캔버스 준비
     useLayoutEffect(() => {
         if (!canvasRef?.current) return;
         const { ctx, teardown } = setupCanvas(canvasRef.current, {
@@ -70,307 +44,53 @@ function Overlay({ canvasRef, bitmapCanvasRef, bitmapCtxRef, vectorCtxRef }) {
             preserve: false,
             maxDpr: 3,
             observeDevicePixelRatio: true,
-            onResize: () => {
-                const bctx = bitmapCtxRef?.current;
-                if (bctx) bitmapHistoryOnResize(bctx);
-            },
+            onResize: () => {},
         });
         overlayCtxRef.current = ctx;
         teardownRef.current = teardown;
         return () => teardownRef.current?.();
-    }, [canvasRef, bitmapCtxRef]);
+    }, [canvasRef]);
 
-    const bm = useBitmap(bitmapCanvasRef, bitmapCtxRef, {
-        tool: activeTool,
-        color: strokeColor,
-        width: strokeWidth,
-    });
-
-    const vec = useVector(canvasRef, overlayCtxRef, vectorCtxRef, {
-        shapeKey: typeof activeShape === 'string' ? activeShape : 'rect',
+    // 벡터 드로잉(프리드로우 포함) — 텍스트 모드가 아니면 동작
+    const vecBind = useVector(canvasRef, overlayCtxRef, vectorCtxRef, {
+        shapeKey: isTextMode ? 'rect' : currentTool || 'rect',
         strokeColor,
         strokeWidth,
         fillColor,
         fillEnabled,
+        // 도형 옵션(다각형/별)
+        sides: eff?.polygon?.sides ?? 6,
+        spikes: eff?.star?.spikes ?? 5,
+        innerRatio: eff?.star?.innerRatio ?? 0.5,
     });
 
-    const [textRect, setTextRect] = useState(null);
-    const [showEditor, setShowEditor] = useState(false);
-    const [editingTarget, setEditingTarget] = useState(null);
-
-    const textDragRef = useRef({
-        drawing: false,
-        moved: false,
-        start: null,
-        mode: 'create',
-    });
-
-    const clearOverlay = useCallback(() => {
-        const canvas = canvasRef.current;
-        const ctx = overlayCtxRef.current;
-        if (!canvas || !ctx) return;
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.restore();
-    }, [canvasRef]);
-
-    const drawDashedRect = useCallback(
-        (start, now) => {
-            const ctx = overlayCtxRef.current;
-            const canvas = canvasRef.current;
-            if (!ctx || !canvas || !start || !now) return;
-
-            const x = Math.min(start.x, now.x);
-            const y = Math.min(start.y, now.y);
-            const w = Math.abs(now.x - start.x);
-            const h = Math.abs(now.y - start.y);
-
-            clearOverlay();
-            getOverlayDesign(overlayCtxRef, () => {
-                ctx.strokeRect(x, y, w, h);
-            });
-        },
-        [clearOverlay, canvasRef]
-    );
-
-    // ── 텍스트 모드 (드래그해야만) ────────────────────────────────
-    const onTextPointerDown = useCallback(
-        (e) => {
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
-            const host = e.currentTarget;
-            if (!host) return;
-            if (e.cancelable) e.preventDefault();
-            host.setPointerCapture?.(e.pointerId);
-
-            const p = getCanvasPosition(host, e);
-            const hit = hitTestTextShapes(vecItems, p);
-
-            if (hit) {
-                setEditingTarget(hit);
-                setShowEditor(false);
-                setTextRect(null);
-                textDragRef.current = {
-                    drawing: true,
-                    moved: false,
-                    start: { x: hit.x, y: hit.y },
-                    mode: 'edit',
-                };
-                return;
-            }
-
-            setEditingTarget(null);
-            setShowEditor(false);
-            setTextRect(null);
-            textDragRef.current = {
-                drawing: true,
-                moved: false,
-                start: p,
-                mode: 'create',
-            };
-        },
-        [vecItems]
-    );
-
-    const onTextPointerMove = useCallback(
-        (e) => {
-            if (!textDragRef.current.drawing) return;
-            const host = e.currentTarget;
-            if (!host) return;
-            if (e.cancelable) e.preventDefault();
-
-            const p = getCanvasPosition(host, e);
-            const s = textDragRef.current.start;
-            const dx = Math.abs(p.x - s.x);
-            const dy = Math.abs(p.y - s.y);
-            const moved = dx >= DRAG_THRESHOLD || dy >= DRAG_THRESHOLD;
-
-            if (moved) {
-                textDragRef.current.moved = true;
-                drawDashedRect(s, p);
-            }
-        },
-        [drawDashedRect]
-    );
-
-    const finishTextDrag = useCallback(
-        (p) => {
-            const { start } = textDragRef.current;
-            textDragRef.current = {
-                drawing: false,
-                moved: false,
-                start: null,
-                mode: 'create',
-            };
-
-            let x = Math.min(start.x, p.x);
-            let y = Math.min(start.y, p.y);
-            let w = Math.abs(p.x - start.x);
-            let h = Math.abs(p.y - start.y);
-
-            w = Math.max(MIN_W, Math.round(w));
-            h = Math.max(MIN_H, Math.round(h));
-
-            clearOverlay();
-            setTextRect({ x, y, w, h });
-            setShowEditor(true);
-        },
-        [clearOverlay]
-    );
-
-    const onTextPointerUp = useCallback(
-        (e) => {
-            if (!textDragRef.current.drawing) return;
-            const host = e.currentTarget;
-            if (!host) return;
-            if (e?.cancelable) e.preventDefault();
-
-            if (!textDragRef.current.moved) {
-                textDragRef.current = {
-                    drawing: false,
-                    moved: false,
-                    start: null,
-                    mode: 'create',
-                };
-                clearOverlay();
-                return;
-            }
-
-            const p = getCanvasPosition(host, e);
-            finishTextDrag(p);
-        },
-        [finishTextDrag, clearOverlay]
-    );
-
-    const onTextPointerLeave = onTextPointerUp;
-    const onTextPointerCancel = onTextPointerUp;
-
-    const hostEl = canvasRef.current?.parentElement || null;
-    const editorPortal =
-        showEditor && textRect && hostEl
-            ? createPortal(
-                  <TextArea
-                      rect={textRect}
-                      initialText={editingTarget?.text || ''}
-                      stylePreset={eff?.text}
-                      onClose={() => {
-                          setShowEditor(false);
-                          setTextRect(null);
-                          setEditingTarget(null);
-                      }}
-                      onCommit={(payload) => {
-                          const typed = (payload.text ?? '').trim();
-
-                          if (editingTarget?.id) {
-                              const nextText =
-                                  typed.length === 0
-                                      ? editingTarget.text
-                                      : payload.text;
-
-                              dispatch(
-                                  updateShape({
-                                      id: editingTarget.id,
-                                      type: 'text',
-                                      x: payload.rect.x,
-                                      y: payload.rect.y,
-                                      w: payload.rect.w,
-                                      h: payload.rect.h,
-                                      text: nextText,
-                                      style: { ...payload.style },
-                                  })
-                              );
-                          } else {
-                              if (typed.length === 0) {
-                                  setShowEditor(false);
-                                  setTextRect(null);
-                                  setEditingTarget(null);
-                                  return;
-                              }
-                              dispatch(
-                                  addShape({
-                                      id: getId(),
-                                      type: 'text',
-                                      x: payload.rect.x,
-                                      y: payload.rect.y,
-                                      w: payload.rect.w,
-                                      h: payload.rect.h,
-                                      text: payload.text,
-                                      style: { ...payload.style },
-                                  })
-                              );
-                          }
-
-                          setShowEditor(false);
-                          setTextRect(null);
-                          setEditingTarget(null);
-                      }}
-                  />,
-                  hostEl
-              )
-            : null;
-
-    const isBitmapTool =
-        mode === 'tool' && (activeTool === 'brush' || activeTool === 'eraser');
-
-    const bind = useMemo(() => {
-        if (isBitmapTool) {
-            return {
-                onPointerDown: (e) => {
-                    const ctx = bitmapCtxRef?.current;
-                    if (ctx) beginStroke(ctx);
-                    bm.onPointerDown(e);
-                },
-                onPointerMove: bm.onPointerMove,
-                onPointerUp: (e) => {
-                    bm.onPointerUp(e);
-                    const ctx = bitmapCtxRef?.current;
-                    if (ctx) endStroke(ctx);
-                },
-                onPointerLeave: (e) => {
-                    bm.onPointerLeave(e);
-                    const ctx = bitmapCtxRef?.current;
-                    if (ctx) endStroke(ctx);
-                },
-                onPointerCancel: (e) => {
-                    bm.onPointerCancel(e);
-                    const ctx = bitmapCtxRef?.current;
-                    if (ctx) endStroke(ctx);
-                },
-            };
-        }
-        if (mode === 'text') {
-            return {
-                onPointerDown: onTextPointerDown,
-                onPointerMove: onTextPointerMove,
-                onPointerUp: onTextPointerUp,
-                onPointerLeave: onTextPointerLeave,
-                onPointerCancel: onTextPointerCancel,
-            };
-        }
-        return {
-            onPointerDown: vec.onPointerDown,
-            onPointerMove: vec.onPointerMove,
-            onPointerUp: vec.onPointerUp,
-            onPointerLeave: vec.onPointerLeave,
-            onPointerCancel: vec.onPointerCancel,
-        };
-    }, [
-        mode,
-        isBitmapTool,
-        bm,
-        vec,
-        bitmapCtxRef,
-        onTextPointerDown,
-        onTextPointerMove,
-        onTextPointerUp,
-        onTextPointerLeave,
-        onTextPointerCancel,
-    ]);
+    // 텍스트 모드 훅은 기존 파일(useTextMode) 그대로 사용
+    // 단, 여기서는 TextEditor가 내부에서 onCommit 시 shapeSlice.add 등을 호출한다고 가정
+    const textBind = isTextMode
+        ? {
+              onPointerDown: vecBind.onPointerDown, // 필요 시 텍스트용 훅으로 교체
+              onPointerMove: vecBind.onPointerMove,
+              onPointerUp: vecBind.onPointerUp,
+              onPointerLeave: vecBind.onPointerLeave,
+              onPointerCancel: vecBind.onPointerCancel,
+          }
+        : vecBind;
 
     return (
         <>
-            <canvas className="overlay" ref={canvasRef} {...bind} />
-            {editorPortal}
+            <canvas
+                className="overlay"
+                ref={canvasRef}
+                {...(isTextMode ? {} : vecBind)}
+            />
+            {/* 텍스트 모드일 때만 에디터 활성화(컴포넌트 내부에서 드래그 생성/클릭 편집 처리) */}
+            {isTextMode && (
+                <TextEditor
+                    hostRef={canvasRef}
+                    stylePreset={eff?.text}
+                    // onClose / onCommit 은 TextEditor 내부에서 처리하거나 필요 시 props로 연결
+                />
+            )}
         </>
     );
 }

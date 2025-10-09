@@ -1,28 +1,35 @@
+// src/component/historybtn/VectorBtn.jsx
 import { useDispatch, useSelector } from 'react-redux';
-import {
-    selectVectorCanUndo,
-    selectVectorCanRedo,
-} from '../../redux/slice/vectorSlice';
-import { undoVector, redoVector } from '../../redux/slice/historyVectorThunks';
+import { UNDO_VECTOR, REDO_VECTOR } from '../../redux/middleware/middleware';
 
 function VectorUndoRedoControl() {
     const dispatch = useDispatch();
-    const canUndo = useSelector(selectVectorCanUndo);
-    const canRedo = useSelector(selectVectorCanRedo);
+
+    // history.vector.past/future 길이로 가능 여부 계산
+    const canUndo = useSelector(
+        (s) => (s.history?.vector?.past?.length || 0) > 0
+    );
+    const canRedo = useSelector(
+        (s) => (s.history?.vector?.future?.length || 0) > 0
+    );
 
     return (
         <div className="toolbar-group" aria-label="Vector history">
             <button
+                type="button"
                 className="tb-btn"
                 disabled={!canUndo}
-                onClick={() => dispatch(undoVector())}
+                onClick={() => dispatch({ type: UNDO_VECTOR })}
+                title="Undo (Ctrl/⌘+Z)"
             >
                 ⟲ Vector
             </button>
             <button
+                type="button"
                 className="tb-btn"
                 disabled={!canRedo}
-                onClick={() => dispatch(redoVector())}
+                onClick={() => dispatch({ type: REDO_VECTOR })}
+                title="Redo (Ctrl/⌘+Shift+Z / Ctrl/⌘+Y)"
             >
                 ⟳ Vector
             </button>

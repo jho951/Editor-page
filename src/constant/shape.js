@@ -1,21 +1,25 @@
 /**
- * @file tppl.js
- * @author YJH
- * @description 비트맵 도구 상수
+ * @file shape.js
+ * @description 벡터 도형 상수 (Toolbar용)
  */
-
 import { deepFreeze } from '../util/deep-freeze';
 import { getId } from '../util/get-id';
 
 const SHAPE_TYPE = 'shape';
-/**
- * @description 옵션 (도형)
- */
+
 const SHAPES = deepFreeze([
     {
         id: getId(),
         type: SHAPE_TYPE,
-        mode: SHAPE_TYPE,
+        payload: 'path',
+        name: '드로우',
+        icon: 'pen',
+        shortcut: 'P',
+        cursor: 'crosshair',
+    },
+    {
+        id: getId(),
+        type: SHAPE_TYPE,
         payload: 'line',
         name: '직선',
         icon: 'line',
@@ -25,17 +29,6 @@ const SHAPES = deepFreeze([
     {
         id: getId(),
         type: SHAPE_TYPE,
-        mode: SHAPE_TYPE,
-        payload: 'circle',
-        name: '원',
-        icon: 'circle',
-        shortcut: 'C',
-        cursor: 'crosshair',
-    },
-    {
-        id: getId(),
-        type: SHAPE_TYPE,
-        mode: SHAPE_TYPE,
         payload: 'rect',
         name: '사각형',
         icon: 'rect',
@@ -45,15 +38,30 @@ const SHAPES = deepFreeze([
     {
         id: getId(),
         type: SHAPE_TYPE,
-        mode: SHAPE_TYPE,
-        payload: 'curve',
-        name: '곡선',
-        icon: 'curve',
+        payload: 'circle',
+        name: '원',
+        icon: 'circle',
         shortcut: 'C',
+        cursor: 'crosshair',
+    },
+    {
+        id: getId(),
+        type: SHAPE_TYPE,
+        payload: 'polygon',
+        name: '다각형',
+        icon: 'polygon',
+        shortcut: 'G',
+        cursor: 'crosshair',
+    },
+    {
+        id: getId(),
+        type: SHAPE_TYPE,
+        payload: 'star',
+        name: '별',
+        icon: 'star',
+        shortcut: 'S',
         cursor: 'crosshair',
     },
 ]);
 
-const SHAPES_VALUE = SHAPES.flat().map((item) => item.payload);
-
-export const SHAPE = { SHAPE_TYPE, SHAPES, SHAPES_VALUE };
+export const SHAPE = { SHAPE_TYPE, SHAPES };

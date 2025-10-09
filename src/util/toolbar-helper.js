@@ -7,11 +7,6 @@
 export function buildCatalogGroups({ TOOL, SHAPE, TEXT, IMAGE, SELECT }) {
     return [
         {
-            key: 'tool',
-            title: '도구',
-            items: Array.isArray(TOOL?.TOOLS) ? TOOL.TOOLS : [],
-        },
-        {
             key: 'shape',
             title: '도형',
             items: Array.isArray(SHAPE?.SHAPES) ? SHAPE.SHAPES : [],
@@ -21,29 +16,27 @@ export function buildCatalogGroups({ TOOL, SHAPE, TEXT, IMAGE, SELECT }) {
             title: '텍스트',
             items: Array.isArray(TEXT?.TEXTS) ? TEXT.TEXTS : [],
         },
-        // {
-        //     key: 'image',
-        //     title: '이미지',
-        //     items: Array.isArray(IMAGE?.IMAGES) ? IMAGE.IMAGES : [],
-        // },
-        // {
-        //     key: 'select',
-        //     title: '선택',
-        //     items: Array.isArray(SELECT?.SELECTS) ? SELECT.SELECTS : [],
-        // },
+        {
+            key: 'image',
+            title: '이미지',
+            items: Array.isArray(IMAGE?.IMAGES) ? IMAGE.IMAGES : [],
+        },
+        {
+            key: 'select',
+            title: '선택',
+            items: Array.isArray(SELECT?.SELECTS) ? SELECT.SELECTS : [],
+        },
     ];
 }
 
 // ───────────────────────── 활성 상태 판별 ─────────────────────────
 export function makeIsItemActive(
-    { MODE, TOOL, SHAPE, TEXT, IMAGE, SELECT },
+    { MODE, SHAPE, TEXT, IMAGE, SELECT },
     getState
 ) {
     // getState: () => ({ mode, tool, shape })
     return function isItemActive(item) {
-        const { mode, tool, shape } = getState();
-        if (item.type === TOOL?.TOOL_TYPE)
-            return mode === MODE.TOOL && tool === item.payload;
+        const { mode, shape } = getState();
         if (item.type === SHAPE?.SHAPE_TYPE)
             return mode === MODE.SHAPE && shape === item.payload;
         if (item.type === TEXT?.TEXT_TYPE) return mode === MODE.TEXT;

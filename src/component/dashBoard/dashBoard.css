@@ -13,8 +13,6 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     margin: 12px;
 }
-
-.dashboard canvas.bitmap,
 .dashboard canvas.vector,
 .dashboard canvas.overlay {
     box-sizing: border-box;
@@ -27,16 +25,12 @@
     padding: 0;
 }
 
-.dashboard canvas.bitmap {
-    z-index: 1;
-    pointer-events: none;
-}
 .dashboard canvas.vector {
-    z-index: 2;
+    z-index: calc(var(--z-index) + 1);
     pointer-events: none;
 }
 .dashboard canvas.overlay {
-    z-index: 3;
+    z-index: calc(var(--z-index) + 2);
     pointer-events: auto;
     cursor: crosshair;
     touch-action: none;

@@ -3,24 +3,20 @@
  * @author YJH
  */
 
-import { SHAPE_FEATURE } from './shape';
-import { TOOL_FEATURE } from './tool';
+import { Path } from './path';
+import { Line } from './line';
+import { Rect } from './rect';
+import { Circle } from './circle';
+import { Polygon } from './polygon';
+import { Star } from './star';
 
-/**
- * @description 도구 모음
- */
-const ToolMap = {
-    brush: TOOL_FEATURE.BrushTool,
-    eraser: TOOL_FEATURE.EraserTool,
-};
-
-/**
- * @description 도형 모음
- */
 const ShapeMap = {
-    line: SHAPE_FEATURE.LineShape,
-    circle: SHAPE_FEATURE.CircleShape,
-    rect: SHAPE_FEATURE.RectShape,
+    path: Path,
+    line: Line,
+    rect: Rect,
+    circle: Circle,
+    polygon: Polygon,
+    star: Star,
 };
 
-export { ToolMap, ShapeMap };
+export { ShapeMap };

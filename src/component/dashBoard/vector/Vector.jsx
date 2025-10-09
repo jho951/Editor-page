@@ -6,8 +6,8 @@ import { useLayoutEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { setupCanvas } from '../../../util/canvas-helper';
 import { selectVectorItems } from '../../../redux/slice/shapeSlice';
-
 import { renderScene } from '../../../util/vector-helper';
+
 export default function Vector({ canvasRef, onReady }) {
     const teardownRef = useRef(null);
     const ctxRef = useRef(null);

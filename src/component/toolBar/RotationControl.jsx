@@ -1,6 +1,6 @@
 /**
  * @file RotationControl.jsx
- * @description 회전 컨트롤
+ * @description 회전 컨트롤 (프레젠테이셔널)
  */
 export default function RotationControl({ value = 0, onStep, onSet }) {
     return (
@@ -8,6 +8,7 @@ export default function RotationControl({ value = 0, onStep, onSet }) {
             <div className="toolbar-field-label">회전</div>
             <div className="toolbar-items rotation-group">
                 <button
+                    type="button"
                     className="tb-btn"
                     onClick={() => onStep?.(-15)}
                     title="회전 -15°"
@@ -24,6 +25,7 @@ export default function RotationControl({ value = 0, onStep, onSet }) {
                     onChange={(e) => onSet?.(e.target.value)}
                 />
                 <button
+                    type="button"
                     className="tb-btn"
                     onClick={() => onStep?.(+15)}
                     title="회전 +15°"

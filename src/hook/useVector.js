@@ -1,42 +1,39 @@
+// src/hook/useVector.js
 /**
  * @file useVector.js
- * @description 오버레이에서 드래그 프리뷰(점선) → 벡터 캔버스에 확정 렌더(테두리만 기본)
- *
- * previewCanvasRef / previewCtxRef : 오버레이 (프리뷰)
- * vectorCtxRef : 벡터 레이어 (확정)
- *
- * shapeKey: 'line' | 'rect' | 'circle' | 'curve'
- * fillEnabled=false 이면 확정 시에도 채우지 않음(외곽선만)
- */
-/**
- * @file useVector.js
- * @description 오버레이 프리뷰(점선) → 확정 시 Redux에 저장(addShape), Vector가 재그리기
+ * @description 오버레이 프리뷰(점선) → 확정 시 Redux(addShape) 커밋.
+ * - 지원: 'path' | 'line' | 'rect' | 'circle' | 'polygon' | 'star' | 'pentagon'
+ * - 프리드로우(path)는 드래그 중 overlay에만 그리다가 pointerup에 벡터로 커밋.
  */
 
 import { useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { getCanvasPosition } from '../util/canvas-helper';
-import { SHAPE_FEATURE } from '../feature/shape';
-
-import { addShape } from '../redux/slice/shapeSlice';
 import { getOverlayDesign } from '../util/overlay-helper';
 import { getId } from '../util/get-id';
+import { add as addShape } from '../redux/slice/shapeSlice';
+import { ShapeMap } from '../feature'; // ← 앞서 등록한 Path/Line/Rect/... 맵
 
 export function useVector(
-    previewCanvasRef, // overlay canvas
-    previewCtxRef, // overlay ctx
-    _vectorCtxRef, // (직접 그리지 않음) Vector 컴포넌트가 상태로 재그림
+    previewCanvasRef, // overlay <canvas> ref
+    previewCtxRef, // overlay 2D context ref
+    _vectorCtxRef, // (사용 안 함: Vector 레이어가 Redux 기반 재그림)
     {
         shapeKey = 'rect',
         strokeColor = '#000',
         strokeWidth = 2,
+        strokeOpacity = 1,
         fillColor = 'transparent',
         fillEnabled = false,
+        // 옵션(다각형/별)
+        sides = 6, // polygon
+        spikes = 5, // star
+        innerRatio = 0.5, // star
     } = {}
 ) {
     const dispatch = useDispatch();
-    const stateRef = useRef({});
     const isDrawingRef = useRef(false);
+    const shapeStateRef = useRef(null); // 각 도형이 내부적으로 쓰는 진행 상태
 
     function clearPreview() {
         const canvas = previewCanvasRef.current;
@@ -48,39 +45,53 @@ export function useVector(
         ctx.restore();
     }
 
-    const Impl =
-        (shapeKey === 'line' && SHAPE_FEATURE.LineShape) ||
-        (shapeKey === 'rect' && SHAPE_FEATURE.RectShape) ||
-        (shapeKey === 'circle' && SHAPE_FEATURE.CircleShape) ||
-        (shapeKey === 'curve' && SHAPE_FEATURE.CurveShape) ||
-        SHAPE_FEATURE.LineShape;
+    // 현재 도형 구현체
+    const Impl = ShapeMap[shapeKey] || ShapeMap.rect;
+
+    // 공통 스타일 객체(각 도형의 begin에서 해석)
+    const style = {
+        strokeColor,
+        strokeWidth: Number(strokeWidth),
+        strokeOpacity: Number(strokeOpacity),
+        // fill은 도형에 따라 사용되지 않을 수 있음(Path는 기본 null)
+        ...(fillEnabled && fillColor && fillColor !== 'transparent'
+            ? { fillColor, fillOpacity: 1 }
+            : { fillColor: undefined, fillOpacity: 0 }),
+        // 옵션 전달(있을 때만 사용)
+        sides,
+        spikes,
+        innerRatio,
+    };
 
     function onPointerDown(e) {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         const host = e.currentTarget;
-        const pctx = previewCtxRef.current;
-        if (!host || !pctx) return;
+        const ctx = previewCtxRef.current;
+        if (!host || !ctx || !Impl?.begin) return;
 
         if (e.cancelable) e.preventDefault();
         host.setPointerCapture?.(e.pointerId);
 
         const p = getCanvasPosition(host, e);
-        Impl.begin(pctx, p, strokeWidth, strokeColor, stateRef.current);
+        shapeStateRef.current = {};
+        Impl.begin(shapeStateRef.current, p, style); // 도형 상태 초기화
         isDrawingRef.current = true;
     }
 
     function onPointerMove(e) {
         if (!isDrawingRef.current) return;
         const host = e.currentTarget;
-        const pctx = previewCtxRef.current;
-        if (!host || !pctx) return;
+        const ctx = previewCtxRef.current;
+        if (!host || !ctx || !Impl?.update || !Impl?.preview) return;
 
         if (e.cancelable) e.preventDefault();
         const p = getCanvasPosition(host, e);
 
+        Impl.update(shapeStateRef.current, p);
+
         clearPreview();
         getOverlayDesign(previewCtxRef, () => {
-            Impl.draw(pctx, p, strokeWidth, strokeColor, stateRef.current);
+            Impl.preview(ctx, shapeStateRef.current);
         });
     }
 
@@ -88,42 +99,31 @@ export function useVector(
         if (!isDrawingRef.current) return;
 
         const host = e.currentTarget;
-        const pctx = previewCtxRef.current;
-        if (!host || !pctx) return;
+        const ctx = previewCtxRef.current;
+        if (!host || !ctx || !Impl?.end) return;
 
         if (e?.cancelable) e.preventDefault();
+        host.releasePointerCapture?.(e.pointerId);
+
         const p = getCanvasPosition(host, e);
+        const item = Impl.end(shapeStateRef.current, p);
 
-        const result = Impl.end(
-            pctx,
-            p,
-            strokeWidth,
-            strokeColor,
-            stateRef.current
-        );
-
-        // curve 2단계 지원
-        if (result?.pending) {
-            isDrawingRef.current = false;
-            return;
-        }
-
-        if (result?.shape) {
-            const base = {
+        // 결과 아이템이 있으면 Redux에 커밋
+        if (item && typeof item === 'object') {
+            const finalItem = {
                 id: getId(),
-                ...result.shape,
+                ...item,
             };
 
-            const shape =
-                fillEnabled && fillColor && fillColor !== 'transparent'
-                    ? { ...base, fill: fillColor }
-                    : base;
+            if (!fillEnabled && 'fill' in finalItem) {
+                finalItem.fill = null;
+            }
 
-            dispatch(addShape(shape));
+            dispatch(addShape(finalItem));
         }
 
         clearPreview();
-        stateRef.current = {};
+        shapeStateRef.current = null;
         isDrawingRef.current = false;
     }
 

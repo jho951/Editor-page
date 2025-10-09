@@ -1,82 +1,54 @@
-/**
- * @file shapeSlice.js
- * @author YJH
- * @description 벡터 도형 상태(사각형/원/선/텍스트 등) + 히스토리용 setShapes
- */
-import { createSlice } from '@reduxjs/toolkit';
-import { setMode } from './modeSlice';
-import { MODE } from '../../constant/mode';
-import { SHAPE } from '../../constant/shape';
+import { createSlice, createSelector } from '@reduxjs/toolkit';
 
 const initialState = {
-    mode: MODE.GLOBAL_NULL,
-    value: null,
     items: [],
 };
 
-const shapeSlice = createSlice({
+const slice = createSlice({
     name: 'shape',
     initialState,
     reducers: {
-        setShape(state, { payload }) {
-            state.value = String(payload);
-        },
-        setShapes(state, { payload }) {
-            state.items = Array.isArray(payload) ? payload.slice() : [];
-        },
-
-        addShape(state, { payload }) {
+        add(state, { payload }) {
             state.items.push(payload);
         },
-
-        updateShape(state, { payload }) {
-            const idx = state.items.findIndex((it) => it.id === payload?.id);
-            if (idx >= 0) state.items[idx] = payload;
+        remove(state, { payload }) {
+            const id = typeof payload === 'string' ? payload : payload?.id;
+            state.items = state.items.filter((it) => it.id !== id);
         },
-
-        removeShape(state, { payload }) {
-            state.items = state.items.filter((it) => it.id !== payload);
+        update(state, { payload }) {
+            // payload: { id, patch } | { id, ...fields }
+            const { id, patch, ...rest } = payload || {};
+            const idx = state.items.findIndex((it) => it.id === id);
+            if (idx < 0) return;
+            const delta = patch ? patch : rest;
+            state.items[idx] = { ...state.items[idx], ...delta };
         },
-
-        clearShapes(state) {
+        replaceAll(_state, { payload }) {
+            // payload는 shape의 전체 스냅샷(예: { items: [...] })
+            return payload;
+        },
+        clear(state) {
             state.items = [];
         },
-
-        updateShapeTransform(state, { payload }) {
-            const { id, transform } = payload || {};
-            const it = state.items.find((x) => x.id === id);
-            if (it)
-                it.transform = {
-                    ...(it.transform || {}),
-                    ...(transform || {}),
-                };
+        reorder(state, { payload }) {
+            // payload: array of ids (new z-order)
+            const idOrder = payload || [];
+            const map = new Map(state.items.map((it) => [it.id, it]));
+            state.items = idOrder.map((id) => map.get(id)).filter(Boolean);
         },
-    },
-    extraReducers: (builder) => {
-        builder.addCase(setMode, (state, { payload }) => {
-            state.mode =
-                payload === SHAPE.SHAPE_TYPE
-                    ? SHAPE.SHAPE_TYPE
-                    : MODE.GLOBAL_NULL;
-        });
     },
 });
 
-export const {
-    setShape,
-    setShapes,
-    addShape,
-    updateShape,
-    removeShape,
-    clearShapes,
-    updateShapeTransform,
-} = shapeSlice.actions;
+export const { add, remove, update, replaceAll, clear, reorder } =
+    slice.actions;
+export default slice.reducer;
 
-export default shapeSlice.reducer;
-
-export const selectShapeState = (s) => s.shape;
-export const selectShapeMode = (s) => s.shape.mode;
-export const selectActiveShape = (s) => s.shape.value;
+// selectors
 export const selectVectorItems = (s) => s.shape.items;
-export const selectShapeById = (id) => (s) =>
-    s.shape.items.find((it) => it.id === id) || null;
+export const selectActiveShape = (_s) => 'rect'; // 필요 시 대체(툴/모드와 통합)
+
+// 샘플: id → item
+export const makeSelectItemById = (id) =>
+    createSelector(selectVectorItems, (items) =>
+        items.find((it) => it.id === id)
+    );

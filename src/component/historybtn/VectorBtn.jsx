@@ -1,11 +1,17 @@
-// src/component/historybtn/VectorBtn.jsx
+/**
+ * @file VectorBtn.jsx
+ * @author YJH
+ */
 import { useDispatch, useSelector } from 'react-redux';
-import { UNDO_VECTOR, REDO_VECTOR } from '../../redux/middleware/middleware';
+
+import {
+    UNDO_VECTOR_DOC as UNDO_VECTOR,
+    REDO_VECTOR_DOC as REDO_VECTOR,
+} from '../../redux/middleware/vectorHistoryMiddleware';
 
 function VectorUndoRedoControl() {
     const dispatch = useDispatch();
 
-    // history.vector.past/future 길이로 가능 여부 계산
     const canUndo = useSelector(
         (s) => (s.history?.vector?.past?.length || 0) > 0
     );
@@ -14,26 +20,26 @@ function VectorUndoRedoControl() {
     );
 
     return (
-        <div className="toolbar-group" aria-label="Vector history">
+        <article className="toolbar-group">
             <button
                 type="button"
                 className="tb-btn"
                 disabled={!canUndo}
                 onClick={() => dispatch({ type: UNDO_VECTOR })}
-                title="Undo (Ctrl/⌘+Z)"
+                title="실행 취소 (Ctrl/⌘ + Z)"
             >
-                ⟲ Vector
+                ⟲
             </button>
             <button
                 type="button"
                 className="tb-btn"
                 disabled={!canRedo}
                 onClick={() => dispatch({ type: REDO_VECTOR })}
-                title="Redo (Ctrl/⌘+Shift+Z / Ctrl/⌘+Y)"
+                title="다시 실행 (Ctrl/⌘ + Shift + Z / Ctrl/⌘ + Y)"
             >
-                ⟳ Vector
+                ⟳
             </button>
-        </div>
+        </article>
     );
 }
 

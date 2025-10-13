@@ -1,11 +1,9 @@
-import Toolbar from './component/toolbar/ToolBar';
-import DashBoard from './component/dashboard/DashBoard';
+import Toolbar from './component/toolbar/Toolbar';
 
 function App() {
     return (
         <main id="main">
             <Toolbar />
-            <DashBoard />
         </main>
     );
 }

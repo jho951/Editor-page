@@ -6,7 +6,7 @@
 import { setMode } from '../redux/slice/modeSlice';
 import { setTool } from '../redux/slice/toolSlice';
 import { setShape } from '../redux/slice/shapeSlice';
-import { hydrateFromCatalog } from '../redux/slice/styleSlice';
+import { hydrateFromCatalog } from '../redux/slice/styleSlicesss';
 
 import { TOOL } from '../constant/tool';
 import { SHAPE } from '../constant/shape';

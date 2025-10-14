@@ -1,33 +1,55 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
-    width: 1,
-    height: 1,
+const DEFAULT = {
+    width: 800,
+    height: 600,
     background: null,
-    grid: { enabled: false, size: 10 },
+    grid: {
+        enabled: false,
+        size: 10,
+    },
+};
+
+const coerceSize = (n, fallback) => {
+    const v = Number(n);
+    return Number.isFinite(v) && v > 0 ? v : fallback;
 };
 
 const canvasSlice = createSlice({
     name: 'canvas',
-    initialState,
+    initialState: DEFAULT,
     reducers: {
-        hydrate: (state, { payload }) => (payload ? payload : state),
-        setSize: (state, { payload: { width, height } }) => {
-            if (Number.isFinite(width) && width > 0) state.width = width;
-            if (Number.isFinite(height) && height > 0) state.height = height;
+        replaceAll: (state, { payload }) => {
+            return {
+                width: coerceSize(payload?.width, DEFAULT.width),
+                height: coerceSize(payload?.height, DEFAULT.height),
+                background: payload?.background ?? null,
+                grid: {
+                    enabled: Boolean(payload?.grid?.enabled),
+                    size: coerceSize(payload?.grid?.size, DEFAULT.grid.size),
+                },
+            };
+        },
+
+        setSize: (state, { payload }) => {
+            const w = coerceSize(payload?.width, state.width);
+            const h = coerceSize(payload?.height, state.height);
+            state.width = w;
+            state.height = h;
         },
         setBackground: (state, { payload }) => {
             state.background = payload ?? null;
         },
         setGrid: (state, { payload }) => {
-            state.grid = { ...state.grid, ...payload };
+            if (payload?.enabled != null)
+                state.grid.enabled = Boolean(payload.enabled);
+            if (payload?.size != null)
+                state.grid.size = coerceSize(payload.size, state.grid.size);
         },
-        reset: () => initialState,
+        resetCanvas: () => DEFAULT,
     },
 });
 
-export const { hydrate, setSize, setBackground, setGrid, reset } =
+export const { replaceAll, setSize, setBackground, setGrid, resetCanvas } =
     canvasSlice.actions;
 export default canvasSlice.reducer;
-
-export const selectCanvas = (s) => s.vectorDoc.canvas;

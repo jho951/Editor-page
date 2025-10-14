@@ -1,60 +1,53 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const defaultBuckets = [
-    { id: 'background', type: 'background', dirty: false },
-    { id: 'content-dynamic', type: 'content', static: false, dirty: true },
-    { id: 'overlay', type: 'overlay', dirty: true },
-];
-
-const initialState = {
-    buckets: defaultBuckets,
-    assignment: {},
+const DEFAULT = {
+    buckets: [], // [{ id, type, static?, dirty? }, ...]
+    assignment: {}, // { [layerId]: bucketId }
 };
 
 const renderSlice = createSlice({
     name: 'render',
-    initialState,
+    initialState: DEFAULT,
     reducers: {
-        hydrate: (state, { payload }) =>
-            payload
-                ? {
-                      buckets:
-                          Array.isArray(payload.buckets) &&
-                          payload.buckets.length
-                              ? payload.buckets
-                              : defaultBuckets,
-                      assignment: payload.assignment || {},
-                  }
-                : state,
+        // vectorJson.render 전체 교체용
+        replaceAll: (state, { payload }) => {
+            return {
+                buckets: Array.isArray(payload?.buckets) ? payload.buckets : [],
+                assignment:
+                    payload?.assignment &&
+                    typeof payload.assignment === 'object'
+                        ? payload.assignment
+                        : {},
+            };
+        },
         setBuckets: (state, { payload }) => {
-            state.buckets = payload;
+            state.buckets = Array.isArray(payload) ? payload : [];
         },
-        assignLayer: (state, { payload: { layerId, bucketId } }) => {
-            state.assignment[layerId] = bucketId;
+        setAssignment: (state, { payload }) => {
+            state.assignment =
+                payload && typeof payload === 'object' ? payload : {};
         },
-        unassignLayer: (state, { payload: layerId }) => {
-            delete state.assignment[layerId];
+        assignLayer: (state, { payload }) => {
+            const { layerId, bucketId } = payload || {};
+            if (!layerId) return;
+            if (bucketId == null) delete state.assignment[layerId];
+            else state.assignment[layerId] = bucketId;
         },
-        markDirty: (state, { payload: { bucketId, dirty } }) => {
-            const b = state.buckets.find((b) => b.id === bucketId);
-            if (b) b.dirty = !!dirty;
+        markBucketDirty: (state, { payload }) => {
+            const id = payload;
+            const b = state.buckets.find((x) => x.id === id);
+            if (b) b.dirty = true;
         },
-        reset: () => initialState,
+        resetRender: () => DEFAULT,
     },
 });
 
 export const {
-    hydrate,
+    replaceAll,
     setBuckets,
+    setAssignment,
     assignLayer,
-    unassignLayer,
-    markDirty,
-    reset,
+    markBucketDirty,
+    resetRender,
 } = renderSlice.actions;
 export default renderSlice.reducer;
-
-export const selectRender = (s) => s.vectorDoc.render;
-export const selectBucketById = (s, id) =>
-    s.vectorDoc.render.buckets.find((b) => b.id === id) || null;
-export const selectLayerBucket = (s, layerId) =>
-    s.vectorDoc.render.assignment[layerId] || null;

@@ -1,10 +1,17 @@
-import Toolbar from './component/toolbar/Toolbar';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+import Edit from './page/Edit';
+import Home from './page/Home';
 
 function App() {
     return (
-        <main id="main">
-            <Toolbar />
-        </main>
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/edit/:id" element={<Edit />} />
+            </Routes>
+        </BrowserRouter>
     );
 }
+
 export default App;

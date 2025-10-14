@@ -1,42 +1,48 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
 const initialState = {
     zoom: 1,
+    minZoom: 0.1,
+    maxZoom: 8,
+    step: 0.1,
     pan: { x: 0, y: 0 },
-    rotation: 0,
+    viewportSize: { w: 0, h: 0 },
 };
 
 const viewportSlice = createSlice({
     name: 'viewport',
     initialState,
     reducers: {
-        setZoom: (state, { payload }) => {
-            const z = Number(payload);
-            if (Number.isFinite(z) && z > 0) state.zoom = z;
+        zoomIn: (s) => {
+            s.zoom = clamp(s.zoom + s.step, s.minZoom, s.maxZoom);
         },
-        zoomBy: (state, { payload }) => {
-            const f = Number(payload);
-            if (Number.isFinite(f) && f > 0) state.zoom *= f;
+        zoomOut: (s) => {
+            s.zoom = clamp(s.zoom - s.step, s.minZoom, s.maxZoom);
         },
-        setPan: (state, { payload: { x, y } }) => {
-            if (Number.isFinite(x)) state.pan.x = x;
-            if (Number.isFinite(y)) state.pan.y = y;
+        setZoom: (s, { payload }) => {
+            const v = Number(payload);
+            if (Number.isFinite(v) && v > 0)
+                s.zoom = clamp(v, s.minZoom, s.maxZoom);
         },
-        panBy: (state, { payload: { dx = 0, dy = 0 } }) => {
-            state.pan.x += dx;
-            state.pan.y += dy;
+        resetZoom: (s) => {
+            s.zoom = 1;
         },
-        setRotation: (state, { payload }) => {
-            const r = Number(payload);
-            if (Number.isFinite(r)) state.rotation = r;
+        setPan: (s, { payload }) => {
+            const { x = 0, y = 0 } = payload || {};
+            s.pan.x = x;
+            s.pan.y = y;
         },
-        reset: () => initialState,
+        setViewportSize: (s, { payload }) => {
+            const { w = 0, h = 0 } = payload || {};
+            s.viewportSize.w = w;
+            s.viewportSize.h = h;
+        },
     },
 });
 
-export const { setZoom, zoomBy, setPan, panBy, setRotation, reset } =
+export const { zoomIn, zoomOut, setZoom, resetZoom, setPan, setViewportSize } =
     viewportSlice.actions;
-export default viewportSlice.reducer;
 
-// selectors
-export const selectViewport = (s) => s.viewport;
+export default viewportSlice.reducer;

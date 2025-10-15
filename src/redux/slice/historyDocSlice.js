@@ -1,57 +1,65 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const MAX_STACK = 50;
-
 const initialState = {
     past: [],
     future: [],
     applied: null,
 };
 
+const takePayload = (payload) =>
+    payload?.snapshot != null ? payload.snapshot : payload;
+
 const historyDocSlice = createSlice({
     name: 'historyDoc',
     initialState,
     reducers: {
-        pushPast(state, action) {
-            const snap = action?.payload?.snapshot ?? null;
-            if (!snap) return;
-            state.past.push(snap);
-            if (state.past.length > MAX_STACK) state.past.shift();
-            state.applied = null;
+        resetHistory: () => initialState,
+
+        pushPast: (state, { payload }) => {
+            state.past.push({ snapshot: takePayload(payload) });
         },
-        pushFuture(state, action) {
-            const snap = action?.payload?.snapshot ?? null;
-            if (!snap) return;
-            state.future.push(snap);
-            if (state.future.length > MAX_STACK) state.future.shift();
-            state.applied = null;
+        pushFuture: (state, { payload }) => {
+            state.future.push({ snapshot: takePayload(payload) });
         },
-        clearFuture(state) {
+        clearFuture: (state) => {
             state.future = [];
         },
-        popPast(state) {
-            const snap = state.past.pop();
-            state.applied = snap ?? null;
+
+        popPast: (state) => {
+            if (!state.past.length) return;
+            const top = state.past.pop();
+            state.applied = top;
         },
-        popFuture(state) {
-            const snap = state.future.pop();
-            state.applied = snap ?? null;
+        popFuture: (state) => {
+            if (!state.future.length) return;
+            const top = state.future.pop();
+            state.applied = top;
         },
-        resetHistory(state) {
-            state.past = [];
-            state.future = [];
-            state.applied = null;
+
+        undo: (state) => {
+            if (!state.past.length) return;
+            const top = state.past.pop();
+            state.future.push(top);
+            state.applied = top;
+        },
+        redo: (state) => {
+            if (!state.future.length) return;
+            const top = state.future.pop();
+            state.past.push(top);
+            state.applied = top;
         },
     },
 });
 
 export const {
+    resetHistory,
     pushPast,
     pushFuture,
     clearFuture,
     popPast,
     popFuture,
-    resetHistory,
+    undo,
+    redo,
 } = historyDocSlice.actions;
 
 export default historyDocSlice.reducer;

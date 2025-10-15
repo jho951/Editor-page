@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchDrawings, loadDrawing } from '../../redux/slice/docSlice';
 
 // (선택) baseURL 확인용
-import { http } from '../../lib/http';
+import { http } from '../../lib/axios/http';
 
 // (선택) 서비스 레이어를 직접 호출해보고 싶으면 주석 해제
 // import { drawings } from '../../services/drawings';

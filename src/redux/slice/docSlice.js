@@ -1,6 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { drawings } from '../../api/drawings';
 
+import { replaceAll as replaceCanvas } from './canvasSlice';
+import { replaceAll as replaceLayers } from './layerSlice';
+import { replaceAll as replaceRender } from './renderSlice';
 import { replaceAllShapes } from './shapeSlice';
 import { setSelection } from './selectionSlice';
 import { resetCanvas } from './canvasSlice';
@@ -8,8 +11,51 @@ import { resetHistory } from './historyDocSlice';
 import { resetLayer } from './layerSlice';
 import { resetRender } from './renderSlice';
 
-import { safeParseVectorJson, applyVectorJson } from '../../util/vectorJson';
+// ─── local utils (툴바 호환 위해 여기 둠) ───
+const safeParseVectorJson = (v) => {
+    if (!v) return null;
+    if (typeof v === 'object') return v;
+    try {
+        return JSON.parse(v);
+    } catch {
+        return null;
+    }
+};
 
+const applyVectorJson = (dispatch, vj = {}) => {
+    if (vj.canvas)
+        dispatch({
+            type: replaceCanvas.type,
+            payload: vj.canvas,
+            meta: { fromHistory: true },
+        });
+    if (vj.layers)
+        dispatch({
+            type: replaceLayers.type,
+            payload: vj.layers,
+            meta: { fromHistory: true },
+        });
+    if (vj.render)
+        dispatch({
+            type: replaceRender.type,
+            payload: vj.render,
+            meta: { fromHistory: true },
+        });
+    if (vj.shapes)
+        dispatch({
+            type: replaceAllShapes.type,
+            payload: vj.shapes,
+            meta: { fromHistory: true },
+        });
+    if (vj.selection !== undefined)
+        dispatch({
+            type: setSelection.type,
+            payload: vj.selection,
+            meta: { fromHistory: true },
+        });
+};
+
+// ─── 목록 ───
 export const fetchDrawings = createAsyncThunk(
     'doc/fetchDrawings',
     async (_, { rejectWithValue }) => {
@@ -17,12 +63,12 @@ export const fetchDrawings = createAsyncThunk(
             const res = await drawings.list();
             return Array.isArray(res) ? res : (res?.data ?? []);
         } catch (e) {
-            return rejectWithValue(e.message);
+            return rejectWithValue(e.message || String(e));
         }
     }
 );
 
-// 단건 로드 (id로 GET) - 파싱된 vectorJson을 상태에 적용 + payload에도 넣어 반환
+// ─── 단건 로드 ───
 export const loadDrawing = createAsyncThunk(
     'doc/loadDrawing',
     async (id, { dispatch, rejectWithValue }) => {
@@ -30,10 +76,7 @@ export const loadDrawing = createAsyncThunk(
             const res = await drawings.get(id);
             const data = res?.data ?? res;
             const parsedVJ = safeParseVectorJson(data?.vectorJson);
-
             if (parsedVJ) applyVectorJson(dispatch, parsedVJ);
-
-            // 파싱된 vj를 payload에도 넣어서 fulfilled에서 재활용
             return { ...data, vectorJson: parsedVJ };
         } catch (e) {
             return rejectWithValue(e.message || String(e));
@@ -41,8 +84,7 @@ export const loadDrawing = createAsyncThunk(
     }
 );
 
-// ──────────────────────────────────────────────────────────────
-// 상태
+// ─── 상태 ───
 const initialState = {
     items: [],
     currentId: null,
@@ -53,17 +95,36 @@ const initialState = {
     updatedAt: null,
     loading: false,
     error: null,
-    debug: {
-        lastVectorJson: null, // 디버깅용: 마지막으로 로드된 vj 저장
-    },
+    debug: { lastVectorJson: null },
 };
 
 const docSlice = createSlice({
     name: 'doc',
     initialState,
-    reducers: {},
+    reducers: {
+        setDocMeta: (state, { payload }) => {
+            state.currentId = payload?.id ?? state.currentId;
+            state.title = payload?.title ?? state.title;
+            state.version = payload?.version ?? state.version;
+            if (payload?.width != null) state.width = payload.width;
+            if (payload?.height != null) state.height = payload.height;
+            state.updatedAt = payload?.updatedAt ?? state.updatedAt;
+        },
+        setDocItems: (state, { payload }) => {
+            state.items = Array.isArray(payload) ? payload : state.items;
+        },
+        setDocLoading: (state, { payload }) => {
+            state.loading = !!payload;
+        },
+        setDocError: (state, { payload }) => {
+            state.error = payload ?? null;
+        },
+        setLastVectorJson: (state, { payload }) => {
+            state.debug.lastVectorJson = payload ?? null;
+        },
+        resetDoc: () => initialState,
+    },
     extraReducers: (b) => {
-        // 목록
         b.addCase(fetchDrawings.pending, (s) => {
             s.loading = true;
             s.error = null;
@@ -77,7 +138,6 @@ const docSlice = createSlice({
             s.error = payload || '목록 불러오기 실패';
         });
 
-        // 단건
         b.addCase(loadDrawing.pending, (s) => {
             s.loading = true;
             s.error = null;
@@ -85,24 +145,18 @@ const docSlice = createSlice({
         b.addCase(loadDrawing.fulfilled, (s, { payload }) => {
             s.loading = false;
             if (!payload) return;
-
             const m = payload;
-            const vj = m.vectorJson; // 이미 파싱된 객체
+            const vj = m.vectorJson;
 
             s.currentId = m.id ?? null;
             s.title = m.title ?? 'Untitled';
             s.version = m.version ?? 0;
 
-            // 캔버스 크기 동기화: payload → vj.canvas → 기존값
             s.width = m.width ?? vj?.canvas?.width ?? s.width;
             s.height = m.height ?? vj?.canvas?.height ?? s.height;
 
             s.updatedAt = m.updatedAt ?? null;
-
-            // 목록에 없으면 선두 삽입
             if (m.id && !s.items.some((x) => x.id === m.id)) s.items.unshift(m);
-
-            // 디버깅 저장
             s.debug.lastVectorJson = vj || null;
         });
         b.addCase(loadDrawing.rejected, (s, { payload }) => {
@@ -113,16 +167,21 @@ const docSlice = createSlice({
 });
 
 export default docSlice.reducer;
+export const {
+    setDocMeta,
+    setDocItems,
+    setDocLoading,
+    setDocError,
+    setLastVectorJson,
+    resetDoc,
+} = docSlice.actions;
 
-// 선택자(원하면 별도 selectors 파일로 빼도 됨)
-export const selectLastVectorJson = (state) => state.doc?.debug?.lastVectorJson;
-
-// 새 문서 시작: 상태 초기화
+// ─── 새 문서 시작(툴바에서 호출) ───
 export const newDrawing = () => (dispatch) => {
     dispatch(resetCanvas());
     dispatch(resetHistory());
     dispatch(resetLayer());
+    dispatch(setSelection());
+    dispatch(replaceAllShapes());
     dispatch(resetRender());
-    dispatch(setSelection(null));
-    dispatch(replaceAllShapes([]));
 };

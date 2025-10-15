@@ -7,7 +7,7 @@ const transformToolMiddleware = (store) => (next) => (action) => {
     if (action.type === setTool.type) {
         const payload = action.payload;
         const state = store.getState();
-        const ids = state.selection?.selectedIds || [];
+        const ids = state.selection?.ids || [];
 
         const applyAndReturn = () => {
             store.dispatch(setTool('select'));

@@ -1,4 +1,4 @@
-import { CANVAS_RESIZE as CR } from '../constant/resize';
+import { CANVAS_RESIZE as CR } from '../../constant/resize';
 
 export function drawCanvasResizeKnob(ctx, width, height) {
     const k = CR.KNOB;
@@ -44,3 +44,16 @@ export function drawResizePreview(octx, nextW, nextH) {
     octx.strokeRect(0.5, 0.5, nextW - 1, nextH - 1);
     octx.restore();
 }
+
+function setupCanvas(canvas, width, height) {
+    const dpr = (window && window.devicePixelRatio) || 1;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, dpr };
+}
+
+export { setupCanvas };

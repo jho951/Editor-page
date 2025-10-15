@@ -1,35 +1,26 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-// 프로젝트에 맞춰 필요한 형태로 확장 가능
-const DEFAULT = {
-    byId: {}, // { [layerId]: { id, type, props... } }
-    allIds: [], // [layerId, ...]
-    selectedIds: [], // [layerId, ...]
-};
-
-const sanitize = (payload) => {
-    const byId =
-        payload?.byId && typeof payload.byId === 'object' ? payload.byId : {};
-    const allIds = Array.isArray(payload?.allIds)
-        ? payload.allIds
-        : Object.keys(byId);
-    const selectedIds = Array.isArray(payload?.selectedIds)
-        ? payload.selectedIds
-        : [];
-    return { byId, allIds, selectedIds };
-};
+const initialState = [];
 
 const layerSlice = createSlice({
     name: 'layers',
-    initialState: DEFAULT,
+    initialState,
     reducers: {
-        replaceAll: (state, { payload }) => {
-            return sanitize(payload);
+        replaceAll: (state, { payload }) =>
+            Array.isArray(payload) ? payload : state,
+        addLayer: (state, { payload }) => {
+            state.push(payload);
         },
-
-        resetLayer: () => DEFAULT,
+        updateLayer: (state, { payload }) => {
+            const i = state.findIndex((l) => l.id === payload.id);
+            if (i >= 0) state[i] = { ...state[i], ...payload.patch };
+        },
+        removeLayer: (state, { payload }) =>
+            state.filter((l) => l.id !== payload),
+        resetLayer: () => initialState,
     },
 });
 
-export const { replaceAll, reset, resetLayer } = layerSlice.actions;
+export const { replaceAll, addLayer, updateLayer, removeLayer, resetLayer } =
+    layerSlice.actions;
 export default layerSlice.reducer;

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getAuthToken } from '../util/token';
+import { getAuthToken } from './token';
 
 /**
  * @file lib/http.js

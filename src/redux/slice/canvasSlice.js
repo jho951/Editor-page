@@ -1,42 +1,44 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { state } from '../../constant/state';
-import { coerceSize } from '../../util/guide';
+
+const DEFAULT = {
+    width: 800,
+    height: 600,
+    background: null,
+    grid: { enabled: false, size: 10 },
+};
+
+const coerceSize = (n, fallback) => {
+    const v = Number(n);
+    return Number.isFinite(v) && v > 0 ? v : fallback;
+};
 
 const canvasSlice = createSlice({
     name: 'canvas',
-    initialState: state.CANVAS,
+    initialState: DEFAULT,
     reducers: {
-        replaceAll: (state, { payload }) => {
-            return {
-                width: coerceSize(payload?.width, state.CANVAS.width),
-                height: coerceSize(payload?.height, state.CANVAS.height),
-                background: payload?.background ?? null,
-                grid: {
-                    enabled: Boolean(payload?.grid?.enabled),
-                    size: coerceSize(
-                        payload?.grid?.size,
-                        state.CANVAS.grid.size
-                    ),
-                },
-            };
-        },
-
+        replaceAll: (state, { payload }) => ({
+            width: coerceSize(payload?.width, DEFAULT.width),
+            height: coerceSize(payload?.height, DEFAULT.height),
+            background: payload?.background ?? null,
+            grid: {
+                enabled: Boolean(payload?.grid?.enabled),
+                size: coerceSize(payload?.grid?.size, DEFAULT.grid.size),
+            },
+        }),
         setSize: (state, { payload }) => {
-            const w = coerceSize(payload?.width, state.width);
-            const h = coerceSize(payload?.height, state.height);
-            state.width = w;
-            state.height = h;
+            state.width = coerceSize(payload?.width, state.width);
+            state.height = coerceSize(payload?.height, state.height);
         },
         setBackground: (state, { payload }) => {
             state.background = payload ?? null;
         },
         setGrid: (state, { payload }) => {
             if (payload?.enabled != null)
-                state.grid.enabled = Boolean(payload.enabled);
+                state.grid.enabled = !!payload.enabled;
             if (payload?.size != null)
                 state.grid.size = coerceSize(payload.size, state.grid.size);
         },
-        resetCanvas: () => state.CANVAS,
+        resetCanvas: () => DEFAULT,
     },
 });
 

@@ -1,9 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-    tool: 'select',
-    draft: { stroke: '#333333', fill: '#ffffff', strokeWidth: 2 },
-    selectionRect: null,
+    tool: 'select', // 'select' | 'rect' | 'ellipse' | 'line' | 'polyline' | 'polygon' | 'path' | 'text'
+    draft: { stroke: '#333', fill: null, strokeWidth: 1 },
     cursor: 'default',
 };
 
@@ -11,39 +10,43 @@ const toolSlice = createSlice({
     name: 'tools',
     initialState,
     reducers: {
-        setTool: (s, { payload }) => {
-            s.tool = payload;
+        setTool: (state, { payload }) => {
+            state.tool = payload;
         },
-        setDraftStyle: (s, { payload }) => {
-            Object.assign(s.draft, payload);
+        setDraft: (state, { payload }) => {
+            state.draft = { ...state.draft, ...(payload || {}) };
         },
-        setStroke: (s, { payload }) => {
-            s.draft.stroke = payload;
+        setCursor: (state, { payload }) => {
+            state.cursor = payload ?? 'default';
         },
-        setFill: (s, { payload }) => {
-            s.draft.fill = payload;
+        resetTool: () => initialState,
+
+        // ★ Toolbar 호환용 (그대로 호출 가능)
+        setStroke: (state, { payload }) => {
+            state.draft = { ...state.draft, stroke: payload };
         },
-        setStrokeWidth: (s, { payload }) => {
-            const n = Number(payload);
-            s.draft.strokeWidth = Number.isFinite(n) && n > 0 ? n : 1;
+        setFill: (state, { payload }) => {
+            state.draft = { ...state.draft, fill: payload };
         },
-        setCursor: (s, { payload }) => {
-            s.cursor = payload || 'default';
-        },
-        setSelectionRect: (s, { payload }) => {
-            s.selectionRect = payload; // {x,y,w,h} | null
+        setStrokeWidth: (state, { payload }) => {
+            const v = Number(payload);
+            state.draft = {
+                ...state.draft,
+                strokeWidth: Number.isFinite(v)
+                    ? v
+                    : (state.draft.strokeWidth ?? 1),
+            };
         },
     },
 });
 
 export const {
     setTool,
-    setDraftStyle,
+    setDraft,
+    setCursor,
+    resetTool,
     setStroke,
     setFill,
     setStrokeWidth,
-    setCursor,
-    setSelectionRect,
 } = toolSlice.actions;
-
 export default toolSlice.reducer;

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import {
@@ -48,11 +47,10 @@ import {
 } from '../icon/Icon';
 
 import styles from './Toolbar.module.css';
-import LoadModal from '../modal/Modal';
+
 import FileOperations from './FileOperations';
 
 const Toolbar = () => {
-    const navigate = useNavigate();
     const dispatch = useDispatch();
     const { past = [], future = [] } = useSelector((s) => s.historyDoc || {});
 
@@ -92,6 +90,23 @@ const Toolbar = () => {
         }
     };
 
+    // 🔹 열기 버튼 클릭 시 목록 패널 열고, 최신 목록 조회
+    const onOpenClick = () => {
+        setOpenLoad(true);
+        dispatch(fetchDrawings());
+    };
+
+    // 🔹 도면 선택 시 로드 + 패널 닫기 (+ 필요 시 라우팅)
+    const onSelectDoc = async (doc) => {
+        if (!doc?.id) return;
+        try {
+            await dispatch(loadDrawing(String(doc.id))).unwrap();
+            setOpenLoad(false);
+        } catch (err) {
+            console.error('[Toolbar] loadDrawing error:', err);
+        }
+    };
+
     useEffect(() => {
         const onKey = (e) => {
             const isMod = e.ctrlKey || e.metaKey;
@@ -118,6 +133,22 @@ const Toolbar = () => {
             <div className={styles.toolbar}>
                 <FileOperations />
                 <Separator />
+
+                {/* 🔹 파일: 열기(목록 패널 오픈), 저장(추가 예정), 새 문서 */}
+                <ToolButton title="열기" onClick={onOpenClick}>
+                    <IconOpen />
+                </ToolButton>
+                {/* 저장은 save thunk 연결 후 활성화 */}
+                {/* <ToolButton title="저장" onClick={onSave}><IconSave/></ToolButton> */}
+                <ToolButton
+                    title="새 문서"
+                    onClick={() => dispatch(newDrawing())}
+                >
+                    <IconSave />
+                </ToolButton>
+
+                <Separator />
+
                 <ToolButton
                     active={tool === 'select'}
                     title="선택 도구"
@@ -274,29 +305,27 @@ const Toolbar = () => {
                 </div>
                 <Separator />
 
-                <Separator />
-
                 {/* 스타일 컨트롤: 선색/채움/두께 */}
                 <div className={styles.colorGroup} aria-label="스타일">
                     <label className={styles.colorItem} title="윤곽선 색">
                         <span
                             className={styles.colorSwatch}
-                            style={{ background: draft?.stroke }}
+                            style={{ background: draft?.stroke || '#000000' }}
                         />
                         <input
                             type="color"
-                            value={draft?.stroke}
+                            value={draft?.stroke || '#000000'}
                             onChange={onStrokeChange}
                         />
                     </label>
                     <label className={styles.colorItem} title="채우기 색">
                         <span
                             className={styles.colorSwatch}
-                            style={{ background: draft?.fill }}
+                            style={{ background: draft?.fill || '#000000' }}
                         />
                         <input
                             type="color"
-                            value={draft?.fill}
+                            value={draft?.fill || '#000000'}
                             onChange={onFillChange}
                         />
                     </label>
@@ -355,6 +384,78 @@ const Toolbar = () => {
                     </button>
                 </div>
             </div>
+
+            {/* 🔹 열기 패널: 네비게이션 아래에 붙는 간단 목록 UI */}
+            {openLoad && (
+                <div
+                    className={styles.loadPanel}
+                    role="dialog"
+                    aria-label="도면 열기"
+                >
+                    <div className={styles.loadHeader}>
+                        <strong>도면 열기</strong>
+                        <div className={styles.loadActions}>
+                            <button
+                                type="button"
+                                className={styles.iconBtn}
+                                onClick={() => dispatch(fetchDrawings())}
+                                disabled={docLoading}
+                                title="새로고침"
+                            >
+                                ⟳
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.iconBtn}
+                                onClick={() => setOpenLoad(false)}
+                                title="닫기"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+
+                    {docLoading && (
+                        <div className={styles.loadStatus}>불러오는 중…</div>
+                    )}
+                    {docError && (
+                        <div className={styles.loadError}>
+                            에러: {String(docError)}
+                        </div>
+                    )}
+
+                    {!docLoading && !docError && (
+                        <ul className={styles.docList}>
+                            {docs.length === 0 && (
+                                <li className={styles.docEmpty}>
+                                    목록이 없습니다.
+                                </li>
+                            )}
+                            {docs.map((d) => (
+                                <li key={d.id} className={styles.docItem}>
+                                    <button
+                                        type="button"
+                                        className={styles.docBtn}
+                                        onClick={() => onSelectDoc(d)}
+                                        title={d.title}
+                                    >
+                                        <span className={styles.docTitle}>
+                                            {d.title}
+                                        </span>
+                                        {d.updatedAt && (
+                                            <span className={styles.docDate}>
+                                                {new Date(
+                                                    d.updatedAt
+                                                ).toLocaleString()}
+                                            </span>
+                                        )}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
         </header>
     );
 };

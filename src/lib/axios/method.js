@@ -1,4 +1,4 @@
-import { http } from '../lib/http';
+import { http } from './http';
 
 const api = {
     get: (url, cfg) => http.get(url, cfg).then((r) => r.data),

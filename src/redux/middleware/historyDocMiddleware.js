@@ -43,7 +43,7 @@ const clone = (v) => JSON.parse(JSON.stringify(v));
 
 const makeSnapshot = (state) => ({
     shapes: clone(state.shapes?.list || []),
-    selection: clone(state.selection?.selectedIds || []),
+    selection: clone(state.selection?.ids || []),
 });
 
 const applySnapshot = (store, snapshot) => {

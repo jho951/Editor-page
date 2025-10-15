@@ -1,147 +1,369 @@
-import { createSlice, nanoid } from '@reduxjs/toolkit';
-import {
-    multiply,
-    translate,
-    rotate as R,
-    scale as S,
-    skewX as KX,
-    skewY as KY,
-    around,
-} from '../../util/matrix';
+import { createSlice } from '@reduxjs/toolkit';
 
-// 간단한 bbox 유틸 (rect/ellipse/line 등에서 사용).
-// 실제 앱에서는 실제 좌표/points로부터 bbox를 계산하도록 교체 가능.
-const getBBox = (shape) => {
-    if (shape.bbox) return shape.bbox;
-    // fallback: rect-like
-    const { x = 0, y = 0, w = 0, h = 0 } = shape;
-    return { x, y, w, h };
+const ensureArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const genId = () =>
+    globalThis.crypto?.randomUUID?.() ||
+    `s_${Math.random().toString(36).slice(2, 9)}`;
+
+// ───────────────────────────────────────────────
+// bbox 계산
+const calcBBox = (s) => {
+    if (
+        s.type === 'rect' ||
+        s.type === 'ellipse' ||
+        s.type === 'circle' ||
+        s.type === 'text'
+    ) {
+        return { x: s.x, y: s.y, w: s.w, h: s.h };
+    }
+    if (s.type === 'line') {
+        const x0 = s.x,
+            y0 = s.y,
+            x1 = s.x + s.w,
+            y1 = s.y + s.h;
+        const x = Math.min(x0, x1),
+            y = Math.min(y0, y1);
+        return { x, y, w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) };
+    }
+    if (s.type === 'star') {
+        return { x: s.x, y: s.y, w: s.w, h: s.h };
+    }
+    if (s.type === 'polyline' || s.type === 'polygon' || s.type === 'path') {
+        const pts = s.data?.points || [];
+        if (pts.length < 2) return { x: s.x ?? 0, y: s.y ?? 0, w: 0, h: 0 };
+        let minX = Infinity,
+            minY = Infinity,
+            maxX = -Infinity,
+            maxY = -Infinity;
+        for (let i = 0; i < pts.length; i += 2) {
+            const x = pts[i],
+                y = pts[i + 1];
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        }
+        return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    }
+    return s.bbox ?? { x: 0, y: 0, w: 0, h: 0 };
 };
 
-const initialState = {
-    list: [], // 예: {id,type, x,y,w,h, style, matrix:[a,b,c,d,e,f], bbox?}
+// ───────────────────────────────────────────────
+// flip / skew 헬퍼
+const reflectX = (x, ox) => 2 * ox - x;
+const reflectY = (y, oy) => 2 * oy - y;
+
+const getIds = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.ids)) return payload.ids;
+    if (payload?.id) return [payload.id];
+    return ensureArray(payload);
 };
 
-const applyMatrixToShape = (shape, M) => {
-    // 행렬 합성: shape.matrix = shape.matrix * M
-    const cur = shape.matrix || [1, 0, 0, 1, 0, 0];
-    const next = multiply(cur, M);
-    shape.matrix = next;
+// poly류 좌표에 선형 shear 적용
+const shearPoints = (pts, kx, ky, ox, oy) => {
+    for (let i = 0; i < pts.length; i += 2) {
+        const x = pts[i],
+            y = pts[i + 1];
+        const dx = x - ox,
+            dy = y - oy;
+        const nx = ox + dx + kx * dy;
+        const ny = oy + dy + ky * dx;
+        pts[i] = nx;
+        pts[i + 1] = ny;
+    }
 };
+
+// ───────────────────────────────────────────────
+
+const initialState = { list: [] };
 
 const shapeSlice = createSlice({
     name: 'shapes',
     initialState,
     reducers: {
-        addShape: {
-            prepare: (partial) => ({
-                payload: {
-                    id: nanoid(),
-                    type: partial.type || 'rect',
-                    x: partial.x ?? 0,
-                    y: partial.y ?? 0,
-                    w: partial.w ?? 0,
-                    h: partial.h ?? 0,
-                    style: partial.style || {
-                        stroke: '#333',
-                        fill: '#fff',
-                        strokeWidth: 2,
-                    },
-                    matrix: partial.matrix || [1, 0, 0, 1, 0, 0],
-                    bbox: partial.bbox || null,
-                    data: partial.data || null,
+        replaceAllShapes: (state, { payload }) => {
+            state.list = Array.isArray(payload)
+                ? payload.map((s) => ({ ...s, bbox: s.bbox ?? calcBBox(s) }))
+                : [];
+        },
+        addShape: (state, { payload }) => {
+            const id = payload.id ?? genId();
+            const s = {
+                id,
+                type: payload.type,
+                x: payload.x ?? 0,
+                y: payload.y ?? 0,
+                w: payload.w ?? 0,
+                h: payload.h ?? 0,
+                style: payload.style ?? {
+                    stroke: '#333',
+                    fill: null,
+                    strokeWidth: 1,
                 },
-            }),
-            reducer: (s, { payload }) => {
-                s.list.push(payload);
-            },
+                data: payload.data ?? null,
+                matrix: payload.matrix ?? [1, 0, 0, 1, 0, 0],
+            };
+            s.bbox = calcBBox(s);
+            state.list.push(s);
         },
-        setShapeStyle: (s, { payload }) => {
-            const { ids = [], style = {} } = payload || {};
-            s.list.forEach((sh) => {
-                if (ids.includes(sh.id)) Object.assign(sh.style, style);
-            });
+        removeShapes: (state, { payload }) => {
+            const ids = ensureArray(payload);
+            state.list = state.list.filter((s) => !ids.includes(s.id));
         },
-        translateShapes: (s, { payload }) => {
-            const { ids = [], dx = 0, dy = 0 } = payload || {};
-            const T = translate(dx, dy);
-            s.list.forEach((sh) => {
-                if (ids.includes(sh.id)) applyMatrixToShape(sh, T);
-            });
+        setShapeData: (state, { payload }) => {
+            const it = state.list.find((x) => x.id === payload.id);
+            if (!it) return;
+            it.data = { ...(it.data || {}), ...(payload.data || {}) };
+            it.bbox = calcBBox(it);
         },
-        rotateShapes: (s, { payload }) => {
-            const { ids = [], deg = 90 } = payload || {};
-            s.list.forEach((sh) => {
-                if (!ids.includes(sh.id)) return;
-                const { x, y, w, h } = getBBox(sh);
-                const mx = x + w / 2,
-                    my = y + h / 2;
-                const M = around(mx, my, R(deg));
-                applyMatrixToShape(sh, M);
-            });
+        setShapeStyle: (state, { payload }) => {
+            const ids = ensureArray(payload.ids);
+            for (const it of state.list) {
+                if (ids.includes(it.id))
+                    it.style = {
+                        ...(it.style || {}),
+                        ...(payload.style || {}),
+                    };
+            }
         },
-        flipHShapes: (s, { payload }) => {
-            const { ids = [] } = payload || {};
-            s.list.forEach((sh) => {
-                if (!ids.includes(sh.id)) return;
-                const { x, y, w, h } = getBBox(sh);
-                const mx = x + w / 2,
-                    my = y + h / 2;
-                const M = around(mx, my, S(-1, 1));
-                applyMatrixToShape(sh, M);
-            });
+        translateShapes: (state, { payload }) => {
+            const ids = ensureArray(payload.ids);
+            for (const it of state.list) {
+                if (!ids.includes(it.id)) continue;
+                if (
+                    it.type === 'polyline' ||
+                    it.type === 'polygon' ||
+                    it.type === 'path'
+                ) {
+                    const pts = it.data?.points || [];
+                    for (let i = 0; i < pts.length; i += 2) {
+                        pts[i] += payload.dx;
+                        pts[i + 1] += payload.dy;
+                    }
+                    it.data.points = pts;
+                } else {
+                    it.x += payload.dx;
+                    it.y += payload.dy;
+                }
+                it.bbox = calcBBox(it);
+            }
         },
-        flipVShapes: (s, { payload }) => {
-            const { ids = [] } = payload || {};
-            s.list.forEach((sh) => {
-                if (!ids.includes(sh.id)) return;
-                const { x, y, w, h } = getBBox(sh);
-                const mx = x + w / 2,
-                    my = y + h / 2;
-                const M = around(mx, my, S(1, -1));
-                applyMatrixToShape(sh, M);
-            });
+        scaleShapes: (state, { payload }) => {
+            const ids = ensureArray(payload.ids);
+            const ox = payload.origin?.x ?? null,
+                oy = payload.origin?.y ?? null;
+            const sx = Number(payload.sx ?? 1),
+                sy = Number(payload.sy ?? 1);
+            for (const it of state.list) {
+                if (!ids.includes(it.id)) continue;
+                if (
+                    it.type === 'polyline' ||
+                    it.type === 'polygon' ||
+                    it.type === 'path'
+                ) {
+                    const pts = it.data?.points || [];
+                    if (ox != null && oy != null) {
+                        for (let i = 0; i < pts.length; i += 2) {
+                            pts[i] = ox + (pts[i] - ox) * sx;
+                            pts[i + 1] = oy + (pts[i + 1] - oy) * sy;
+                        }
+                    } else {
+                        for (let i = 0; i < pts.length; i += 2) {
+                            pts[i] *= sx;
+                            pts[i + 1] *= sy;
+                        }
+                    }
+                    it.data.points = pts;
+                } else {
+                    if (ox != null && oy != null) {
+                        it.x = ox + (it.x - ox) * sx;
+                        it.y = oy + (it.y - oy) * sy;
+                    }
+                    it.w *= sx;
+                    it.h *= sy;
+                }
+                it.bbox = calcBBox(it);
+            }
         },
-        skewShapes: (s, { payload }) => {
-            const { ids = [], xDeg = 0, yDeg = 0 } = payload || {};
-            s.list.forEach((sh) => {
-                if (!ids.includes(sh.id)) return;
-                const { x, y, w, h } = getBBox(sh);
-                const mx = x + w / 2,
-                    my = y + h / 2;
-                // KX, KY 순서 합성(필요 시 조정)
-                const M = around(mx, my, multiply(KX(xDeg), KY(yDeg)));
-                applyMatrixToShape(sh, M);
-            });
+        rotateShapes: (state, { payload }) => {
+            const ids = ensureArray(payload.ids);
+            const deg = Number(payload.deg ?? 0);
+            const rad = (deg * Math.PI) / 180;
+            const cos = Math.cos(rad),
+                sin = Math.sin(rad);
+            const ox = payload.origin?.x ?? null,
+                oy = payload.origin?.y ?? null;
+            const rot = (x, y) => {
+                if (ox == null || oy == null) return [x, y];
+                const dx = x - ox,
+                    dy = y - oy;
+                return [ox + dx * cos - dy * sin, oy + dx * sin + dy * cos];
+            };
+            for (const it of state.list) {
+                if (!ids.includes(it.id)) continue;
+                if (
+                    it.type === 'polyline' ||
+                    it.type === 'polygon' ||
+                    it.type === 'path'
+                ) {
+                    const pts = it.data?.points || [];
+                    for (let i = 0; i < pts.length; i += 2) {
+                        const [nx, ny] = rot(pts[i], pts[i + 1]);
+                        pts[i] = nx;
+                        pts[i + 1] = ny;
+                    }
+                    it.data.points = pts;
+                } else {
+                    const [nx, ny] = rot(it.x, it.y);
+                    it.x = nx;
+                    it.y = ny;
+                }
+                it.bbox = calcBBox(it);
+            }
         },
-        scaleShapes: (s, { payload }) => {
-            const { ids = [], sx = 1, sy = 1 } = payload || {};
-            s.list.forEach((sh) => {
-                if (!ids.includes(sh.id)) return;
-                const { x, y, w, h } = getBBox(sh);
-                const mx = x + w / 2,
-                    my = y + h / 2;
-                const M = around(mx, my, S(sx, sy));
-                applyMatrixToShape(sh, M);
-            });
+
+        // ───────────────────────────────────────────────
+        // 폴리(라인/곤/프리드로우) 노드 편집
+        updatePolylineNode: (state, { payload }) => {
+            const it = state.list.find((x) => x.id === payload.id);
+            if (!it) return;
+            const pts = it.data?.points || [];
+            const i = clamp(payload.index * 2, 0, Math.max(0, pts.length - 2));
+            pts[i] = payload.x;
+            pts[i + 1] = payload.y;
+            it.data.points = pts;
+            it.bbox = calcBBox(it);
         },
-        // undo/redo에서 상태 통째로 교체할 때 사용
-        replaceAllShapes: (s, { payload }) => {
-            s.list = Array.isArray(payload) ? payload : [];
+        insertPolylineNode: (state, { payload }) => {
+            const it = state.list.find((x) => x.id === payload.id);
+            if (!it) return;
+            const pts = it.data?.points || [];
+            const i = clamp(payload.index * 2 + 2, 0, pts.length);
+            pts.splice(i, 0, payload.x, payload.y);
+            it.data.points = pts;
+            it.bbox = calcBBox(it);
+        },
+        deletePolylineNode: (state, { payload }) => {
+            const it = state.list.find((x) => x.id === payload.id);
+            if (!it) return;
+            const pts = it.data?.points || [];
+            if (pts.length <= 4) return; // 최소 2점 보존
+            const i = clamp(payload.index * 2, 0, pts.length - 2);
+            pts.splice(i, 2);
+            it.data.points = pts;
+            it.bbox = calcBBox(it);
+        },
+
+        // ───────────────────────────────────────────────
+        // 🔴 추가: flip / skew (미들웨어 호환용)
+        flipHShapes: (state, { payload }) => {
+            const ids = getIds(payload);
+            for (const it of state.list) {
+                if (!ids.includes(it.id)) continue;
+                const bb = calcBBox(it);
+                const ox = payload?.origin?.x ?? bb.x + bb.w / 2;
+
+                if (
+                    it.type === 'polyline' ||
+                    it.type === 'polygon' ||
+                    it.type === 'path'
+                ) {
+                    const pts = it.data?.points || [];
+                    for (let i = 0; i < pts.length; i += 2)
+                        pts[i] = reflectX(pts[i], ox);
+                    it.data.points = pts;
+                } else {
+                    // x' = 2*ox - (x + w)
+                    it.x = 2 * ox - (it.x + it.w);
+                }
+                it.bbox = calcBBox(it);
+            }
+        },
+        flipVShapes: (state, { payload }) => {
+            const ids = getIds(payload);
+            for (const it of state.list) {
+                if (!ids.includes(it.id)) continue;
+                const bb = calcBBox(it);
+                const oy = payload?.origin?.y ?? bb.y + bb.h / 2;
+
+                if (
+                    it.type === 'polyline' ||
+                    it.type === 'polygon' ||
+                    it.type === 'path'
+                ) {
+                    const pts = it.data?.points || [];
+                    for (let i = 0; i < pts.length; i += 2)
+                        pts[i + 1] = reflectY(pts[i + 1], oy);
+                    it.data.points = pts;
+                } else {
+                    // y' = 2*oy - (y + h)
+                    it.y = 2 * oy - (it.y + it.h);
+                }
+                it.bbox = calcBBox(it);
+            }
+        },
+        skewShapes: (state, { payload }) => {
+            const ids = getIds(payload);
+            const kx = Number(payload?.kx ?? 0);
+            const ky = Number(payload?.ky ?? 0);
+            for (const it of state.list) {
+                if (!ids.includes(it.id)) continue;
+                const bb = calcBBox(it);
+                const ox = payload?.origin?.x ?? bb.x + bb.w / 2;
+                const oy = payload?.origin?.y ?? bb.y + bb.h / 2;
+
+                if (
+                    it.type === 'polyline' ||
+                    it.type === 'polygon' ||
+                    it.type === 'path'
+                ) {
+                    const pts = it.data?.points || [];
+                    shearPoints(pts, kx, ky, ox, oy);
+                    it.data.points = pts;
+                } else {
+                    // 사각형류는 꼭짓점 기준 근사 bbox 재산정
+                    const tl = { x: it.x, y: it.y };
+                    const tr = { x: it.x + it.w, y: it.y };
+                    const bl = { x: it.x, y: it.y + it.h };
+                    const br = { x: it.x + it.w, y: it.y + it.h };
+                    const tx = (p) => {
+                        const dx = p.x - ox,
+                            dy = p.y - oy;
+                        return { x: ox + dx + kx * dy, y: oy + dy + ky * dx };
+                    };
+                    const T = [tx(tl), tx(tr), tx(bl), tx(br)];
+                    const minX = Math.min(...T.map((p) => p.x));
+                    const maxX = Math.max(...T.map((p) => p.x));
+                    const minY = Math.min(...T.map((p) => p.y));
+                    const maxY = Math.max(...T.map((p) => p.y));
+                    it.x = minX;
+                    it.y = minY;
+                    it.w = maxX - minX;
+                    it.h = maxY - minY;
+                }
+                it.bbox = calcBBox(it);
+            }
         },
     },
 });
 
 export const {
+    replaceAllShapes,
     addShape,
+    removeShapes,
+    setShapeData,
     setShapeStyle,
     translateShapes,
+    scaleShapes,
     rotateShapes,
+    updatePolylineNode,
+    insertPolylineNode,
+    deletePolylineNode,
     flipHShapes,
     flipVShapes,
     skewShapes,
-    scaleShapes,
-    replaceAllShapes,
 } = shapeSlice.actions;
 
 export default shapeSlice.reducer;

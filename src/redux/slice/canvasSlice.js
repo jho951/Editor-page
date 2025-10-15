@@ -1,14 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-
-const DEFAULT = {
-    width: 800,
-    height: 600,
-    background: null,
-    grid: {
-        enabled: false,
-        size: 10,
-    },
-};
+import { state } from '../../constant/state';
 
 const coerceSize = (n, fallback) => {
     const v = Number(n);
@@ -17,16 +8,19 @@ const coerceSize = (n, fallback) => {
 
 const canvasSlice = createSlice({
     name: 'canvas',
-    initialState: DEFAULT,
+    initialState: state.CANVAS,
     reducers: {
         replaceAll: (state, { payload }) => {
             return {
-                width: coerceSize(payload?.width, DEFAULT.width),
-                height: coerceSize(payload?.height, DEFAULT.height),
+                width: coerceSize(payload?.width, state.CANVAS.width),
+                height: coerceSize(payload?.height, state.CANVAS.height),
                 background: payload?.background ?? null,
                 grid: {
                     enabled: Boolean(payload?.grid?.enabled),
-                    size: coerceSize(payload?.grid?.size, DEFAULT.grid.size),
+                    size: coerceSize(
+                        payload?.grid?.size,
+                        state.CANVAS.grid.size
+                    ),
                 },
             };
         },
@@ -46,7 +40,7 @@ const canvasSlice = createSlice({
             if (payload?.size != null)
                 state.grid.size = coerceSize(payload.size, state.grid.size);
         },
-        resetCanvas: () => DEFAULT,
+        resetCanvas: () => state.CANVAS,
     },
 });
 

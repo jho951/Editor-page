@@ -1,10 +1,9 @@
 import { idToRGB, rgbToCss } from '../util/idColor';
-import { HANDLE, HANDLE_KEYS } from '../constant/handle';
+import { HANDLE } from '../constant/handle';
 
 export function renderMain(ctx, shapes, selection = []) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     for (const s of shapes) drawShape(ctx, s);
-    // draw selection outlines
     for (const id of selection) {
         const s = shapes.find((it) => it.id === id);
         if (!s) continue;
@@ -14,7 +13,6 @@ export function renderMain(ctx, shapes, selection = []) {
         ctx.strokeStyle = '#4c8bf5';
         ctx.lineWidth = 1;
         ctx.strokeRect(x, y, w, h);
-        // handles
         drawHandles(ctx, s);
         ctx.restore();
     }

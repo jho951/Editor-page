@@ -4,18 +4,16 @@ import {
     drawCanvasResizeKnob,
     drawCanvasResizeHitbox,
 } from '../../util/resize';
-import CanvasResizeOverlay from './/Overlay';
 
-export default function CanvasRoot() {
+import CanvasResizeOverlay from './Overlay';
+
+function CanvasRoot() {
     const canvasRef = useRef(null);
     const hitmapRef = useRef(null);
     const { width, height, grid } = useSelector((s) => s.canvas);
 
     useEffect(() => {
-        // DPR 세팅 (예시)
         const dpr = window.devicePixelRatio || 1;
-
-        // view
         {
             const c = canvasRef.current,
                 ctx = c.getContext('2d');
@@ -51,7 +49,7 @@ export default function CanvasRoot() {
     }, [width, height /*, shapes 등*/]);
 
     return (
-        <div style={{ position: 'relative', width, height }}>
+        <div>
             <canvas ref={canvasRef} />
             <canvas ref={hitmapRef} style={{ display: 'none' }} />
             {/* 드래그 중 점선 프리뷰 전용 오버레이 */}
@@ -64,3 +62,5 @@ export default function CanvasRoot() {
         </div>
     );
 }
+
+export default CanvasRoot;

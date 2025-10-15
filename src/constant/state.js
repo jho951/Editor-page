@@ -1,16 +1,21 @@
 import { TOOL } from './tool';
 
 /**
- *  @property {width} 캔버스 너비
- *  @property {height} 캔버스 높이
- *  @property {background} 캔버스 배경
- *  @property {grid}
+ * @property {width} canvas 벡터 좌표계 기반 너비
+ * @property {height} canvas 벡터 좌표계 기반 높이
+ * @property {background} canvas 배경 (null: 투명)
+ * @property {grid} canvas 그리드 설정
+ * @property {enabled} grid 활성화 여부
+ * @property {size} grid 격자 크기
  */
-const CANVAS_DEFAULT = {
-    width: 1,
-    height: 1,
+const CANVAS = {
+    width: 800,
+    height: 600,
     background: null,
-    grid: { enabled: false, size: 10 },
+    grid: {
+        enabled: false,
+        size: 10,
+    },
 };
 
 /**
@@ -35,4 +40,4 @@ const TOOL_DEFAULT = {
     draft: { stroke: '#111', fill: 'transparent', strokeWidth: 2 },
 };
 
-export { CANVAS_DEFAULT, HISTORY_DEFAULT, TOOL_DEFAULT };
+export const state = { CANVAS, HISTORY_DEFAULT, TOOL_DEFAULT };

@@ -65,6 +65,7 @@ export default function LoadModal({ open, onClose }) {
 /* styles */
 const backdrop = {
     position: 'fixed',
+    width: '100vw',
     inset: 0,
     display: 'flex',
     alignItems: 'center',

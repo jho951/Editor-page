@@ -1,5 +1,4 @@
-// 2D 변환 행렬 유틸 (SVG/CSS와 동일한 a b c d e f)
-export const I = () => [1, 0, 0, 1, 0, 0]; // identity
+export const I = () => [1, 0, 0, 1, 0, 0];
 
 export const multiply = (m1, m2) => {
     const [a1, b1, c1, d1, e1, f1] = m1;

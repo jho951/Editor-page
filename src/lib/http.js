@@ -1,25 +1,37 @@
 import axios from 'axios';
+import { getAuthToken } from '../util/token';
 
-let getToken = () => null;
-const attachAuthTokenProvider = (fn) => {
-    getToken = typeof fn === 'function' ? fn : () => null;
-};
-
-const BASE_URL = 'http://localhost:8080/api';
-
+/**
+ * @file lib/http.js
+ * @author YJH
+ * @description Axios HTTP 클라이언트 설정
+ * @module lib/http
+ * @returns {AxiosInstance} 설정된 Axios 인스턴스
+ */
 const http = axios.create({
-    baseURL: BASE_URL,
+    baseURL: 'http://localhost:8080/api',
     timeout: 15000,
     withCredentials: true,
     headers: { 'Content-Type': 'application/json' },
 });
 
+/**
+ * 요청 인터셉터 - Authorization 헤더 자동 포함
+ * @param {object} config - Axios 요청 설정 객체
+ * @returns {object} 수정된 요청 설정 객체
+ */
 http.interceptors.request.use((config) => {
-    const token = getToken?.();
+    const token = getAuthToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
 });
 
+/**
+ * 응답 인터셉터 - 에러 표준화
+ * @param {object} res - Axios 응답 객체
+ * @returns {object} 응답 객체
+ * @throws {Error} 표준화된 에러 객체
+ */
 http.interceptors.response.use(
     (res) => res,
     (err) => {
@@ -33,11 +45,4 @@ http.interceptors.response.use(
     }
 );
 
-const api = {
-    get: (url, cfg) => http.get(url, cfg).then((r) => r.data),
-    post: (url, body, cfg) => http.post(url, body, cfg).then((r) => r.data),
-    put: (url, body, cfg) => http.put(url, body, cfg).then((r) => r.data),
-    delete: (url, cfg) => http.delete(url, cfg).then((r) => r.data),
-};
-
-export { attachAuthTokenProvider, http, api };
+export { http };

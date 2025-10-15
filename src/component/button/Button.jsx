@@ -1,6 +1,6 @@
 import styles from './Button.module.css';
 
-function ToolButton({ active, title, shortcut, onClick, children }) {
+const ToolButton = ({ active, title, shortcut, onClick, children }) => {
     return (
         <button
             className={`${styles.toolBtn} ${active ? styles.active : ''}`}
@@ -12,6 +12,6 @@ function ToolButton({ active, title, shortcut, onClick, children }) {
             {children}
         </button>
     );
-}
+};
 
 export { ToolButton };

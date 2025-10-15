@@ -19,8 +19,7 @@ const getBBox = (shape) => {
 };
 
 const initialState = {
-    // 예: {id,type, x,y,w,h, style, matrix:[a,b,c,d,e,f], bbox?}
-    list: [],
+    list: [], // 예: {id,type, x,y,w,h, style, matrix:[a,b,c,d,e,f], bbox?}
 };
 
 const applyMatrixToShape = (shape, M) => {

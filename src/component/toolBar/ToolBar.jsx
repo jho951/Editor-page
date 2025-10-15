@@ -49,8 +49,9 @@ import {
 
 import styles from './Toolbar.module.css';
 import LoadModal from '../modal/Modal';
+import FileOperations from './FileOperations';
 
-export default function Toolbar() {
+const Toolbar = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { past = [], future = [] } = useSelector((s) => s.historyDoc || {});
@@ -91,10 +92,6 @@ export default function Toolbar() {
         }
     };
 
-    const onNewDrawing = () => {
-        dispatch(newDrawing());
-    };
-
     useEffect(() => {
         const onKey = (e) => {
             const isMod = e.ctrlKey || e.metaKey;
@@ -117,29 +114,9 @@ export default function Toolbar() {
     }, [dispatch]);
 
     return (
-        <>
-            <div
-                className={styles.toolbar}
-                role="toolbar"
-                aria-label="Drawing toolbar"
-            >
-                <div className={styles.zoomGroup}>
-                    <button
-                        className={styles.iconBtn}
-                        onClick={() => setOpenLoad(true)}
-                        title="불러오기"
-                    >
-                        <IconOpen />
-                    </button>
-
-                    <button
-                        className={styles.iconBtn}
-                        onClick={() => setOpenLoad(true)}
-                        title="저장하기"
-                    >
-                        <IconSave />
-                    </button>
-                </div>
+        <header>
+            <div className={styles.toolbar}>
+                <FileOperations />
                 <Separator />
                 <ToolButton
                     active={tool === 'select'}
@@ -378,8 +355,8 @@ export default function Toolbar() {
                     </button>
                 </div>
             </div>
-
-            <LoadModal open={openLoad} onClose={() => setOpenLoad(false)} />
-        </>
+        </header>
     );
-}
+};
+
+export default Toolbar;

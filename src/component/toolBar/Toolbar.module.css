@@ -1,32 +1,54 @@
 .toolbar {
     position: fixed;
-    top: 12px;
-    left: 12px;
+    top: var(--default-figure);
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px;
-    background: rgba(255, 255, 255, 0.85);
+    padding: var(--default-figure);
+    background:
+        radial-gradient(
+            60% 80% at 15% 10%,
+            rgba(255, 255, 255, 0.18) 0%,
+            rgba(255, 255, 255, 0) 60%
+        ),
+        radial-gradient(
+            70% 90% at 85% 20%,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0) 55%
+        ),
+        linear-gradient(
+            135deg,
+            #cfd5da 0%,
+            #babfcb 22%,
+            #a7a2c1 48%,
+            #7d8899 72%,
+            #5e6b77 100%
+        );
+    /* 필요시 */
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: var(--background-color);
     backdrop-filter: saturate(140%) blur(8px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 999px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
-    z-index: 1000;
+    box-shadow: var(--box-shadow);
+    z-index: calc(var(--z-index) + 5);
 }
 
 .dropdownWrap {
     position: relative;
 }
+
 .dropdown {
     position: absolute;
-    top: 44px;
+    top: 4rem;
     left: 0;
-    min-width: 180px;
-    padding: 6px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.98);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+    min-width: 18rem;
+    padding: var(--default-figure);
+    border-radius: 1.4rem;
+    background: rgba(var(--background-color-rgb), 0.95);
+    box-shadow: var(--box-shadow);
 }
 
 .menuItem {

@@ -1,10 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { state } from '../../constant/state';
-
-const coerceSize = (n, fallback) => {
-    const v = Number(n);
-    return Number.isFinite(v) && v > 0 ? v : fallback;
-};
+import { coerceSize } from '../../util/guide';
 
 const canvasSlice = createSlice({
     name: 'canvas',

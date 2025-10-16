@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDrawings, loadDrawing } from '../../redux/slice/docSlice';
+import {
+    fetchDrawings,
+    loadDrawing,
+} from '../../lib/axios/redux/slice/docSlice';
 import { useNavigate } from 'react-router-dom';
 
 export default function LoadModal({ open, onClose }) {

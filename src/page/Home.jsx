@@ -1,11 +1,9 @@
-import CanvasStage from '../component/CanvasStage';
-import Toolbar from '../component/toolbar/Toolbar';
+import { Header } from '../component/header/implementation/Header';
 
 function Home() {
     return (
         <main>
-            <Toolbar />
-            <CanvasStage />
+            <Header></Header>
         </main>
     );
 }

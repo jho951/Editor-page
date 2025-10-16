@@ -13,6 +13,14 @@ export const multiply = (m1, m2) => {
     ];
 };
 
+export const matrixToTransform = (m = [1, 0, 0, 1, 0, 0]) => {
+    const [a, b, c, d, e, f] = m;
+    const scaleX = Math.hypot(a, b) || 1;
+    const scaleY = Math.hypot(c, d) || 1;
+    const rotation = (Math.atan2(b, a) * 180) / Math.PI;
+    return { x: e, y: f, rotation, scaleX, scaleY };
+};
+
 export const translate = (tx, ty) => [1, 0, 0, 1, tx, ty];
 export const scale = (sx, sy = sx) => [sx, 0, 0, sy, 0, 0];
 export const rotate = (deg) => {

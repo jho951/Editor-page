@@ -1,10 +1,4 @@
-const matrixToTransform = (m = [1, 0, 0, 1, 0, 0]) => {
-    const [a, b, c, d, e, f] = m;
-    const scaleX = Math.hypot(a, b) || 1;
-    const scaleY = Math.hypot(c, d) || 1;
-    const rotation = (Math.atan2(b, a) * 180) / Math.PI;
-    return { x: e, y: f, rotation, scaleX, scaleY };
-};
+import { matrixToTransform } from './math/matrix';
 
 export const serializeVectorJson = (state) => {
     const canvas = state.canvas;
@@ -40,8 +34,7 @@ export const serializeVectorJson = (state) => {
         });
     }
 
-    // 렌더 버킷의 dirty는 저장 시 제거(런타임 전용)
-    const buckets = (render?.buckets || []).map(({ dirty, ...rest }) => rest);
+    const buckets = (render?.buckets || []).map(({ _, ...rest }) => rest);
 
     return {
         schema: 1,

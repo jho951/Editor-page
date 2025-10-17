@@ -1,45 +1,21 @@
 import { createSlice } from '@reduxjs/toolkit';
-
-const DEFAULT = {
-    buckets: [
-        { id: 'background', type: 'background', dirty: false },
-        { id: 'content-dynamic', type: 'content', static: false, dirty: true },
-        { id: 'overlay', type: 'overlay', dirty: true },
-    ],
-    assignment: {},
-};
+import { DEFAULT } from '../constant/default';
+import { REDUCER_NAME } from '../constant/name';
 
 const renderSlice = createSlice({
-    name: 'render',
-    initialState: DEFAULT,
+    name: REDUCER_NAME.RENDER,
+    initialState: DEFAULT.RENDER,
     reducers: {
-        replaceAll: (state, { payload }) => ({
-            buckets: Array.isArray(payload?.buckets)
-                ? payload.buckets
-                : DEFAULT.buckets,
-            assignment: payload?.assignment ?? {},
-        }),
-        assignShapeToBucket: (state, { payload }) => {
-            const { shapeId, bucketId } = payload || {};
-            if (!shapeId || !bucketId) return;
-            state.assignment[shapeId] = bucketId;
+        markDirty: (s, { payload }) => {
+            s.dirty[payload] = true;
         },
-        clearShapeAssignment: (state, { payload }) => {
-            if (payload) delete state.assignment[payload];
+        clearDirty: (s, { payload }) => {
+            s.dirty[payload] = false;
         },
-        setBucketDirty: (state, { payload }) => {
-            const b = state.buckets.find((x) => x.id === payload?.id);
-            if (b) b.dirty = !!payload?.dirty;
+        markAllDirty: (s) => {
+            s.dirty.vector = s.dirty.overlay = s.dirty.hitmap = true;
         },
-        resetRender: () => DEFAULT,
     },
 });
-
-export const {
-    replaceAll,
-    assignShapeToBucket,
-    clearShapeAssignment,
-    setBucketDirty,
-    resetRender,
-} = renderSlice.actions;
+export const { markDirty, clearDirty, markAllDirty } = renderSlice.actions;
 export default renderSlice.reducer;

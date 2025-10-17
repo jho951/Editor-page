@@ -15,24 +15,18 @@ const Icon = memo(
         },
         ref
     ) {
-        const def = ICONS[name];
-        if (!def) return null;
-
-        const ariaProps = title
-            ? { role: 'img', 'aria-label': title }
-            : { role: 'presentation', 'aria-hidden': true };
+        if (!ICONS[name]) return null;
 
         return (
             <svg
                 ref={ref}
-                viewBox={def.vb || '0 0 24 24'}
+                viewBox={ICONS[name].vb || '0 0 24 24'}
                 width={size}
                 height={size}
-                {...ariaProps}
                 {...rest}
             >
                 {title ? <title>{title}</title> : null}
-                {def.g.map((n, i) =>
+                {ICONS[name].g.map((n, i) =>
                     React.createElement(n.el, {
                         key: i,
                         ...mergeAttrs(n, { stroke, fill, strokeWidth }),

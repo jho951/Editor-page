@@ -5,7 +5,7 @@
  * @return UUID id
  * @example const id = getId();
  */
-function getId() {
+function genId() {
     return crypto.randomUUID();
 }
-export { getId };
+export { genId };

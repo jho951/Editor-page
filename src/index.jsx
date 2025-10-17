@@ -20,6 +20,7 @@ root.render(
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/edit/:id" element={<Edit />} />
+                <Route path="/edit/new" element={<Edit />} />
             </Routes>
         </BrowserRouter>
     </Provider>

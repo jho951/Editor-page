@@ -1,55 +1,36 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { DEFAULT } from '../constant/default';
+import { REDUCER_NAME } from '../constant/name';
 
-const initialState = {
-    ids: [],
-    primary: null,
-    anchor: null, // { shapeId, index } — 폴리라인/폴리곤/프리드로우 노드 선택
-};
-
+/**
+ * @file selectionSlice.js
+ * @author YJH
+ * @description 캔버스 내 요소 선택 관리 슬라이스
+ * @property {id} 선택된 도형의 아이디
+ * @property {anchor} 노드 선택
+ * @see {@link DEFAULT.SELCECTION} 초기 상태
+ */
 const selectionSlice = createSlice({
-    name: 'selection',
-    initialState,
+    name: REDUCER_NAME.SELCECTION,
+    initialState: DEFAULT.SELCECTION,
     reducers: {
         setSelection: (state, { payload }) => {
-            if (payload == null) {
-                state.ids = [];
-                state.primary = null;
-                state.anchor = null;
-                return;
-            }
-            if (Array.isArray(payload)) {
-                state.ids = payload;
-                state.primary = payload[0] ?? null;
-                state.anchor = null;
-                return;
-            }
-            state.ids = payload.ids ?? [];
-            state.primary = payload.primary ?? state.ids[0] ?? null;
+            state.id = payload ?? null;
             state.anchor = null;
         },
-        addToSelection: (state, { payload }) => {
-            const id = payload;
-            if (!id) return;
-            if (!state.ids.includes(id)) state.ids.push(id);
-            state.primary = state.primary ?? id;
-        },
-        removeFromSelection: (state, { payload }) => {
-            state.ids = state.ids.filter((x) => x !== payload);
-            if (state.primary === payload) state.primary = state.ids[0] ?? null;
-            if (state.anchor?.shapeId === payload) state.anchor = null;
+        clearSelection: (state) => {
+            state.id = null;
+            state.anchor = null;
         },
         setAnchorSelection: (state, { payload }) => {
             state.anchor = payload ?? null;
         },
-        clearSelection: () => initialState,
     },
 });
 
-export const {
-    setSelection,
-    addToSelection,
-    removeFromSelection,
-    setAnchorSelection,
-    clearSelection,
-} = selectionSlice.actions;
+export const { setSelection, clearSelection, setAnchorSelection } =
+    selectionSlice.actions;
 export default selectionSlice.reducer;
+
+export const getSelectedId = (s) => s.selection?.id ?? null;
+export const hasSelection = (s) => !!s.selection?.id;

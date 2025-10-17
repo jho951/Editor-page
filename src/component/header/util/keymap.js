@@ -1,8 +1,4 @@
-const isMac =
-    typeof window !== 'undefined' &&
-    /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-
-export const MOD = isMac ? 'Meta' : 'Control';
+import { isMac, MOD } from '../constant/os';
 
 export function displayShortcut(combo) {
     // UI용 보기 좋은 라벨 (⌘, Ctrl 기호 치환)

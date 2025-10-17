@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     setStroke,
     setFill,
@@ -6,6 +5,19 @@ import {
 } from '../../../lib/redux/slice/toolSlice';
 
 function StylePanel({ styles, draft, dispatch }) {
+    const stroke =
+        typeof draft.stroke === 'string' && draft.stroke
+            ? draft.stroke
+            : '#333333';
+    const fill =
+        typeof draft.fill === 'string'
+            ? draft.fill
+            : draft.fill == null
+              ? ''
+              : String(draft.fill);
+    const strokeWidth = Number.isFinite(draft.strokeWidth)
+        ? draft.strokeWidth
+        : 1;
     return (
         <div className={styles.colorGroup}>
             <label className={styles.colorItem} title="윤곽선 색">
@@ -15,7 +27,7 @@ function StylePanel({ styles, draft, dispatch }) {
                 />
                 <input
                     type="color"
-                    value={draft?.stroke}
+                    value={stroke}
                     onChange={(e) => dispatch(setStroke(e.target.value))}
                 />
             </label>
@@ -26,7 +38,7 @@ function StylePanel({ styles, draft, dispatch }) {
                 />
                 <input
                     type="color"
-                    value={draft?.fill}
+                    value={fill}
                     onChange={(e) => dispatch(setFill(e.target.value))}
                 />
             </label>
@@ -36,12 +48,10 @@ function StylePanel({ styles, draft, dispatch }) {
                     min="1"
                     max="24"
                     step="1"
-                    value={draft?.strokeWidth || 2}
+                    value={strokeWidth}
                     onChange={(e) => dispatch(setStrokeWidth(e.target.value))}
                 />
-                <span className={styles.strokeBadge}>
-                    {draft?.strokeWidth || 2}px
-                </span>
+                <span className={styles.strokeBadge}>{strokeWidth}px</span>
             </label>
         </div>
     );

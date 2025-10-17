@@ -1,0 +1,39 @@
+.backdrop {
+    position: fixed;
+    width: 100vw;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: calc(var(--z-index) + 100);
+}
+
+.modal {
+    width: 48rem;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow: auto;
+    background: var(--background-color);
+    border-radius: var(--default-figure);
+    box-shadow: var(--box-shadow);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2.2rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 1.2rem;
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+
+    cursor: pointer;
+}

@@ -1,4 +1,4 @@
-import { HEADER_ELEMENTS } from '../../header/constant/element';
+import { HEADER_ELEMENTS } from '../../header/constant/item';
 import { idToRGB, rgbToCss } from './id-color';
 
 export function renderMain(ctx, shapes, selection = []) {

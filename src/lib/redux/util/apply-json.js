@@ -1,28 +1,13 @@
 import { replaceAll as replaceCanvas } from '../slice/canvasSlice';
-import { replaceAll as replaceLayers } from '../slice/layerSlice';
 import { replaceAll as replaceRender } from '../slice/renderSlice';
-import { replaceAllShapes } from '../slice/shapeSlice';
+import { replaceAll as replaceShape } from '../slice/shapeSlice';
 import { setSelection } from '../slice/selectionSlice';
 
-/**
- * vectorJson를 상태에 적용 (dispatch 필요)
- * @param {function} dispatch - Redux dispatch 함수
- * @param {object} vj - vectorJson 객체
- * @example
- * applyVectorJson(dispatch, { canvas: {...}, layers: [...], shapes: [...] });
- */
 const applyVectorJson = (dispatch, v = {}) => {
     if (v.canvas)
         dispatch({
             type: replaceCanvas.type,
             payload: v.canvas,
-            meta: { fromHistory: true },
-        });
-
-    if (v.layers)
-        dispatch({
-            type: replaceLayers.type,
-            payload: v.layers,
             meta: { fromHistory: true },
         });
 
@@ -34,7 +19,7 @@ const applyVectorJson = (dispatch, v = {}) => {
         });
     if (v.shapes)
         dispatch({
-            type: replaceAllShapes.type,
+            type: replaceShape.type,
             payload: v.shapes,
             meta: { fromHistory: true },
         });

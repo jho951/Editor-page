@@ -5,16 +5,16 @@ import {
     HANDLE_KEYMAP,
     eventToCombo,
     isTypingTarget,
-} from '../component/header/util/keymap';
+} from '../../component/header/util/keymap';
 import {
     dispatchCommand,
     dispatchHandleCommand,
-} from '../component/header/util/command';
+} from '../../component/header/util/command';
 
 function useEditorShortcuts() {
     const dispatch = useDispatch();
     const store = useStore();
-    const getState = store.getState; // ⬅️ 안정적인 getState
+    const getState = store.getState;
 
     useEffect(() => {
         function onKeyDown(e) {
@@ -43,7 +43,7 @@ function useEditorShortcuts() {
         window.addEventListener('keydown', onKeyDown, { capture: true });
         return () =>
             window.removeEventListener('keydown', onKeyDown, { capture: true });
-    }, [dispatch]); // getState는 안정적이므로 deps에 안 넣어도 됨
+    }, [dispatch, getState]);
 }
 
 export { useEditorShortcuts };

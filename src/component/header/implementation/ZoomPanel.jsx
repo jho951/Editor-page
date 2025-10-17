@@ -3,7 +3,7 @@ import {
     zoomIn,
     zoomOut,
     setZoom,
-    resetZoom,
+    reset as resetZoom,
 } from '../../../lib/redux/slice/viewportSlice';
 
 import styles from '../style/ZoomPanel.module.css';

@@ -1,146 +1,154 @@
+// src/component/header/implementation/Header.jsx
+import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import {
-    setTool,
-    setStroke,
-    setFill,
-    setStrokeWidth,
-} from '../../../lib/redux/slice/toolSlice';
-import {
-    zoomIn,
-    zoomOut,
-    setZoom,
-    resetZoom,
-} from '../../../lib/redux/slice/viewportSlice';
-import {
-    historyUndo,
-    historyRedo,
-} from '../../../lib/redux/middleware/historyDocMiddleware';
-import { fetchDrawings } from '../../../lib/redux/thunks/docThunks';
-
-import { ToolBtn } from '../../button/implementation/ToolBtn';
-import { Icon } from '../../icon/implementation/Icon';
-import { DropDown } from '../../select/implementation/DropDown';
-
-import { HEADER_ELEMENTS } from '../constant/element';
-import styles from '../style/Header.module.css';
 import { DROPDOWN_SECTION } from '../constant/section';
+import {
+    buildItemIndex,
+    makeDispatchCommand,
+    TOOL_FROM_KEY,
+} from '../util/command';
+
+import { MenuSection } from './MenuSection';
+import { StylePanel } from './StylePanel';
+import { ZoomPanel } from './ZoomPanel';
+
+import { SaveModal } from '../../modal/implementation/SaveModal';
+import { OpenModal } from '../../modal/implementation/OpenModal';
+
+import styles from '../style/Header.module.css';
+
+const SECTION_ICON_NAME = {
+    file: 'open',
+    shape: 'shape',
+    transform: 'transform',
+    zoom: 'zoom',
+};
+
+const ITEM_ICON_NAME = {
+    path: 'freeDraw',
+    text: 'text',
+    undo: 'undo',
+    redo: 'redo',
+};
 
 function Header() {
     const dispatch = useDispatch();
+    const zoom = useSelector((s) => s.viewport?.zoom ?? 1);
+    const draft = useSelector((s) => s.tools?.draft) || {};
+    const tool = useSelector((s) => s.tools?.tool) || 'select';
 
-    const { tool, draft } = useSelector((s) => s.tools || {});
-    const { zoom } = useSelector((s) => s.viewport);
-    const { past = [], future = [] } = useSelector((s) => s.historyDoc);
+    console.log(tool);
 
-    const canUndo = past.length > 0;
-    const canRedo = future.length > 0;
+    const ITEM_INDEX = useMemo(() => buildItemIndex(DROPDOWN_SECTION), []);
+    const dispatchCommand = useMemo(
+        () =>
+            makeDispatchCommand(
+                ITEM_INDEX,
+                dispatch,
+                () => window.__REDUX_STORE__?.getState?.() || {}
+            ),
+        [ITEM_INDEX, dispatch]
+    );
 
-    // ───────────────────────── 핸들러(공통)
-    const handleFile = (key) => {
-        switch (key) {
-            case 'new':
-                /* TODO: 새 문서 */ break;
-            case 'save':
-                /* TODO: 저장 */ break;
-            case 'export':
-                dispatch(fetchDrawings());
-                break; // 불러오기 목록 갱신
-            default:
-                break;
-        }
-    };
+    const [openId, setOpenId] = useState(null);
+    const openDropdown = (id) => setOpenId(id);
+    const closeDropdown = () => setOpenId(null);
+    const toggleDropdown = (id) => setOpenId((p) => (p === id ? null : id));
 
-    const handleSelect = (key) => {
-        // 파일
-        if (key === 'new' || key === 'save' || key === 'export')
-            return handleFile(key);
-
-        // 도형(프리픽스 제거)
-        if (key.startsWith('shape-'))
-            return dispatch(setTool(key.replace('shape-', '')));
-
-        // 도구 단일 버튼
-        if (key === 'path' || key === 'text') return dispatch(setTool(key));
-
-        // 히스토리
-        if (key === 'undo') return dispatch(historyUndo());
-        if (key === 'redo') return dispatch(historyRedo());
-
-        // 줌
-        if (key === 'in') return dispatch(zoomIn());
-        if (key === 'out') return dispatch(zoomOut());
-        if (key === 'fit') return dispatch(resetZoom()); // 필요하면 fit-to-screen 로직으로 교체
-
-        // 변형 (자리표시자; 실제 액션으로 교체)
-        if (key === 'flipH') return console.info('[flipH] TODO: implement');
-        if (key === 'flipV') return console.info('[flipV] TODO: implement');
-        if (key === 'rotate') return console.info('[rotate] TODO: implement');
-        if (key === 'skew') return console.info('[skew] TODO: implement');
-    };
-
-    // 드롭다운 선택 상태(모양만 표시)
-    const selectedKeyFor = (sectionId) => {
-        if (sectionId !== 'shape') return null;
-        const shapeKeys = ['rect', 'ellipse', 'line', 'polygon', 'star'];
-        return shapeKeys.includes(tool) ? `shape-${tool}` : null;
-    };
-
-    // ───────────────────────── 단일 버튼(객체들만)
-    const singleButtons = [
-        HEADER_ELEMENTS.FREE_DRAW_ITEM,
-        HEADER_ELEMENTS.TEXT_ITEM,
-        { ...HEADER_ELEMENTS.UNDO_ITEM, disabled: !canUndo },
-        { ...HEADER_ELEMENTS.REDO_ITEM, disabled: !canRedo },
-    ].filter(Boolean);
-
-    // 공통 클래스 묶음
-    const cls = {
-        wrap: styles.dropdownWrap,
-        panel: styles.dropdown,
-        item: styles.menuItem,
-        checked: styles.checked,
-        icon: styles.menuIcon,
-    };
+    const selectedShapeKey = useMemo(() => {
+        return TOOL_FROM_KEY[tool] ?? null;
+    }, [tool]);
 
     return (
-        <header
-            className={styles.toolbar}
-            role="menubar"
-            aria-label="상단 헤더"
-        >
-            {DROPDOWN_SECTION.map((sec) => (
-                <DropDown
-                    key={sec.id}
-                    Trigger={(p) => (
-                        <ToolBtn {...p} title={sec.title}>
-                            <Icon name={sec.icon} />
-                        </ToolBtn>
-                    )}
-                    items={(sec.items || []).filter(Boolean)}
-                    selectedKey={selectedKeyFor(sec.id)}
-                    onSelect={handleSelect}
-                    ariaLabel={sec.title}
-                    classNames={cls}
-                />
-            ))}
+        <>
+            <header className={styles.header}>
+                <nav className={styles.left}>
+                    {DROPDOWN_SECTION.map((entry) => {
+                        const isDropdown = Array.isArray(entry?.items);
 
-            {/* 단일 객체 → 버튼 */}
-            {singleButtons.map((btn) => (
-                <ToolBtn
-                    key={btn.key}
-                    title={
-                        btn.shortcutLabel
-                            ? `${btn.label} (${btn.shortcutLabel})`
-                            : btn.label
-                    }
-                    disabled={btn.disabled}
-                    onClick={() => handleSelect(btn.key)}
-                >
-                    {btn.icon}
-                </ToolBtn>
-            ))}
-        </header>
+                        if (isDropdown) {
+                            const active = openId === entry.id;
+                            return (
+                                <div
+                                    key={entry.id}
+                                    className={styles.navItem}
+                                    onMouseEnter={() => openDropdown(entry.id)}
+                                    onMouseLeave={closeDropdown}
+                                >
+                                    <MenuSection
+                                        title={entry.title}
+                                        icon={
+                                            SECTION_ICON_NAME[entry.id] ||
+                                            'menu'
+                                        }
+                                        items={entry.items}
+                                        selectedKey={
+                                            entry.id === 'shape'
+                                                ? selectedShapeKey
+                                                : null
+                                        }
+                                        onSelect={(key) => {
+                                            dispatchCommand(key);
+                                            closeDropdown();
+                                        }}
+                                        ariaLabel={entry.title}
+                                        classNames={{
+                                            wrap: styles.dropdownWrap,
+                                            menu: styles.dropdownRight,
+                                            item: styles.menuItem,
+                                            checked: styles.checked,
+                                        }}
+                                        TriggerProps={{
+                                            onClick: () =>
+                                                toggleDropdown(entry.id),
+                                            title: entry.title,
+                                            'aria-expanded': active,
+                                        }}
+                                    />
+                                </div>
+                            );
+                        }
+
+                        const it = entry;
+                        return (
+                            <div key={it.key} className={styles.navItem}>
+                                <button
+                                    type="button"
+                                    className={styles.navButton}
+                                    onClick={() => dispatchCommand(it)}
+                                    title={
+                                        it.shortcutLabel
+                                            ? `${it.label} (${it.shortcutLabel})`
+                                            : it.label
+                                    }
+                                >
+                                    {it.icon}
+                                    <span>{it.label}</span>
+                                </button>
+                            </div>
+                        );
+                    })}
+                </nav>
+
+                {/* 가운데: 스타일 패널 */}
+                <section className={styles.center}>
+                    <StylePanel
+                        styles={styles}
+                        draft={draft}
+                        dispatch={dispatch}
+                    />
+                </section>
+
+                {/* 우: 줌 패널 */}
+                <section className={styles.right}>
+                    <ZoomPanel zoom={zoom} dispatch={dispatch} />
+                </section>
+            </header>
+            {/* 모달 */}
+            <SaveModal />
+            <OpenModal />
+        </>
     );
 }
 

@@ -1,5 +1,4 @@
-import React from 'react';
-import { DropDown } from '../../select/implementation/DropDown';
+import { DropDown } from '../../context/implementation/DropDown';
 import { ToolBtn } from '../../button/implementation/ToolBtn';
 import { Icon } from '../../icon/implementation/Icon';
 

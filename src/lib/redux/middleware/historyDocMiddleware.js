@@ -4,45 +4,23 @@ import {
     clearFuture,
     popPast,
     popFuture,
-} from '../slice/historyDocSlice';
+} from '../slice/historySlice';
 
+import { replaceAll as replaceAllShapes } from '../slice/shapeSlice';
+
+import { setSelection } from '../slice/selectionSlice';
 import {
-    replaceAllShapes,
-    addShape,
-    setShapeStyle,
-    translateShapes,
-    rotateShapes,
-    flipHShapes,
-    flipVShapes,
-    skewShapes,
-    scaleShapes,
-} from '../slice/shapeSlice';
-
-import { setSelection, clearSelection } from '../slice/selectionSlice';
-
-export const HISTORY_UNDO = 'history/UNDO';
-export const HISTORY_REDO = 'history/REDO';
-export const historyUndo = () => ({ type: HISTORY_UNDO });
-export const historyRedo = () => ({ type: HISTORY_REDO });
-
-const MUTATION_TYPES = new Set([
-    addShape.type,
-    setShapeStyle.type,
-    translateShapes.type,
-    rotateShapes.type,
-    flipHShapes.type,
-    flipVShapes.type,
-    skewShapes.type,
-    scaleShapes.type,
-    setSelection.type,
-    clearSelection.type,
-]);
+    HISTORY_REDO,
+    HISTORY_UNDO,
+    MUTATION_TYPES,
+} from '../constant/history';
 
 const clone = (v) => JSON.parse(JSON.stringify(v));
 
+// 단일 선택 모드 스냅샷
 const makeSnapshot = (state) => ({
     shapes: clone(state.shapes?.list || []),
-    selection: clone(state.selection?.ids || []),
+    selection: state.selection?.id ?? null,
 });
 
 const applySnapshot = (store, snapshot) => {
@@ -54,7 +32,7 @@ const applySnapshot = (store, snapshot) => {
     });
     store.dispatch({
         type: setSelection.type,
-        payload: snapshot.selection || [],
+        payload: snapshot.selection ?? null,
         meta: { fromHistory: true },
     });
 };
@@ -76,7 +54,7 @@ export const historyDocMiddleware = (store) => (next) => (action) => {
         store.dispatch(popPast());
 
         const { applied } = store.getState().historyDoc;
-        applySnapshot(store, unwrap(applied)); // ★ 언랩해서 적용
+        applySnapshot(store, unwrap(applied)); // ← 언랩해서 적용
         return;
     }
 
@@ -91,19 +69,20 @@ export const historyDocMiddleware = (store) => (next) => (action) => {
         store.dispatch(popFuture());
 
         const { applied } = store.getState().historyDoc;
-        applySnapshot(store, unwrap(applied)); // ★ 언랩해서 적용
+        applySnapshot(store, unwrap(applied)); // ← 언랩해서 적용
         return;
     }
 
     let beforeSnap = null;
     if (MUTATION_TYPES.has(action.type)) {
-        beforeSnap = makeSnapshot(store.getState());
+        beforeSnap = makeSnapshot(store.getState()); // 변경 전 스냅
     }
 
     const result = next(action);
 
     if (beforeSnap) {
-        store.dispatch(pushPast({ snapshot: beforeSnap })); // (래퍼 유지)
+        // 변경 완료 후 "이전 상태"를 past에 적재 → UNDO 시 이전 상태로 복귀
+        store.dispatch(pushPast({ snapshot: beforeSnap }));
         store.dispatch(clearFuture());
     }
 

@@ -1,4 +1,9 @@
-import { CANVAS_RESIZE as CR } from '../../../constant/resize';
+import { CANVAS_RESIZE as CR } from '../constant/resize';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+    enterPathEdit,
+    enterTextEdit,
+} from '../../../lib/redux/slice/editSlice';
 
 export function drawCanvasResizeKnob(ctx, width, height) {
     const k = CR.KNOB;
@@ -52,6 +57,39 @@ function setupCanvas(canvas, width, height) {
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     return { ctx, dpr };
+}
+
+export function CanvasController() {
+    const dispatch = useDispatch();
+    const shapes = useSelector((s) => s.shape.list);
+
+    const pickTopShapeId = (x, y) => {
+        // 히트 캔버스 픽셀 → id 매핑 (이미 있는 로직 사용)
+        // 없으면 bbox 역순 스캔 등의 간단 픽킹 임시 구현
+    };
+
+    const onDoubleClick = (e) => {
+        const { x, y } = getCanvasXY(e);
+        const id = pickTopShapeId(x, y);
+        if (!id) return;
+        const s = shapes.find((v) => v.id === id);
+        if (!s) return;
+
+        if (s.type === 'text') {
+            dispatch(enterTextEdit({ id }));
+        } else if (
+            s.type === 'polyline' ||
+            s.type === 'polygon' ||
+            s.type === 'path'
+        ) {
+            dispatch(enterPathEdit({ id }));
+        } else {
+            // 필요시 transform 편집 진입
+            // dispatch(enterTransform({ id, handle:null, origin: {x,y} }));
+        }
+    };
+
+    return <canvas onDoubleClick={onDoubleClick} /* ... */ />;
 }
 
 export { setupCanvas };

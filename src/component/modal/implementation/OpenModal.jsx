@@ -11,12 +11,10 @@ function OpenModal() {
     const loading = useSelector((s) => s.doc?.loading);
     const error = useSelector((s) => s.doc?.error);
 
-    // open 시 리스트 로드
     useEffect(() => {
         if (open) dispatch(fetchDrawings());
     }, [open, dispatch]);
 
-    // ESC 닫기
     useEffect(() => {
         if (!open) return;
         const onKey = (e) => {

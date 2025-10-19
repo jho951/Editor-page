@@ -1,29 +1,46 @@
-import { useEffect, useRef } from 'react';
-import { useDispatch } from 'react-redux';
-import { useParams, useLocation } from 'react-router-dom';
-import { openNew, loadAndApplyDrawing } from '../lib/redux/util/async';
-import { Header } from '../component/header/implementation/Header';
+import React, { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+
+import { useDispatch, useSelector } from 'react-redux';
+
+import { setTitle } from '../lib/redux/slice/docSlice';
+import { loadDrawingById } from '../lib/redux/util/async';
+import ToolHeader from '../component/header/implementation/ToolHeader';
+import CanvasStageRobustRedux from '../component/canvas/Canvs';
 
 function Edit() {
-    const dispatch = useDispatch();
     const { id } = useParams();
-    const loc = useLocation();
-    const did = useRef(false);
+    const dispatch = useDispatch();
+
+    const meta = useSelector((s) => s.doc?.current);
+    const loading = useSelector((s) => s.doc?.loading);
 
     useEffect(() => {
-        did.current = true;
-        if (id === 'new' || loc.pathname.endsWith('/new')) {
-            dispatch(openNew());
-        } else if (id) {
-            dispatch(loadAndApplyDrawing(id));
+        if (id && id !== 'new') {
+            dispatch(loadDrawingById(id));
         }
-    }, [id, loc.pathname, dispatch]);
+    }, [id, dispatch]);
 
     return (
-        <main>
-            <Header />
-        </main>
+        <div className="page app main" style={{ height: '100%' }}>
+            <ToolHeader
+                title={meta?.title}
+                onTitleChange={(t) => dispatch(setTitle(t))}
+            />
+
+            {loading ? (
+                <div style={{ padding: 16 }}>불러오는 중…</div>
+            ) : (
+                <main style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+                    <div
+                        className="canvas-stage-wrap"
+                        style={{ flex: 1, minHeight: 0 }}
+                    >
+                        <CanvasStageRobustRedux />
+                    </div>
+                </main>
+            )}
+        </div>
     );
 }
-
 export default Edit;

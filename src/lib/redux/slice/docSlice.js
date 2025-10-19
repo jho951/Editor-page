@@ -1,170 +1,127 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { DEFAULT } from '../constant/initial';
-import { REDUCER_NAME } from '../constant/name';
 import {
-    loadDrawing,
-    saveDoc,
     fetchDrawings,
     deleteDrawing,
+    loadDrawingById,
     saveDrawingByName,
-    openNew,
+    saveCurrentDrawing,
 } from '../util/async';
 
-const normalize = (row) => ({
-    id: row.id,
-    title: row.title ?? '(제목없음)',
-    createdAt: row.createdAt ?? row.created_at ?? null,
-    updatedAt: row.updatedAt ?? row.updated_at ?? null,
-    version: typeof row.version === 'number' ? row.version : 0,
-});
+const initialState = {
+    items: [], // 목록
+    loading: false,
+    error: null,
+    ui: { loadOpen: false, saveOpen: false },
+    current: { id: null, title: '', version: null, dirty: false },
+};
 
 const docSlice = createSlice({
-    name: REDUCER_NAME.DOC,
-    initialState: DEFAULT.DOC,
+    name: 'doc',
+    initialState,
     reducers: {
-        setDocMeta: (state, { payload }) => {
-            state.currentId = payload?.id ?? state.currentId;
-            state.title = payload?.title ?? state.title;
-            state.version = payload?.version ?? state.version;
-            if (payload?.width != null) state.width = payload.width;
-            if (payload?.height != null) state.height = payload.height;
-            state.updatedAt = payload?.updatedAt ?? state.updatedAt;
+        openLoadModal(state) {
+            state.ui.loadOpen = true;
         },
-        setDocItems: (state, { payload }) => {
-            state.items = Array.isArray(payload)
-                ? payload.map(normalize)
-                : state.items;
+        closeLoadModal(state) {
+            state.ui.loadOpen = false;
         },
-        setDocLoading: (state, { payload }) => {
-            state.loading = !!payload;
+        openSaveModal(state) {
+            state.ui.saveOpen = true;
         },
-        setDocError: (state, { payload }) => {
-            state.error = payload ?? null;
+        closeSaveModal(state) {
+            state.ui.saveOpen = false;
         },
-        setLastVectorJson: (state, { payload }) => {
-            state.debug.lastVectorJson = payload ?? null;
+
+        setTitle(state, action) {
+            state.current.title = action.payload || '';
+            state.current.dirty = true;
         },
-        openLoadModal: (s) => {
-            s.ui.loadOpen = true;
+        markDirty(state) {
+            state.current.dirty = true;
         },
-        closeLoadModal: (s) => {
-            s.ui.loadOpen = false;
+        markClean(state) {
+            state.current.dirty = false;
         },
-        openSaveModal: (s) => {
-            s.ui.saveOpen = true;
+        setCurrentMeta(state, action) {
+            const {
+                id = null,
+                title = '',
+                version = null,
+            } = action.payload || {};
+            state.current.id = id;
+            state.current.title = title;
+            state.current.version = version;
+            state.current.dirty = false;
         },
-        closeSaveModal: (s) => {
-            s.ui.saveOpen = false;
-        },
-        resetDoc: () => DEFAULT.DOC,
     },
-    extraReducers: (b) => {
-        b.addCase(openNew.fulfilled, (s, { payload }) => {
-            s.currentId = payload.id; // null
-            s.title = payload.title; // Untitled
-            s.version = payload.version; // 0
-            s.width = payload.width; // 1280
-            s.height = payload.height; // 720
-            s.updatedAt = payload.updatedAt; // null
-            s.loading = false;
-            s.error = null;
-        });
+    extraReducers: (builder) => {
         // 목록
-        b.addCase(fetchDrawings.pending, (s) => {
+        builder.addCase(fetchDrawings.pending, (s) => {
             s.loading = true;
             s.error = null;
         });
-        b.addCase(fetchDrawings.fulfilled, (s, { payload }) => {
+        builder.addCase(fetchDrawings.fulfilled, (s, a) => {
             s.loading = false;
-            s.items = Array.isArray(payload) ? payload.map(normalize) : [];
+            s.items = a.payload;
         });
-        b.addCase(fetchDrawings.rejected, (s, { payload, error }) => {
+        builder.addCase(fetchDrawings.rejected, (s, a) => {
             s.loading = false;
-            s.error = payload || error?.message || '목록 불러오기 실패';
+            s.error = a.payload || a.error?.message || 'list failed';
         });
 
-        // 단일 로드
-        b.addCase(loadDrawing.pending, (s) => {
+        // 삭제는 thunk에서 목록 재로딩
+
+        // 로드
+        builder.addCase(loadDrawingById.pending, (s) => {
             s.loading = true;
             s.error = null;
         });
-        b.addCase(loadDrawing.fulfilled, (s, { payload }) => {
+        builder.addCase(loadDrawingById.fulfilled, (s) => {
             s.loading = false;
-            if (!payload) return;
-            const m = payload;
-            const vj = m.vectorJson;
-
-            s.currentId = m.id ?? null;
-            s.title = m.title ?? 'Untitled';
-            s.version = m.version ?? 0;
-            s.width = m.width ?? vj?.canvas?.width ?? s.width;
-            s.height = m.height ?? vj?.canvas?.height ?? s.height;
-            s.updatedAt = m.updatedAt ?? null;
-
-            const norm = normalize(m);
-            const idx = s.items.findIndex((x) => x.id === norm.id);
-            if (norm.id) {
-                if (idx >= 0) s.items[idx] = { ...s.items[idx], ...norm };
-                else s.items.unshift(norm);
-            }
-            s.debug.lastVectorJson = vj || null;
         });
-        b.addCase(loadDrawing.rejected, (s, { payload }) => {
+        builder.addCase(loadDrawingById.rejected, (s, a) => {
             s.loading = false;
-            s.error = payload || '불러오기 실패';
+            s.error = a.payload || a.error?.message || 'load failed';
         });
 
-        // 저장(기존)
-        b.addCase(saveDoc.fulfilled, (s, { payload }) => {
-            s.updatedAt = payload?.meta?.updatedAt ?? s.updatedAt;
-        });
-
-        // ✅ 새로 추가: 이름으로 저장
-        b.addCase(saveDrawingByName.pending, (s) => {
+        // 새로 저장
+        builder.addCase(saveDrawingByName.pending, (s) => {
             s.loading = true;
             s.error = null;
         });
-        b.addCase(saveDrawingByName.fulfilled, (s, { payload }) => {
+        builder.addCase(saveDrawingByName.fulfilled, (s) => {
             s.loading = false;
-            const m = payload?.data ?? payload; // axios/fetch 대응
-            if (!m) return;
-
-            s.currentId = m.id ?? s.currentId;
-            s.title = m.title ?? s.title;
-            s.version = m.version ?? s.version;
-            s.updatedAt = m.updatedAt ?? s.updatedAt;
-
-            const norm = normalize(m);
-            const idx = s.items.findIndex((x) => x.id === norm.id);
-            if (norm.id) {
-                if (idx >= 0) s.items[idx] = { ...s.items[idx], ...norm };
-                else s.items.unshift(norm);
-            }
         });
-        b.addCase(saveDrawingByName.rejected, (s, { payload, error }) => {
+        builder.addCase(saveDrawingByName.rejected, (s, a) => {
             s.loading = false;
-            s.error = payload || error?.message || '저장 실패';
+            s.error = a.payload || a.error?.message || 'save failed';
         });
 
-        // 삭제(있다면)
-        b.addCase(deleteDrawing?.fulfilled, (s, { payload: deletedId }) => {
-            if (!deletedId) return;
-            s.items = s.items.filter((it) => it.id !== deletedId);
+        // 업데이트 저장
+        builder.addCase(saveCurrentDrawing.pending, (s) => {
+            s.loading = true;
+            s.error = null;
+        });
+        builder.addCase(saveCurrentDrawing.fulfilled, (s) => {
+            s.loading = false;
+            s.current.dirty = false;
+        });
+        builder.addCase(saveCurrentDrawing.rejected, (s, a) => {
+            s.loading = false;
+            s.error = a.payload || a.error?.message || 'update failed';
         });
     },
 });
 
-export default docSlice.reducer;
-
 export const {
-    setDocMeta,
-    setDocItems,
-    setDocLoading,
-    setDocError,
-    setLastVectorJson,
     openLoadModal,
     closeLoadModal,
     openSaveModal,
     closeSaveModal,
-    resetDoc,
+    setTitle,
+    markDirty,
+    markClean,
+    setCurrentMeta,
 } = docSlice.actions;
+
+export default docSlice.reducer;

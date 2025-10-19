@@ -10,6 +10,9 @@ import {
     resizeShape,
     deleteFocused,
     updateText,
+    historyStart,
+    redo,
+    undo,
 } from '../../lib/redux/slice/canvasSlice';
 import {
     selectTool,
@@ -17,6 +20,12 @@ import {
     selectStarPts,
     selectStarRatio,
     setTool,
+    selectView,
+    setView,
+    zoomTo,
+    panBy,
+    resetView,
+    selectCanvasBg,
 } from '../../lib/redux/slice/uiSlice';
 
 /* =========================================================
@@ -199,6 +208,7 @@ function CanvasStageRobustRedux() {
     const polygonSides = useSelector(selectPoly);
     const starPoints = useSelector(selectStarPts);
     const starInnerRatio = useSelector(selectStarRatio);
+    const canvasBg = useSelector(selectCanvasBg);
 
     // DOM
     const wrapRef = useRef(null);
@@ -208,6 +218,12 @@ function CanvasStageRobustRedux() {
     const textRef = useRef(null);
     const editingRef = useRef(false);
     const editingIdRef = useRef(null);
+    const viewRef = useRef({ scale: 1, tx: 0, ty: 0 });
+
+    const view = useSelector(selectView);
+
+    const MIN_SCALE = 0.2;
+    const MAX_SCALE = 8;
 
     // local (레이아웃용)
     const [size, setSize] = useState({ w: 640, h: 420 });
@@ -223,6 +239,12 @@ function CanvasStageRobustRedux() {
     useEffect(() => {
         focusRef.current = focusId;
     }, [focusId]);
+
+    useEffect(() => {
+        if (!view) return;
+        viewRef.current = { ...viewRef.current, ...view };
+        requestAnimationFrame(renderAllOnce);
+    }, [view]);
 
     const toolRef = useRef(tool);
     useEffect(() => {
@@ -331,12 +353,26 @@ function CanvasStageRobustRedux() {
                 break;
         }
     }
+    function screenToWorld(xs, ys) {
+        const { scale, tx, ty } = viewRef.current;
+        return { x: (xs - tx) / scale, y: (ys - ty) / scale };
+    }
+    function worldToScreen(xw, yw) {
+        const { scale, tx, ty } = viewRef.current;
+        return { x: xw * scale + tx, y: yw * scale + ty };
+    }
 
     function renderVector(ctx, shapesNow) {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+        const { scale, tx, ty } = viewRef.current;
+        ctx.translate(tx, ty);
+        ctx.scale(scale, scale);
+
         for (const s of shapesNow) {
             ctx.save();
-            ctx.lineWidth = s.strokeWidth || 2;
+            // 줌 배율과 무관하게 시각적 두께를 일정하게: 화면 기준 두께 유지
+            ctx.lineWidth = (s.strokeWidth || 2) / scale;
             ctx.strokeStyle = s.stroke || '#333';
             ctx.fillStyle = s.fill ?? (s.type === 'line' ? undefined : '#fff');
             if (s.type === 'rect') {
@@ -381,12 +417,17 @@ function CanvasStageRobustRedux() {
             }
             ctx.restore();
         }
+        ctx.restore();
     }
 
     function renderHitmap(ctx, shapesNow) {
         ctx.save();
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.imageSmoothingEnabled = false;
+        const { scale, tx, ty } = viewRef.current;
+        ctx.translate(tx, ty);
+        ctx.scale(scale, scale);
+
         for (const s of shapesNow) {
             const { r, g, b } = idToRGB(s.pickId);
             const col = `rgb(${r},${g},${b})`;
@@ -395,7 +436,10 @@ function CanvasStageRobustRedux() {
 
             if (s.type === 'rect') {
                 ctx.fillRect(s.x, s.y, s.w, s.h);
-                ctx.lineWidth = Math.max(s.strokeWidth || 2, 8);
+                ctx.lineWidth = Math.max(
+                    (s.strokeWidth || 2) / scale,
+                    8 / scale
+                );
                 ctx.strokeRect(s.x, s.y, s.w, s.h);
             } else if (s.type === 'line') {
                 drawLinePath(ctx, s.x, s.y, s.w, s.h);
@@ -429,6 +473,9 @@ function CanvasStageRobustRedux() {
         if (!f) return;
 
         ctx.save();
+        const { scale, tx, ty } = viewRef.current;
+        ctx.translate(tx, ty);
+        ctx.scale(scale, scale);
         ctx.setLineDash([6, 4]);
         ctx.strokeStyle = 'rgb(76,139,245)';
         ctx.lineWidth = 1;
@@ -458,15 +505,6 @@ function CanvasStageRobustRedux() {
         ctx.restore();
     }
 
-    function renderAllOnce() {
-        const vctx = vecRef.current?.getContext('2d');
-        const hctx = hitRef.current?.getContext('2d');
-        const octx = ovRef.current?.getContext('2d');
-        if (vctx) renderVector(vctx, shapesRef.current);
-        if (hctx) renderHitmap(hctx, shapesRef.current);
-        if (octx) renderOverlay(octx);
-    }
-
     /* ---------------- Re-render when state changes ---------------- */
     useEffect(() => {
         renderAllOnce();
@@ -487,6 +525,7 @@ function CanvasStageRobustRedux() {
             if (e.key === 'Backspace' || e.key === 'Delete') {
                 if (focusRef.current == null) return;
                 e.preventDefault();
+                dispatch(historyStart());
                 dispatch(deleteFocused());
                 requestAnimationFrame(() => {
                     renderAllOnce();
@@ -508,7 +547,7 @@ function CanvasStageRobustRedux() {
                 ((e.clientX - rect.left) * (ov.width / rect.width)) / DPR();
             const y =
                 ((e.clientY - rect.top) * (ov.height / rect.height)) / DPR();
-            return { x, y };
+            return screenToWorld(x, y);
         }
         // function hitHandle(pt, bbox, s = 8) {
         //     const midX = bbox.x + bbox.w / 2,
@@ -667,7 +706,6 @@ function CanvasStageRobustRedux() {
 
         function onDown(e) {
             e.preventDefault();
-            if (editingRef.current) return;
             const p = toCanvasPt(e);
             const currentTool = toolRef.current;
 
@@ -685,6 +723,25 @@ function CanvasStageRobustRedux() {
                 } else {
                     endTextEdit(true); // 커밋 후 계속 진행(다른 도형 선택/포커스 해제 등)
                 }
+            }
+            const pScreen = (() => {
+                const rect = ov.getBoundingClientRect();
+                const xs =
+                    ((e.clientX - rect.left) * (ov.width / rect.width)) / DPR();
+                const ys =
+                    ((e.clientY - rect.top) * (ov.height / rect.height)) /
+                    DPR();
+                return { xs, ys };
+            })();
+            const isPan =
+                e.button === 1 ||
+                e.buttons === 4 ||
+                e.shiftKey ||
+                e.code === 'Space' ||
+                e.key === ' ';
+            if (isPan) {
+                dragRef.current = { type: 'pan', startScreen: pScreen };
+                return;
             }
 
             if (currentTool !== 'select') {
@@ -718,6 +775,7 @@ function CanvasStageRobustRedux() {
                         8
                     );
                     if (hh) {
+                        dispatch(historyStart());
                         dragRef.current = {
                             type: 'resize',
                             id: f.id,
@@ -733,6 +791,7 @@ function CanvasStageRobustRedux() {
                         p.y >= f.y &&
                         p.y <= f.y + f.h
                     ) {
+                        dispatch(historyStart());
                         dragRef.current = { type: 'move', id: f.id, start: p };
                         return;
                     }
@@ -755,6 +814,7 @@ function CanvasStageRobustRedux() {
                         8
                     );
                     if (hh) {
+                        dispatch(historyStart());
                         dragRef.current = {
                             type: 'resize',
                             id: target.id,
@@ -770,6 +830,7 @@ function CanvasStageRobustRedux() {
                         p.y >= target.y &&
                         p.y <= target.y + target.h
                     ) {
+                        dispatch(historyStart());
                         dragRef.current = {
                             type: 'move',
                             id: target.id,
@@ -893,6 +954,25 @@ function CanvasStageRobustRedux() {
                 dragRef.current.last = p;
                 return;
             }
+            if (ds.type === 'pan') {
+                const rect = ov.getBoundingClientRect();
+                const xs =
+                    ((e.clientX - rect.left) * (ov.width / rect.width)) / DPR();
+                const ys =
+                    ((e.clientY - rect.top) * (ov.height / rect.height)) /
+                    DPR();
+                const dx = xs - ds.startScreen.xs;
+                const dy = ys - ds.startScreen.ys;
+                dispatch(
+                    setView({
+                        tx: viewRef.current.tx + dx,
+                        ty: viewRef.current.ty + dy,
+                    })
+                );
+                ds.startScreen = { xs, ys };
+
+                return;
+            }
         }
 
         function onUp(e) {
@@ -925,6 +1005,7 @@ function CanvasStageRobustRedux() {
                         ? Math.abs(w) + Math.abs(h) >= 2
                         : w >= 2 && h >= 2;
                 if (minOK) {
+                    dispatch(historyStart());
                     const payload = {
                         type: tool,
                         x: tool === 'line' ? ds.start.x : x,
@@ -971,6 +1052,7 @@ function CanvasStageRobustRedux() {
                 const pts = ds.path || [];
                 const bbox = computeBBox(pts);
                 if (pts.length >= 2 && bbox) {
+                    dispatch(historyStart());
                     let { minX, minY, w, h } = bbox;
                     const MIN_SIDE = 2; // 정규화가 무의미해지지 않게 최소 두께
                     if (w < MIN_SIDE) {
@@ -1000,6 +1082,10 @@ function CanvasStageRobustRedux() {
                 }
                 const octx = ovRef.current.getContext('2d');
                 octx.clearRect(0, 0, ovRef.current.width, ovRef.current.height);
+            }
+            if (ds.type === 'pan') {
+                dragRef.current = null;
+                return;
             }
 
             dragRef.current = null;
@@ -1031,6 +1117,7 @@ function CanvasStageRobustRedux() {
         const id = editingIdRef.current ?? editingId;
         const val = textRef.current?.value ?? '';
         if (commit && id != null) {
+            dispatch(historyStart());
             dispatch(updateText({ id, text: val }));
         }
         // 편집 플래그를 "즉시" 정리해 벡터 레이어가 더 이상 스킵하지 않도록
@@ -1051,76 +1138,185 @@ function CanvasStageRobustRedux() {
         }
     }, [focusId]);
 
+    function renderAllOnce() {
+        const vctx = vecRef.current?.getContext('2d');
+        const hctx = hitRef.current?.getContext('2d');
+        const octx = ovRef.current?.getContext('2d');
+
+        if (vctx) renderVector(vctx, shapesRef.current);
+        if (hctx) renderHitmap(hctx, shapesRef.current);
+        if (octx) renderOverlay(octx);
+    }
+
+    useEffect(() => {
+        function onKeyDown(e) {
+            const tag = e.target?.tagName;
+            const typing =
+                tag === 'INPUT' ||
+                tag === 'TEXTAREA' ||
+                e.target?.isContentEditable;
+            // 텍스트 편집 중 Ctrl+Z는 textarea 기본 undo에 맡기고, 편집 중이 아닐 때만 캔버스 undo/redo
+            if (!typing && !editingRef.current) {
+                const isMac = navigator.platform.toLowerCase().includes('mac');
+                const cmd = isMac ? e.metaKey : e.ctrlKey;
+
+                if (cmd && e.key.toLowerCase() === 'z') {
+                    e.preventDefault();
+                    if (e.shiftKey) dispatch(redo());
+                    else dispatch(undo());
+                    requestAnimationFrame(renderAllOnce);
+                    return;
+                }
+                if (cmd && e.key.toLowerCase() === 'y') {
+                    e.preventDefault();
+                    dispatch(redo());
+                    requestAnimationFrame(renderAllOnce);
+                    return;
+                }
+            }
+            // ↓ 기존 삭제 로직 유지
+            if ((e.key === 'Backspace' || e.key === 'Delete') && !typing) {
+                if (focusRef.current == null) return;
+                e.preventDefault();
+                dispatch(historyStart());
+                dispatch(deleteFocused());
+                requestAnimationFrame(renderAllOnce);
+            }
+        }
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [dispatch]);
+
+    useEffect(() => {
+        const ov = ovRef.current;
+        if (!ov) return;
+
+        function onWheel(e) {
+            // 두 손가락 스크롤/트랙패드 줌도 고려하려면 e.ctrlKey 케이스 포함
+            const delta = e.deltaY;
+            if (!e.ctrlKey && !e.metaKey) {
+                // 일반 스크롤은 패닝으로 쓰고 싶다면 여기서 tx,ty 변경 처리 가능
+                // 이번엔 줌만 처리: 기본 스크롤 방지
+            }
+            e.preventDefault();
+
+            const rect = ov.getBoundingClientRect();
+            const xs =
+                ((e.clientX - rect.left) * (ov.width / rect.width)) / DPR();
+            const ys =
+                ((e.clientY - rect.top) * (ov.height / rect.height)) / DPR();
+
+            const { scale, tx, ty } = viewRef.current;
+            const zoom = Math.exp(-delta * 0.0015);
+            const newScale = Math.min(
+                MAX_SCALE,
+                Math.max(MIN_SCALE, scale * zoom)
+            );
+
+            // 커서 고정 줌: (xs,ys)가 가리키는 월드점이 화면에서 그대로 보이도록 tx,ty 보정
+            if (newScale !== scale) {
+                // 현재 월드 좌표
+                const wx = (xs - tx) / scale;
+                const wy = (ys - ty) / scale;
+                // 새로운 스케일에서 같은 월드점이 같은 화면좌표가 되도록
+                const ntx = xs - wx * newScale;
+                const nty = ys - wy * newScale;
+
+                dispatch(setView({ scale: newScale, tx: ntx, ty: nty }));
+            }
+        }
+
+        ov.addEventListener('wheel', onWheel, { passive: false });
+        return () => ov.removeEventListener('wheel', onWheel);
+    }, []);
+
     /* ---------------- JSX ---------------- */
     return (
         <div
-            className="canvas-stage-wrap fill-viewport"
-            ref={wrapRef}
-            style={{ background: 'var(--canvas-bg)' }}
+            className="canvas-outer"
+            style={{
+                position: 'relative',
+                overflow: 'auto',
+                width: '100%',
+                height: '100%',
+            }}
         >
-            <canvas ref={vecRef} className="layer-vector" />
-            <canvas ref={hitRef} className="layer-hitmap" />
-            <canvas ref={ovRef} className="layer-overlay" />
             <div
-                style={{
-                    position: 'absolute',
-                    left: 8,
-                    top: 8,
-                    zIndex: 9999,
-                    fontSize: '1.2rem',
-                    color: 'var(--text-color)',
-                }}
+                className="canvas-stage-wrap fill-viewport"
+                ref={wrapRef}
+                style={{ background: canvasBg }}
             >
-                tool: <b>{tool}</b> · 드래그: 도형 생성 · 더블클릭(선택모드):
-                포커스 · 포커스 후 드래그: 이동/리사이즈 · 빈 곳 클릭: 포커스
-                해제 · ⌫/Del: 삭제
-            </div>
-            {editingId != null &&
-                (() => {
-                    const s = shapes.find((v) => v.id === editingId);
-                    if (!s) return null;
-                    // DPR 고려: 우리는 컨텍스트에 dpr을 곱해 뒀으니, CSS 좌표 기준 그대로 쓰면 됩니다.
-                    const style = {
+                <canvas ref={vecRef} className="layer-vector" />
+                <canvas ref={hitRef} className="layer-hitmap" />
+                <canvas ref={ovRef} className="layer-overlay" />
+                <div
+                    style={{
                         position: 'absolute',
-                        left: s.x,
-                        top: s.y,
-                        width: s.w,
-                        height: s.h,
-                        zIndex: 10000,
-                        padding: 4,
-                        margin: 0,
-                        border: '1px solid var(--overlay-marquee-stroke)',
-                        outline: 'none',
-                        background: 'transparent',
-                        color: s.color || '#111',
-                        font: s.font || '16px sans-serif',
-                        lineHeight: s.lineHeight || 1.3,
-                        resize: 'none',
-                        overflow: 'auto',
-                        whiteSpace: 'pre-wrap',
-                    };
-                    return (
-                        <textarea
-                            ref={textRef}
-                            style={style}
-                            defaultValue={s.text || ''}
-                            onBlur={() => endTextEdit(true)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Escape') {
-                                    e.preventDefault();
-                                    endTextEdit(false);
-                                }
-                                if (
-                                    e.key === 'Enter' &&
-                                    (e.ctrlKey || e.metaKey)
-                                ) {
-                                    e.preventDefault();
-                                    endTextEdit(true);
-                                }
-                            }}
-                        />
-                    );
-                })()}
+                        left: 8,
+                        top: 8,
+                        zIndex: 9999,
+                        fontSize: '1.2rem',
+                        color: 'var(--text-color)',
+                    }}
+                >
+                    tool: <b>{tool}</b> · 드래그: 도형 생성 ·
+                    더블클릭(선택모드): 포커스 · 포커스 후 드래그: 이동/리사이즈
+                    · 빈 곳 클릭: 포커스 해제 · ⌫/Del: 삭제
+                </div>
+                {editingId != null &&
+                    (() => {
+                        const s = shapes.find((v) => v.id === editingId);
+                        if (!s) return null;
+                        const { x: left, y: top } = worldToScreen(s.x, s.y);
+                        const { x: right, y: bottom } = worldToScreen(
+                            s.x + s.w,
+                            s.y + s.h
+                        );
+                        const width = right - left;
+                        const height = bottom - top;
+                        // DPR 고려: 우리는 컨텍스트에 dpr을 곱해 뒀으니, CSS 좌표 기준 그대로 쓰면 됩니다.
+                        const style = {
+                            position: 'absolute',
+                            left,
+                            top,
+                            width,
+                            height,
+                            zIndex: 10000,
+                            padding: 4,
+                            margin: 0,
+                            border: '1px solid var(--overlay-marquee-stroke)',
+                            outline: 'none',
+                            background: 'transparent',
+                            color: s.color || '#111',
+                            font: s.font || '16px sans-serif',
+                            lineHeight: s.lineHeight || 1.3,
+                            resize: 'none',
+                            overflow: 'auto',
+                            whiteSpace: 'pre-wrap',
+                        };
+                        return (
+                            <textarea
+                                ref={textRef}
+                                style={style}
+                                defaultValue={s.text || ''}
+                                onBlur={() => endTextEdit(true)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        endTextEdit(false);
+                                    }
+                                    if (
+                                        e.key === 'Enter' &&
+                                        (e.ctrlKey || e.metaKey)
+                                    ) {
+                                        e.preventDefault();
+                                        endTextEdit(true);
+                                    }
+                                }}
+                            />
+                        );
+                    })()}
+            </div>
         </div>
     );
 }

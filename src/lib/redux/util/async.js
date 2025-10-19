@@ -1,217 +1,111 @@
-// async.js
+// lib/redux/util/async.js
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { drawings } from '../../axios/drawings';
-import { safeParseVectorJson } from '../util/guide';
-import { REDUCER_NAME } from '../constant/name';
+import { hydrateFromDoc, takeSnapshot } from './serde';
+import { setCurrentMeta, markClean } from '../slice/docSlice';
 
-import { replaceAll as replaceCanvas } from '../slice/shapeSlice';
-import { replaceAll as replaceShapes } from '../slice/shapeSlice';
-import { clearSelection } from '../slice/selectionSlice';
-import {
-    reset as resetHistory,
-    clearFuture,
-    pushPast,
-} from '../slice/historySlice';
-import { markAllDirty } from '../slice/renderSlice';
-import { fitIn as viewportFitIn } from '../slice/viewportSlice';
+import { drawings } from '../../../lib/axios/drawings';
 
-import { DEFAULT } from '../constant/initial';
-import { resetDoc, setDocMeta, setLastVectorJson } from '../slice/docSlice';
-
-// ------------------------------------------------------------------
-// 현재 상태 → vectorJson 직렬화
-const buildVectorJson = (state) => {
-    const canvas = state?.canvas ?? {};
-    const shapes = state?.shape?.list ?? [];
-    const doc = state?.doc ?? {};
-
-    return {
-        canvas: {
-            width: canvas.width ?? 0,
-            height: canvas.height ?? 0,
-            background: canvas.background ?? null,
-            grid: canvas.grid ?? null,
-        },
-        shapes,
-        meta: {
-            version: doc.version ?? 0,
-            title: (doc.title ?? 'Untitled').trim(),
-            updatedAt: new Date().toISOString(),
-        },
-    };
-};
-
-// ------------------------------------------------------------------
-// 목록 불러오기
+/** 목록 불러오기 */
 export const fetchDrawings = createAsyncThunk(
-    `${REDUCER_NAME.DOC}/fetchDrawings`,
+    'doc/list',
     async (_, { rejectWithValue }) => {
         try {
-            const res = await drawings.list();
-            const list = Array.isArray(res) ? res : (res?.data ?? []);
-            // 필요 시 최신순 정렬
-            // list.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-            return list;
+            const res = await drawings.list(1, 100);
+            // 서버 응답 형식에 맞게 items 추출
+            return Array.isArray(res?.items) ? res.items : res || [];
         } catch (e) {
-            return rejectWithValue(e?.message || String(e));
+            return rejectWithValue(e?.message || 'list failed');
         }
     }
 );
 
-// 삭제
+/** 항목 삭제 */
 export const deleteDrawing = createAsyncThunk(
-    `${REDUCER_NAME.DOC}/deleteDrawing`,
-    async (id, { rejectWithValue }) => {
+    'doc/delete',
+    async (id, { rejectWithValue, dispatch }) => {
         try {
             await drawings.remove(id);
-            return id;
+            // 삭제 후 목록 새로 고침(선택)
+            dispatch(fetchDrawings());
+            return true;
         } catch (e) {
-            return rejectWithValue(e?.message || String(e));
+            return rejectWithValue(e?.message || 'delete failed');
         }
     }
 );
 
-// 단일 문서 로드(서버 통신만)
-export const loadDrawing = createAsyncThunk(
-    `${REDUCER_NAME.DOC}/loadDrawing`,
-    async (id, { rejectWithValue }) => {
+/** 문서 로드 */
+export const loadDrawingById = createAsyncThunk(
+    'doc/loadOne',
+    async (id, { rejectWithValue, dispatch }) => {
         try {
-            const res = await drawings.get(id);
-            const data = res?.data ?? res;
-            const vj = safeParseVectorJson(data?.vectorJson);
-            return { ...data, vectorJson: vj };
+            const data = await drawings.get(id);
+            // 서버에서 { id, title, version, vectorJson } 형태라고 가정
+            const doc = data?.vectorJson || data?.doc || data;
+            await dispatch(hydrateFromDoc(doc));
+            dispatch(
+                setCurrentMeta({
+                    id: data.id,
+                    title: data.title || '',
+                    version: data.version || 1,
+                })
+            );
+            dispatch(markClean());
+            return true;
         } catch (e) {
-            return rejectWithValue(e?.message || String(e));
+            return rejectWithValue(e?.message || 'load failed');
         }
     }
 );
 
-// vectorJson → 각 슬라이스에 반영
-export const applyVectorJson = createAsyncThunk(
-    `${REDUCER_NAME.DOC}/applyVectorJson`,
-    async (vectorJson, { dispatch }) => {
-        if (!vectorJson) return false;
-
-        const cvs = vectorJson.canvas ?? {};
-
-        // 1) 캔버스/도형 반영
-        dispatch(
-            replaceCanvas({
-                width: cvs.width ?? 0,
-                height: cvs.height ?? 0,
-                background: cvs.background ?? null,
-                grid: cvs.grid ?? null,
-            })
-        );
-        dispatch(replaceShapes(vectorJson.shapes || []));
-
-        // 2) 선택/히스토리 초기화
-        dispatch(clearSelection());
-        dispatch(resetHistory());
-        dispatch(clearFuture());
-
-        // 3) 뷰포트 맞춤
-        dispatch(
-            viewportFitIn({
-                canvasW: cvs.width ?? 0,
-                canvasH: cvs.height ?? 0,
-                viewW: vectorJson.viewW ?? cvs.width ?? 0,
-                viewH: vectorJson.viewH ?? cvs.height ?? 0,
-                padding: 16,
-            })
-        );
-
-        // 4) 리렌더 플래그
-        dispatch(markAllDirty());
-        return true;
-    }
-);
-
-// 새 문서 시작 (로컬 초기화)
-export const openNew = createAsyncThunk(
-    `${REDUCER_NAME.DOC}/openNew`,
-    async (_, { dispatch }) => {
-        // 1) 문서/레이어 전부 초기화
-        dispatch(resetDoc());
-
-        // 2) 메타/캔버스 크기 세팅
-        const meta = {
-            id: null,
-            title: 'Untitled',
-            version: 0,
-            updatedAt: null,
-            width: DEFAULT.CANVAS.width,
-            height: DEFAULT.CANVAS.height,
-        };
-        dispatch(setDocMeta(meta));
-
-        dispatch(
-            setLastVectorJson({
-                canvas: {
-                    width: DEFAULT.CANVAS.width,
-                    height: DEFAULT.CANVAS.height,
-                },
-                shapes: [],
-                layers: [],
-            })
-        );
-
-        document.title = 'Untitled — Editor';
-        return meta;
-    }
-);
-
-// 저장(서버 통신 X): vectorJson 반환
-export const saveDoc = createAsyncThunk(
-    `${REDUCER_NAME.DOC}/saveDoc`,
-    async (_, { getState }) => {
-        const state = getState();
-        const vectorJson = buildVectorJson(state);
-        return vectorJson;
-    }
-);
-
-// 서버 로드 + 상태 반영 한번에
-export const loadAndApplyDrawing = createAsyncThunk(
-    `${REDUCER_NAME.DOC}/loadAndApplyDrawing`,
-    async (id, { dispatch, getState }) => {
-        const res = await dispatch(loadDrawing(id)).unwrap();
-        if (!res) return null;
-
-        const vj = res.vectorJson;
-        if (vj) {
-            await dispatch(applyVectorJson(vj));
-            // 히스토리 기점 스냅
-            const snap = buildVectorJson(getState());
-            // 프로젝트의 pushPast 시그니처에 맞춰 payload 전달
-            dispatch(pushPast(snap)); // 필요 시 { snapshot: snap }로 교체
-            dispatch(markAllDirty());
-        }
-        return res;
-    }
-);
-
-// 제목을 지정하여 새로 저장 (POST)
+/** 새 이름으로 저장(최초 저장) */
 export const saveDrawingByName = createAsyncThunk(
-    `${REDUCER_NAME.DOC}/saveDrawingByName`,
-    async (title, { getState, rejectWithValue }) => {
+    'doc/saveNew',
+    async (title, { getState, rejectWithValue, dispatch }) => {
         try {
             const state = getState();
-            const vectorJson = buildVectorJson(state);
-            const doc = state?.doc ?? {};
-
-            const body = {
-                title: (title || doc.title || 'Untitled').trim(),
-                width: vectorJson.canvas.width,
-                height: vectorJson.canvas.height,
-                version: doc.version ?? 0,
-                vectorJson,
-            };
-
-            const res = await drawings.create(body); // POST /drawings
-            return res?.data ?? res;
+            const vectorJson = takeSnapshot(state);
+            const res = await drawings.create({ title, vectorJson });
+            dispatch(
+                setCurrentMeta({
+                    id: res.id,
+                    title: res.title || title,
+                    version: res.version || 1,
+                })
+            );
+            dispatch(markClean());
+            return res;
         } catch (e) {
-            return rejectWithValue(e?.message || String(e));
+            return rejectWithValue(e?.message || 'save failed');
+        }
+    }
+);
+
+/** 기존 문서 업데이트 저장 */
+export const saveCurrentDrawing = createAsyncThunk(
+    'doc/saveUpdate',
+    async (_, { getState, rejectWithValue, dispatch }) => {
+        try {
+            const state = getState();
+            const meta = state.doc.current;
+            if (!meta.id) throw new Error('문서 ID가 없습니다.');
+            const vectorJson = takeSnapshot(state);
+            const res = await drawings.update(meta.id, {
+                title: meta.title || 'Untitled',
+                version: meta.version,
+                vectorJson,
+            });
+            dispatch(
+                setCurrentMeta({
+                    id: res.id,
+                    title: res.title || meta.title,
+                    version: res.version || meta.version,
+                })
+            );
+            dispatch(markClean());
+            return res;
+        } catch (e) {
+            return rejectWithValue(e?.message || 'update failed');
         }
     }
 );

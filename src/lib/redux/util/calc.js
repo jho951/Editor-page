@@ -1,4 +1,7 @@
+// calc.js
 const calcBBox = (s) => {
+    if (!s) return { x: 0, y: 0, w: 0, h: 0 };
+
     if (
         s.type === 'rect' ||
         s.type === 'ellipse' ||
@@ -6,13 +9,14 @@ const calcBBox = (s) => {
         s.type === 'text' ||
         s.type === 'star'
     ) {
-        return { x: s.x, y: s.y, w: s.w, h: s.h };
+        return { x: s.x ?? 0, y: s.y ?? 0, w: s.w ?? 0, h: s.h ?? 0 };
     }
+
     if (s.type === 'line') {
-        const x0 = s.x,
-            y0 = s.y,
-            x1 = s.x + s.w,
-            y1 = s.y + s.h;
+        const x0 = s.x ?? 0,
+            y0 = s.y ?? 0;
+        const x1 = (s.x ?? 0) + (s.w ?? 0);
+        const y1 = (s.y ?? 0) + (s.h ?? 0);
         const x = Math.min(x0, x1),
             y = Math.min(y0, y1);
         return { x, y, w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) };
@@ -35,15 +39,11 @@ const calcBBox = (s) => {
         }
         return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
     }
+
     return s.bbox ?? { x: 0, y: 0, w: 0, h: 0 };
 };
 
-/**
- * @description 별 경계 상자(bounding box)를 계산하는 유틸리티 함수
- * @param {object} s - 선분 도형 객체
- * @returns {object} 경계 상자 {x, y, w, h}
- * @throws {Error} 지원되지 않는 도형 타입
- */
+// 별 포인트 생성
 function makeStarPoints(
     cx,
     cy,
@@ -63,12 +63,12 @@ function makeStarPoints(
 }
 
 const lineToEndpoints = (s) => ({
-    x1: s.x,
-    y1: s.y,
-    x2: s.x + s.w,
-    y2: s.y + s.h,
+    x1: s.x ?? 0,
+    y1: s.y ?? 0,
+    x2: (s.x ?? 0) + (s.w ?? 0),
+    y2: (s.y ?? 0) + (s.h ?? 0),
 });
-const endpointsToLine = ({ x1, y1, x2, y2 }) => ({
+const endpointsToLine = ({ x1 = 0, y1 = 0, x2 = 0, y2 = 0 }) => ({
     x: x1,
     y: y1,
     w: x2 - x1,

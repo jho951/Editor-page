@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { DEFAULT } from '../constant/default';
+import { DEFAULT } from '../constant/initial';
 import { REDUCER_NAME } from '../constant/name';
 import { takePayload } from '../util/guide';
 

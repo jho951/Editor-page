@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { DEFAULT } from '../constant/default';
+import { DEFAULT } from '../constant/initial';
 import { REDUCER_NAME } from '../constant/name';
 
 /**
@@ -8,11 +8,11 @@ import { REDUCER_NAME } from '../constant/name';
  * @description 캔버스 내 요소 선택 관리 슬라이스
  * @property {id} 선택된 도형의 아이디
  * @property {anchor} 노드 선택
- * @see {@link DEFAULT.SELCECTION} 초기 상태
+ * @see {@link DEFAULT.SELECTION} 초기 상태
  */
 const selectionSlice = createSlice({
-    name: REDUCER_NAME.SELCECTION,
-    initialState: DEFAULT.SELCECTION,
+    name: REDUCER_NAME.SELECTION,
+    initialState: DEFAULT.SELECTION,
     reducers: {
         setSelection: (state, { payload }) => {
             state.id = payload ?? null;

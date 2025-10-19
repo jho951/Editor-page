@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { REDUCER_NAME } from '../constant/name';
-import { DEFAULT } from '../constant/default';
+import { DEFAULT } from '../constant/initial';
 import { clamp } from '../util/guide';
 
 /**

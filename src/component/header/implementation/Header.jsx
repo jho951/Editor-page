@@ -1,5 +1,4 @@
-// src/component/header/implementation/Header.jsx
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { DROPDOWN_SECTION } from '../constant/section';
@@ -8,39 +7,28 @@ import {
     makeDispatchCommand,
     TOOL_FROM_KEY,
 } from '../util/command';
+import { useHeaderShortcuts } from '../hook/useHeaderShortcuts';
 
-import { MenuSection } from './MenuSection';
+import { DropDown } from '../../context/implementation/DropDown';
+import { Icon } from '../../icon/implementation/Icon';
 import { StylePanel } from './StylePanel';
 import { ZoomPanel } from './ZoomPanel';
 
 import { SaveModal } from '../../modal/implementation/SaveModal';
 import { OpenModal } from '../../modal/implementation/OpenModal';
 
+import { IconBtn } from '../../button/implementation/IconBtn';
+
 import styles from '../style/Header.module.css';
-
-const SECTION_ICON_NAME = {
-    file: 'open',
-    shape: 'shape',
-    transform: 'transform',
-    zoom: 'zoom',
-};
-
-const ITEM_ICON_NAME = {
-    path: 'freeDraw',
-    text: 'text',
-    undo: 'undo',
-    redo: 'redo',
-};
 
 function Header() {
     const dispatch = useDispatch();
-    const zoom = useSelector((s) => s.viewport?.zoom ?? 1);
-    const draft = useSelector((s) => s.tools?.draft) || {};
-    const tool = useSelector((s) => s.tools?.tool) || 'select';
+    const zoom = useSelector((s) => s.viewport?.zoom);
 
-    console.log(tool);
+    const tool = useSelector((s) => s.tool);
 
     const ITEM_INDEX = useMemo(() => buildItemIndex(DROPDOWN_SECTION), []);
+
     const dispatchCommand = useMemo(
         () =>
             makeDispatchCommand(
@@ -51,101 +39,105 @@ function Header() {
         [ITEM_INDEX, dispatch]
     );
 
+    useHeaderShortcuts({ dispatchCommand });
+
+    const [open, setOpen] = useState(false);
+
     const [openId, setOpenId] = useState(null);
-    const openDropdown = (id) => setOpenId(id);
-    const closeDropdown = () => setOpenId(null);
-    const toggleDropdown = (id) => setOpenId((p) => (p === id ? null : id));
+
+    const [anchorRect, setAnchorRect] = useState(null);
+
+    const buttonRefs = useRef({});
+
+    const onClickSection = useCallback(
+        (id) => (e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setOpenId((prev) => (prev === id && open ? null : id));
+            setOpen((prev) => (openId !== id ? true : !prev));
+            setAnchorRect(rect);
+        },
+        [open, openId]
+    );
+
+    const closeMenu = useCallback(() => {
+        setOpen(false);
+        setOpenId(null);
+        setAnchorRect(null);
+    }, []);
+
+    const closeDropdownOnly = useCallback(() => {
+        setOpen(false);
+        setAnchorRect(null);
+    }, []);
 
     const selectedShapeKey = useMemo(() => {
-        return TOOL_FROM_KEY[tool] ?? null;
+        for (const [k, v] of Object.entries(TOOL_FROM_KEY))
+            if (v === tool.tool) return k;
+        return null;
     }, [tool]);
+
+    const currentSection = useMemo(
+        () => DROPDOWN_SECTION.find((s) => s?.key === openId),
+        [openId]
+    );
+
+    const customContent = useMemo(() => {
+        if (openId === 'style') {
+            return <StylePanel draft={tool.draft} dispatch={dispatch} />;
+        }
+        if (openId === 'zoom') {
+            return <ZoomPanel zoom={zoom} dispatch={dispatch} />;
+        }
+        return null;
+    }, [openId, tool, dispatch, zoom]);
 
     return (
         <>
             <header className={styles.header}>
-                <nav className={styles.left}>
-                    {DROPDOWN_SECTION.map((entry) => {
-                        const isDropdown = Array.isArray(entry?.items);
+                <div className={styles.leftRail}>
+                    {DROPDOWN_SECTION.map((section) => {
+                        if (!section.key) return null;
 
-                        if (isDropdown) {
-                            const active = openId === entry.id;
-                            return (
-                                <div
-                                    key={entry.id}
-                                    className={styles.navItem}
-                                    onMouseEnter={() => openDropdown(entry.id)}
-                                    onMouseLeave={closeDropdown}
-                                >
-                                    <MenuSection
-                                        title={entry.title}
-                                        icon={
-                                            SECTION_ICON_NAME[entry.id] ||
-                                            'menu'
-                                        }
-                                        items={entry.items}
-                                        selectedKey={
-                                            entry.id === 'shape'
-                                                ? selectedShapeKey
-                                                : null
-                                        }
-                                        onSelect={(key) => {
-                                            dispatchCommand(key);
-                                            closeDropdown();
-                                        }}
-                                        ariaLabel={entry.title}
-                                        classNames={{
-                                            wrap: styles.dropdownWrap,
-                                            menu: styles.dropdownRight,
-                                            item: styles.menuItem,
-                                            checked: styles.checked,
-                                        }}
-                                        TriggerProps={{
-                                            onClick: () =>
-                                                toggleDropdown(entry.id),
-                                            title: entry.title,
-                                            'aria-expanded': active,
-                                        }}
-                                    />
-                                </div>
-                            );
-                        }
+                        const active = open && openId === section.key;
+                        const title = section.title || section.label;
 
-                        const it = entry;
+                        const isHistoryItem =
+                            section.key === 'undo' || section.key === 'redo';
+
+                        const onClickHandler = isHistoryItem
+                            ? () => dispatchCommand(section.key)
+                            : onClickSection(section.key);
+
                         return (
-                            <div key={it.key} className={styles.navItem}>
-                                <button
-                                    type="button"
-                                    className={styles.navButton}
-                                    onClick={() => dispatchCommand(it)}
-                                    title={
-                                        it.shortcutLabel
-                                            ? `${it.label} (${it.shortcutLabel})`
-                                            : it.label
-                                    }
-                                >
-                                    {it.icon}
-                                    <span>{it.label}</span>
-                                </button>
-                            </div>
+                            <IconBtn
+                                key={section.key}
+                                ref={(r) =>
+                                    (buttonRefs.current[section.key] = r)
+                                }
+                                type="button"
+                                active={active}
+                                icon={<Icon name={section.key} size={26} />}
+                                title={title}
+                                onClick={onClickHandler}
+                            />
                         );
                     })}
-                </nav>
-
-                {/* 가운데: 스타일 패널 */}
-                <section className={styles.center}>
-                    <StylePanel
-                        styles={styles}
-                        draft={draft}
-                        dispatch={dispatch}
-                    />
-                </section>
-
-                {/* 우: 줌 패널 */}
-                <section className={styles.right}>
-                    <ZoomPanel zoom={zoom} dispatch={dispatch} />
-                </section>
+                </div>
             </header>
-            {/* 모달 */}
+
+            <DropDown
+                open={open}
+                onClose={closeMenu}
+                anchorRect={anchorRect}
+                items={currentSection?.items}
+                onSelect={(key) => {
+                    dispatchCommand(key);
+                    closeDropdownOnly();
+                }}
+                selectedKey={selectedShapeKey}
+                content={customContent}
+            />
+
             <SaveModal />
             <OpenModal />
         </>

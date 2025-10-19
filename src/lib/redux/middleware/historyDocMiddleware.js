@@ -4,87 +4,135 @@ import {
     clearFuture,
     popPast,
     popFuture,
+    undo,
+    redo,
 } from '../slice/historySlice';
-
-import { replaceAll as replaceAllShapes } from '../slice/shapeSlice';
-
-import { setSelection } from '../slice/selectionSlice';
+import { markAllDirty } from '../slice/renderSlice';
 import {
-    HISTORY_REDO,
-    HISTORY_UNDO,
-    MUTATION_TYPES,
-} from '../constant/history';
+    replaceAll as replaceAllShapes,
+    addShape,
+    removeShapes,
+    setShapeData,
+    setShapeStyle,
+    translateShapes,
+    scaleShapes,
+    rotateShapes,
+    flipHShapes,
+    flipVShapes,
+    skewShapes,
+    // 전용 추가 액션들(있으면 감지)
+    addRectFromDrag,
+    addEllipseFromDrag,
+    addLineFromDrag,
+    addPolygon,
+    addPath,
+    addStarFromDrag,
+    addText,
+} from '../slice/shapeSlice';
+import { setSelection } from '../slice/selectionSlice';
 
-const clone = (v) => JSON.parse(JSON.stringify(v));
+// history(권장) → historyDoc(호환)
+const pickHistory = (state) => state?.history ?? state?.historyDoc ?? {};
 
-// 단일 선택 모드 스냅샷
-const makeSnapshot = (state) => ({
-    shapes: clone(state.shapes?.list || []),
-    selection: state.selection?.id ?? null,
-});
+const MUTATION_TYPES = new Set(
+    [
+        // 생성
+        addShape?.type,
+        addRectFromDrag?.type,
+        addEllipseFromDrag?.type,
+        addLineFromDrag?.type,
+        addPolygon?.type,
+        addStarFromDrag?.type,
+        addPath?.type,
+        addText?.type,
+        // 편집/변형
+        removeShapes?.type,
+        setShapeData?.type,
+        setShapeStyle?.type,
+        translateShapes?.type,
+        scaleShapes?.type,
+        rotateShapes?.type,
+        flipHShapes?.type,
+        flipVShapes?.type,
+        skewShapes?.type,
+    ].filter(Boolean)
+); // undefined 방지
 
-const applySnapshot = (store, snapshot) => {
-    if (!snapshot) return;
+function makeSnapshot(rootState) {
+    const shapes = rootState?.shape?.list ?? [];
+    const selectionId = rootState?.selection?.id ?? null;
+    return {
+        shapes: JSON.parse(JSON.stringify(shapes)),
+        selection: { id: selectionId },
+    };
+}
+
+function applySnapshot(store, snap) {
+    if (!snap) return;
+    // fromHistory 플래그로 루프 방지 + replaceAll은 배열 payload
     store.dispatch({
         type: replaceAllShapes.type,
-        payload: snapshot.shapes || [],
+        payload: snap.shapes || [],
         meta: { fromHistory: true },
     });
     store.dispatch({
         type: setSelection.type,
-        payload: snapshot.selection ?? null,
+        payload: snap.selection?.id ?? null,
         meta: { fromHistory: true },
     });
+    store.dispatch({ type: markAllDirty.type, meta: { fromHistory: true } });
+}
+
+const getAppliedSnapshot = (state) => {
+    const applied = pickHistory(state)?.applied;
+    if (!applied) return null;
+    return applied.snapshot ? applied.snapshot : applied;
 };
 
-const unwrap = (v) =>
-    v && typeof v === 'object' && 'snapshot' in v ? v.snapshot : v;
-
 export const historyDocMiddleware = (store) => (next) => (action) => {
+    // 스냅샷 적용 중엔 기록 금지
     if (action?.meta?.fromHistory) return next(action);
 
     // UNDO
-    if (action.type === HISTORY_UNDO) {
+    if (action.type === undo.type) {
         const state = store.getState();
-        const past = state.historyDoc?.past || [];
+        const past = pickHistory(state)?.past || [];
         if (!past.length) return;
 
         const current = makeSnapshot(state);
-        store.dispatch(pushFuture({ snapshot: current }));
-        store.dispatch(popPast());
+        store.dispatch(pushFuture({ snapshot: current })); // 현재 → future
+        store.dispatch(popPast()); // past → applied
 
-        const { applied } = store.getState().historyDoc;
-        applySnapshot(store, unwrap(applied)); // ← 언랩해서 적용
+        const snap = getAppliedSnapshot(store.getState());
+        applySnapshot(store, snap);
         return;
     }
 
     // REDO
-    if (action.type === HISTORY_REDO) {
+    if (action.type === redo.type) {
         const state = store.getState();
-        const future = state.historyDoc?.future || [];
+        const future = pickHistory(state)?.future || [];
         if (!future.length) return;
 
         const current = makeSnapshot(state);
-        store.dispatch(pushPast({ snapshot: current }));
-        store.dispatch(popFuture());
+        store.dispatch(pushPast({ snapshot: current })); // 현재 → past
+        store.dispatch(popFuture()); // future → applied
 
-        const { applied } = store.getState().historyDoc;
-        applySnapshot(store, unwrap(applied)); // ← 언랩해서 적용
+        const snap = getAppliedSnapshot(store.getState());
+        applySnapshot(store, snap);
         return;
     }
 
+    // 변경 전 스냅샷
     let beforeSnap = null;
-    if (MUTATION_TYPES.has(action.type)) {
-        beforeSnap = makeSnapshot(store.getState()); // 변경 전 스냅
-    }
+    if (MUTATION_TYPES.has(action.type))
+        beforeSnap = makeSnapshot(store.getState());
 
     const result = next(action);
 
     if (beforeSnap) {
-        // 변경 완료 후 "이전 상태"를 past에 적재 → UNDO 시 이전 상태로 복귀
         store.dispatch(pushPast({ snapshot: beforeSnap }));
         store.dispatch(clearFuture());
     }
-
     return result;
 };

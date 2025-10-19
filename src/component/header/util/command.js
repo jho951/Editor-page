@@ -1,4 +1,3 @@
-// src/component/header/util/command.js
 import { setTool, setCursor } from '../../../lib/redux/slice/toolSlice';
 import {
     zoomIn,
@@ -16,34 +15,33 @@ import {
     enterTextEdit,
     exitEdit,
 } from '../../../lib/redux/slice/editSlice';
+import {
+    deletePolylineNode,
+    translateShapes,
+} from '../../../lib/redux/slice/shapeSlice';
 
-// 선택 id (단일 선택 가정)
 function getSelectedId(state) {
     return state?.selection?.id ?? null;
 }
 
-// 섹션 배열 → key→item 맵
 export const buildItemIndex = (sections) => {
     const map = new Map();
     sections.forEach((entry) => {
-        if (Array.isArray(entry?.items)) {
+        if (Array.isArray(entry?.items))
             entry.items.forEach((it) => {
                 if (it?.key) map.set(it.key, it);
             });
-        } else if (entry?.key) {
-            map.set(entry.key, entry);
-        }
+        else if (entry?.key) map.set(entry.key, entry);
     });
     return map;
 };
 
-// shape 드롭다운 키 → 실제 tool 값
 export const TOOL_FROM_KEY = {
-    'shape-rect': 'rect',
-    'shape-ellipse': 'ellipse',
-    'shape-line': 'line',
-    'shape-polygon': 'polygon',
-    'shape-star': 'star',
+    rect: 'rect',
+    ellipse: 'ellipse',
+    line: 'line',
+    polygon: 'polygon',
+    star: 'star',
     path: 'path',
     text: 'text',
 };
@@ -60,24 +58,27 @@ export const makeDispatchCommand = (
                 ? keyOrItem
                 : ITEM_INDEX.get(key);
         const c = item?.cursor || 'default';
-
         if (!key) return;
 
-        // ───────── 도구 (shape/path/text) ─────────
+        // ───────── 도구 ─────────
         if (TOOL_FROM_KEY[key]) {
             dispatch(setTool(TOOL_FROM_KEY[key]));
             dispatch(setCursor(c));
             return;
         }
+        if (key === 'select') {
+            dispatch(setTool('select'));
+            dispatch(setCursor('default'));
+            return;
+        }
 
-        // ───────── 편집 모드 진입/종료 ─────────
+        // ───────── 편집 모드 ─────────
         if (key === 'edit-enter') {
-            const state = getState();
-            const id = getSelectedId(state);
+            const s = getState();
+            const id = getSelectedId(s);
             if (!id) return;
-            const shape = state?.shape?.list?.find?.((s) => s.id === id);
+            const shape = s?.shape?.list?.find?.((x) => x.id === id);
             if (!shape) return;
-
             if (shape.type === 'text') dispatch(enterTextEdit({ id }));
             else if (['polyline', 'polygon', 'path'].includes(shape.type))
                 dispatch(enterPathEdit({ id }));
@@ -90,49 +91,70 @@ export const makeDispatchCommand = (
             return;
         }
         if (key === 'node-delete') {
-            // TODO: path 편집 중 노드 삭제 액션 연결
-            // dispatch(deletePolylineNode({ id: targetId, index: hoverNode.index }));
+            const s = getState();
+            const id = getSelectedId(s);
+            const idx = s?.edit?.hoverNode?.index;
+            if (id != null && Number.isFinite(idx))
+                dispatch(deletePolylineNode({ id, index: idx }));
+            dispatch(setCursor('default'));
+            return;
+        }
+
+        // ───────── 이동(nudge) ─────────
+        if (key.startsWith('nudge')) {
+            const s = getState();
+            const id = getSelectedId(s);
+            if (!id) return;
+            const delta = key.includes('10') ? 10 : 1;
+            const dx = key.endsWith('left')
+                ? -delta
+                : key.endsWith('right')
+                  ? delta
+                  : 0;
+            const dy = key.endsWith('up')
+                ? -delta
+                : key.endsWith('down')
+                  ? delta
+                  : 0;
+            dispatch(translateShapes({ ids: [id], dx, dy }));
+            dispatch(setCursor('default'));
             return;
         }
 
         // ───────── 줌 ─────────
-        if (key === 'in') {
+        if (key === 'in' || key === 'zoom-in') {
             dispatch(zoomIn());
             dispatch(setCursor(c));
             return;
         }
-        if (key === 'out') {
+        if (key === 'out' || key === 'zoom-out') {
             dispatch(zoomOut());
             dispatch(setCursor(c));
             return;
         }
-        if (key === 'fit') {
-            dispatch(fit(/* 필요시 payload */));
+        if (key === 'fit' || key === 'zoom-fit') {
+            dispatch(fit());
             dispatch(setCursor(c));
             return;
         }
 
         // ───────── 파일 ─────────
-        if (key === 'new' || key === 'file-new') {
-            // 새 탭 새 문서
+        if (key === 'new') {
             window.open('/edit/new', '_blank', 'noopener');
             dispatch(setCursor(c));
             return;
         }
-        if (key === 'save' || key === 'file-save') {
-            // 이름 저장 모달
+        if (key === 'save') {
             dispatch(openSaveModal());
             dispatch(setCursor(c));
             return;
         }
         if (key === 'quick-save') {
-            // 바로 저장(thunk saveDoc)
             dispatch(saveDoc());
             dispatch(setCursor(c));
             return;
         }
-        if (key === 'open' || key === 'export' || key === 'file-open') {
-            // 불러오기 모달(리스트 갱신 후 오픈)
+        if (key === 'open' || key === 'export') {
             dispatch(fetchDrawings()).finally(() => {
                 dispatch(openLoadModal());
                 dispatch(setCursor(c));
@@ -152,9 +174,14 @@ export const makeDispatchCommand = (
             return;
         }
 
-        // ───────── 트랜스폼 (미들웨어가 setTool payload 해석) ─────────
-        if (key === 'rotate') {
+        // ───────── 트랜스폼 (미들웨어 해석) ─────────
+        if (key === 'rotate-90') {
             dispatch(setTool({ type: 'rotate', deg: 90 }));
+            dispatch(setCursor(c));
+            return;
+        }
+        if (key === 'rotate-180') {
+            dispatch(setTool({ type: 'rotate', deg: 180 }));
             dispatch(setCursor(c));
             return;
         }

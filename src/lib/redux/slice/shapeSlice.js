@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { REDUCER_NAME } from '../constant/name';
-import { DEFAULT } from '../constant/default';
+import { DEFAULT } from '../constant/initial';
 import {
     calcBBox,
     endpointsToLine,
@@ -225,72 +225,96 @@ const shapeSlice = createSlice({
         },
 
         /* --------------------------------- 변형들 --------------------------------- */
-
+        // (A) 이동: 항상 새 배열/새 객체
         translateShapes: (state, { payload }) => {
-            const ids = ensureArray(payload.ids);
-            for (const it of state.list) {
-                if (!ids.includes(it.id)) continue;
+            const ids = new Set(
+                Array.isArray(payload.ids) ? payload.ids : [payload.ids]
+            );
+            state.list = state.list.map((s) => {
+                if (!ids.has(s.id)) return s;
+                let next = { ...s };
 
                 if (
-                    it.type === 'polyline' ||
-                    it.type === 'polygon' ||
-                    it.type === 'path'
+                    next.type === 'polyline' ||
+                    next.type === 'polygon' ||
+                    next.type === 'path'
                 ) {
-                    const pts = it.data?.points || [];
+                    const pts = [...(next.data?.points || [])];
                     for (let i = 0; i < pts.length; i += 2) {
                         pts[i] += payload.dx;
                         pts[i + 1] += payload.dy;
                     }
-                    it.data.points = pts;
+                    next = {
+                        ...next,
+                        data: { ...(next.data || {}), points: pts },
+                    };
                 } else {
-                    it.x += payload.dx;
-                    it.y += payload.dy;
+                    next = {
+                        ...next,
+                        x: next.x + payload.dx,
+                        y: next.y + payload.dy,
+                    };
                 }
-                it.bbox = calcBBox(it);
-            }
+
+                next.bbox = calcBBox(next);
+                return next;
+            });
         },
 
+        // (B) 스케일: 항상 새 배열/새 객체
         scaleShapes: (state, { payload }) => {
-            const ids = ensureArray(payload.ids);
+            const ids = new Set(
+                Array.isArray(payload.ids) ? payload.ids : [payload.ids]
+            );
             const ox = payload.origin?.x ?? null;
             const oy = payload.origin?.y ?? null;
             const sx = Number(payload.sx ?? 1);
             const sy = Number(payload.sy ?? 1);
-
             const scalePt = (x, y) =>
                 ox != null && oy != null
                     ? [ox + (x - ox) * sx, oy + (y - oy) * sy]
                     : [x * sx, y * sy];
 
-            for (const it of state.list) {
-                if (!ids.includes(it.id)) continue;
+            state.list = state.list.map((s) => {
+                if (!ids.has(s.id)) return s;
+                let next = { ...s };
 
                 if (
-                    it.type === 'polyline' ||
-                    it.type === 'polygon' ||
-                    it.type === 'path'
+                    next.type === 'polyline' ||
+                    next.type === 'polygon' ||
+                    next.type === 'path'
                 ) {
-                    const pts = it.data?.points || [];
+                    const pts = [...(next.data?.points || [])];
                     for (let i = 0; i < pts.length; i += 2) {
                         const [nx, ny] = scalePt(pts[i], pts[i + 1]);
                         pts[i] = nx;
                         pts[i + 1] = ny;
                     }
-                    it.data.points = pts;
+                    next = {
+                        ...next,
+                        data: { ...(next.data || {}), points: pts },
+                    };
                 } else {
-                    if (ox != null && oy != null) {
-                        const [nx, ny] = scalePt(it.x, it.y);
-                        it.x = nx;
-                        it.y = ny;
-                    } else {
-                        it.x *= sx;
-                        it.y *= sy;
+                    let nx = next.x,
+                        ny = next.y;
+                    if (ox != null && oy != null)
+                        [nx, ny] = scalePt(next.x, next.y);
+                    else {
+                        nx = next.x * sx;
+                        ny = next.y * sy;
                     }
-                    it.w *= sx;
-                    it.h *= sy;
+                    next = {
+                        ...next,
+                        x: nx,
+                        y: ny,
+                        w: next.w * sx,
+                        h: next.h * sy,
+                    };
                 }
-                it.bbox = calcBBox(it);
-            }
+
+                next.bbox = calcBBox(next);
+                return next;
+            });
         },
 
         rotateShapes: (state, { payload }) => {

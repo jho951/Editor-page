@@ -14,8 +14,6 @@ import {
     deletePolylineNode,
 } from '../slice/shapeSlice';
 
-import { setSelection, clearSelection } from '../slice/selectionSlice';
-
 export const HISTORY_UNDO = 'history/UNDO';
 export const HISTORY_REDO = 'history/REDO';
 export const historyUndo = () => ({ type: HISTORY_UNDO });
@@ -35,6 +33,4 @@ export const MUTATION_TYPES = new Set([
     updatePolylineNode.type,
     insertPolylineNode.type,
     deletePolylineNode.type,
-    setSelection.type,
-    clearSelection.type,
 ]);

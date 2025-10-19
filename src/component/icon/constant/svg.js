@@ -22,6 +22,7 @@ const ICONS = {
             { el: 'path', d: 'M10 4l6 6', stroke: '#fff', strokeWidth: 2 },
         ],
     },
+
     text: {
         vb: '0 0 24 24',
         g: [
@@ -443,6 +444,46 @@ const ICONS = {
                 fill: 'none',
             },
             { el: 'path', d: 'M20 20l-3.2-3.2', stroke: 'currentColor' },
+        ],
+    },
+    style: {
+        vb: '0 0 24 24',
+        g: [
+            {
+                el: 'path',
+                d: 'M5.5 13.5h6a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2z',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: 1.7,
+                strokeLinecap: 'round',
+                strokeLinejoin: 'round',
+            },
+
+            {
+                el: 'path',
+                d: 'M10.5 8.5h6a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2z',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: 1.7,
+                strokeLinecap: 'round',
+                strokeLinejoin: 'round',
+            },
+
+            {
+                el: 'path',
+                d: 'M15.5 3.5h5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2z',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: 1.7,
+                strokeLinecap: 'round',
+                strokeLinejoin: 'round',
+            },
+
+            {
+                el: 'path',
+                d: 'M18 9a1 1 0 1 1-2 0a1 1 0 0 1 2 0z',
+                fill: 'currentColor',
+            },
         ],
     },
 };

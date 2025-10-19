@@ -6,6 +6,17 @@
     --overlay-color: #808080;
     --active-color: #1b4da2;
 
+    --handle-size: 8px;
+    --marquee-dash: 6 4;
+
+    --overlay-guideline: rgba(var(--primary-color-rgb), 0.45); /* 가이드라인 */
+    --overlay-marquee-stroke: rgb(76, 139, 245); /* 점선 박스 */
+    --overlay-handle-fill: #ffffff; /* 핸들 내부 */
+    --overlay-handle-stroke: rgb(76, 139, 245); /* 핸들 테두리 */
+
+    /* 캔버스 기본 배경 (원하면 투명 가능) */
+    --canvas-bg: var(--background-color);
+
     --primary-color-rgb: 61, 133, 228;
     --border-color-rgb: 174, 168, 166;
     --background-color-rgb: 245, 245, 245;
@@ -33,10 +44,14 @@
 }
 
 html {
+    height: 100%;
+    min-height: 0;
     font-size: 62.5%;
 }
 
 body {
+    height: 100%;
+    min-height: 0;
     font-family:
         -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
         'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -49,14 +64,143 @@ body {
 
 main {
     width: 100%;
-    min-height: 100vh;
+    min-height: 0;
     position: relative;
-    background-color: rgba(var(--overlay-color-rgb), 0.3);
-    z-index: var(--z-index);
 }
 
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
+}
+
+html,
+body,
+#root,
+main {
+    height: 100%;
+    min-height: 0; /* 스크롤 컨테이너에서 1px 붕괴 방지 */
+}
+
+/* 페이지 래퍼가 있다면(예: .page/.app/.main), 남은 높이 채우기 */
+.page,
+.app,
+.main {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ───────────────── 캔버스 스테이지 래퍼 ───────────────── */
+/* 이 요소에 CanvasStage 컴포넌트를 렌더링하세요 */
+.canvas-stage-wrap {
+    isolation: isolate;
+    position: relative;
+    flex: 1 1 auto; /* 남은 높이 채움 */
+    min-height: 320px; /* 안전 최소 높이 */
+    background: var(--canvas-bg);
+    overflow: hidden;
+}
+
+.canvas-stage-wrap,
+.layer-overlay {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* ───────────────── 레이어 고정 규칙 ───────────────── */
+.layer-vector,
+.layer-hitmap,
+.layer-overlay {
+    position: absolute;
+    inset: 0;
+}
+.layer-overlay,
+.layer-hitmap {
+    touch-action: none;
+}
+
+/* 4) (옵션) 부모 높이가 불명확할 때 즉시 전체 화면 채우는 헬퍼 */
+.fill-viewport {
+    height: 100dvh; /* 확실히 한 화면 꽉 채우기 */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 5) (옵션) 렌더 품질/성능 힌트 */
+.layer-hitmap {
+    image-rendering: pixelated; /* 픽 버퍼 읽기 정확도 ↑ */
+}
+.layer-vector,
+.layer-overlay {
+    /* 필요 시 하드웨어 레이어 격리 */
+    will-change: transform;
+}
+
+/* 벡터: 렌더 전용, 이벤트 없음 */
+.layer-vector {
+    z-index: calc(var(--z-index) + 0);
+    pointer-events: none;
+}
+
+/* 히트맵: 비가시 + 이벤트 없음 */
+.layer-hitmap {
+    z-index: calc(var(--z-index) + 1);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* 오버레이: 상호작용 전담 */
+.layer-overlay {
+    z-index: calc(var(--z-index) + 2);
+    pointer-events: auto;
+}
+
+/* ───────────────── 캔버스 기본 스타일 ───────────────── */
+canvas {
+    display: block;
+    background: transparent;
+}
+
+/* 숫자 인풋 스핀 제거 (기존 유지) */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.canvas-stage-wrap {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-height: 320px;
+}
+.layer-vector,
+.layer-hitmap,
+.layer-overlay {
+    position: absolute;
+    inset: 0;
+    display: block;
+}
+.layer-vector {
+    z-index: 100;
+    pointer-events: none;
+}
+.layer-hitmap {
+    z-index: 101;
+    opacity: 0;
+    pointer-events: none;
+    image-rendering: pixelated;
+}
+.layer-overlay {
+    z-index: 102;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+}
+.fill-viewport {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
 }

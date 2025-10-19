@@ -1,14 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
-
-const initialState = {
-    tool: 'select',
-    draft: { stroke: '#333', fill: null, strokeWidth: 1 },
-    cursor: 'default',
-};
+import { REDUCER_NAME } from '../constant/name';
+import { DEFAULT } from '../constant/initial';
 
 const toolSlice = createSlice({
-    name: 'tools',
-    initialState,
+    name: REDUCER_NAME.TOOL,
+    initialState: DEFAULT.TOOL,
     reducers: {
         setTool: (state, { payload }) => {
             state.tool = payload;
@@ -19,7 +15,7 @@ const toolSlice = createSlice({
         setCursor: (state, { payload }) => {
             state.cursor = payload ?? 'default';
         },
-        resetTool: () => initialState,
+        resetTool: () => DEFAULT.TOOL,
 
         setStroke: (state, { payload }) => {
             state.draft = { ...state.draft, stroke: payload };

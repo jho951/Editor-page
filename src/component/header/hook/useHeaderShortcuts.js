@@ -1,18 +1,7 @@
 import { useEffect } from 'react';
 import { eventToCombo, isTypingTarget } from '../util/keymap';
 
-import { setTool } from '../../../lib/redux/slice/toolSlice';
-import {
-    zoomIn,
-    zoomOut,
-    resetZoom,
-} from '../../../lib/redux/slice/viewportSlice';
-import {
-    historyUndo,
-    historyRedo,
-} from '../../../lib/redux/middleware/historyDocMiddleware';
-
-function useHeaderShortcuts({ dispatch, onFileAction }) {
+function useHeaderShortcuts({ dispatchCommand }) {
     useEffect(() => {
         function onKeyDown(e) {
             if (isTypingTarget(e.target)) {
@@ -30,22 +19,30 @@ function useHeaderShortcuts({ dispatch, onFileAction }) {
             const raw = eventToCombo(e);
             const combo = raw === 'Mod+Shift+=' ? 'Mod+Plus' : raw;
 
-            // 파일
-            if (combo === 'Mod+N')
-                return (e.preventDefault(), onFileAction('new'));
-            if (combo === 'Mod+S')
-                return (e.preventDefault(), onFileAction('save'));
-            if (combo === 'Mod+O')
-                return (e.preventDefault(), onFileAction('export'));
+            if (combo === 'Mod+N') {
+                e.preventDefault();
+                return dispatchCommand('new');
+            }
+            if (combo === 'Mod+S') {
+                e.preventDefault();
+                return dispatchCommand('save');
+            }
+            if (combo === 'Mod+O') {
+                e.preventDefault();
+                return dispatchCommand('open');
+            }
 
-            // 히스토리
-            if (combo === 'Mod+Z')
-                return (e.preventDefault(), dispatch(historyUndo()));
-            if (combo === 'Mod+Y' || combo === 'Mod+Shift+Z')
-                return (e.preventDefault(), dispatch(historyRedo()));
+            if (combo === 'Mod+Z') {
+                e.preventDefault();
+                return dispatchCommand('undo');
+            }
+            if (combo === 'Mod+Y' || combo === 'Mod+Shift+Z') {
+                e.preventDefault();
+                return dispatchCommand('redo');
+            }
 
-            // 도구/도형
-            const toolKey =
+            // ── 툴/도형 ──
+            const featureKey =
                 combo === 'V'
                     ? 'select'
                     : combo === 'T'
@@ -63,20 +60,28 @@ function useHeaderShortcuts({ dispatch, onFileAction }) {
                                 : combo === 'S'
                                   ? 'star'
                                   : null;
-            if (toolKey)
-                return (e.preventDefault(), dispatch(setTool(toolKey)));
+            if (featureKey) {
+                e.preventDefault();
+                return dispatchCommand(featureKey);
+            }
 
-            if (combo === 'Mod+=' || combo === 'Mod+Plus')
-                return (e.preventDefault(), dispatch(zoomIn()));
-            if (combo === 'Mod+-')
-                return (e.preventDefault(), dispatch(zoomOut()));
-            if (combo === 'Mod+0')
-                return (e.preventDefault(), dispatch(resetZoom()));
+            if (combo === 'Mod+=' || combo === 'Mod+Plus') {
+                e.preventDefault();
+                return dispatchCommand('in');
+            }
+            if (combo === 'Mod+-') {
+                e.preventDefault();
+                return dispatchCommand('out');
+            }
+            if (combo === 'Mod+0') {
+                e.preventDefault();
+                return dispatchCommand('fit');
+            }
         }
 
         window.addEventListener('keydown', onKeyDown, { capture: true });
         return () =>
             window.removeEventListener('keydown', onKeyDown, { capture: true });
-    }, [dispatch, onFileAction]);
+    }, [dispatchCommand]);
 }
 export { useHeaderShortcuts };

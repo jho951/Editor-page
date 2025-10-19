@@ -1,92 +1,55 @@
-import { useRef, useEffect, useState } from 'react';
-import { ToolBtn } from '../../button/implementation/ToolBtn';
-import { SafeTrigger } from '../util/variant';
-
+import { useRef } from 'react';
+import { IconBtn } from '../../button/implementation/IconBtn';
 import styles from '../style/DropDown.module.css';
 
-export function DropDown({
-    Trigger = ToolBtn,
-    triggerProps = {},
+function DropDown({
     items = [],
-    selectedKey = null,
     onSelect,
-    classNames = {},
+    selectedKey = null,
+    open,
+    side = 'right',
+    anchorRect,
+    content = null,
 }) {
-    const [open, setOpen] = useState(false);
-    const wrapRef = useRef(null);
-    const triggerRef = useRef(null);
+    const positionStyle = {};
+    const menuRef = useRef(null);
+    if (!open) return null;
 
-    useEffect(() => {
-        const onDoc = (e) => {
-            if (!wrapRef.current) return;
-            if (!wrapRef.current.contains(e.target)) setOpen(false);
-        };
-        document.addEventListener('mousedown', onDoc);
-        return () => document.removeEventListener('mousedown', onDoc);
-    }, []);
-
-    const mergedTriggerProps = {
-        ...triggerProps,
-        onClick: (e) => {
-            triggerProps?.onClick?.(e);
-            setOpen((v) => !v);
-        },
-    };
-
-    const handleSelect = (key) => {
-        onSelect?.(key);
-        setOpen(false);
-    };
+    if (anchorRect) {
+        if (side === 'right') {
+            positionStyle.left = anchorRect.right + 4;
+            positionStyle.top = anchorRect.top;
+        } else if (side === 'bottom') {
+            positionStyle.top = anchorRect.bottom + 4;
+            positionStyle.left = anchorRect.left;
+        }
+    }
 
     return (
-        <div className={classNames.wrap || styles.wrap} ref={wrapRef}>
-            <SafeTrigger
-                ref={triggerRef}
-                Trigger={Trigger}
-                triggerProps={mergedTriggerProps}
-                className={mergedTriggerProps.className}
-            />
+        <div
+            ref={menuRef}
+            role="menu"
+            className={styles.menu}
+            style={positionStyle}
+        >
+            {content ||
+                items.map((it) => {
+                    const checked = selectedKey && selectedKey === it.key;
 
-            {open && (
-                <div className={classNames.panel || styles.panel}>
-                    {items.map((it) => {
-                        const active = selectedKey === it.key;
-                        return (
-                            <button
-                                key={it.key}
-                                type="button"
-                                className={`${classNames.item || styles.item} ${
-                                    active
-                                        ? classNames.checked || styles.checked
-                                        : ''
-                                }`}
-                                onClick={() => handleSelect(it.key)}
-                                title={
-                                    it.shortcutLabel
-                                        ? `${it.label} (${it.shortcutLabel})`
-                                        : it.label
-                                }
-                            >
-                                {!!it.icon && (
-                                    <span
-                                        className={
-                                            classNames.icon || styles.icon
-                                        }
-                                    >
-                                        {it.icon}
-                                    </span>
-                                )}
-                                <span className={styles.label}>{it.label}</span>
-                                {it.shortcutLabel && (
-                                    <span className={styles.kbd}>
-                                        {it.shortcutLabel}
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
+                    return (
+                        <IconBtn
+                            key={it.key}
+                            className={`${styles.item || ''} ${checked ? styles.checked || '' : ''}`}
+                            onClick={() => onSelect?.(it.key)}
+                        >
+                            {it.icon}
+                            <span>{it.label}</span>
+                            {it.shortcutLabel && <kbd>{it.shortcutLabel}</kbd>}
+                        </IconBtn>
+                    );
+                })}
         </div>
     );
 }
+
+export { DropDown };

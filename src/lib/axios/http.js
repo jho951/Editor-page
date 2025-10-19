@@ -1,11 +1,13 @@
+/**
+ * @file http.js
+ * @author YJH
+ */
 import axios from 'axios';
 import { getAuthToken } from './token';
 
 /**
- * @file lib/http.js
- * @author YJH
- * @description Axios HTTP 클라이언트 설정
  * @module lib/http
+ * @description Axios HTTP 클라이언트 설정
  * @returns {AxiosInstance} 설정된 Axios 인스턴스
  */
 const http = axios.create({
@@ -16,7 +18,7 @@ const http = axios.create({
 });
 
 /**
- * 요청 인터셉터 - Authorization 헤더 자동 포함
+ * @description Authorization 헤더 자동 포함
  * @param {object} config - Axios 요청 설정 객체
  * @returns {object} 수정된 요청 설정 객체
  */

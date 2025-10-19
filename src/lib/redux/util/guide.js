@@ -1,32 +1,13 @@
+// guide.js
 import { deepClone } from './parse';
 
-/**
- * @file guide.js
- * @author YJH
- * @description 양수인 경우 숫자 반환, 그 외의 경우 fallback 반환하며 경고 로그를 남김
- * @param {number|string} n - 확인할 값
- * @param {number} fallback - 유효하지 않을 때 반환할 값
- * @returns {number} - 유효한 양수 또는 fallback 값
- */
 const coerceSize = (n, fallback) => {
     const v = Number(n);
-    if (Number.isFinite(v) && v > 0) {
-        return v;
-    } else {
-        console.warn(
-            `숫자 오류: '${n}' (변환할 값: ${v}). 오류로 인해 반환할 값: ${fallback}`
-        );
-        return fallback;
-    }
+    if (Number.isFinite(v) && v > 0) return v;
+    console.warn(`숫자 오류: '${n}' (변환: ${v}). fallback: ${fallback}`);
+    return fallback;
 };
 
-/**
- * @file safeParseVectorJson.js
- * @author YJH
- * @description vectorJson 안전 파서 (문자열/객체 대응)
- * @param {string|object} v - vectorJson (문자열 또는 객체)
- * @returns {object|null} 파싱된 객체 또는 null
- */
 const safeParseVectorJson = (v) => {
     if (!v) return null;
     if (typeof v === 'object') return v;
@@ -37,68 +18,50 @@ const safeParseVectorJson = (v) => {
     }
 };
 
+/** 현재 리덕스 상태로부터 벡터 스냅샷 구성 */
 function makeVectorSnapshot(getState) {
-    const { vector } = getState().doc; // 네 상태 구조에 맞춰 수정
-    const { width, height, shapes, order, styleIndex } = vector;
+    const s = getState();
     return {
         kind: 'vector',
-        width,
-        height,
-        shapes: deepClone(shapes),
-        order: order ? [...order] : undefined,
-        styleIndex: styleIndex ? deepClone(styleIndex) : undefined,
+        canvas: {
+            width: s?.canvas?.width ?? 0,
+            height: s?.canvas?.height ?? 0,
+            background: s?.canvas?.background ?? null,
+            grid: s?.canvas?.grid ?? null,
+        },
+        shapes: deepClone(s?.shape?.list ?? []),
     };
 }
 
+/** viewport 스냅샷 */
 function makeViewportSnapshot(getState) {
-    const { viewport } = getState();
-    const { zoom, pan, fitMode } = viewport;
+    const vp = getState()?.viewport ?? {};
     return {
         kind: 'viewport',
-        zoom,
-        pan: { x: pan.x, y: pan.y },
-        fitMode: fitMode ?? null,
+        zoom: vp.zoom ?? 1,
+        pan: { x: vp.pan?.x ?? 0, y: vp.pan?.y ?? 0 },
+        rotation: vp.rotation ?? 0,
+        fitMode: vp.fitMode ?? null,
     };
 }
 
-/**
- * @file clamp.js
- * @author YJH
- * @description 값을 a와 b 사이로 제한
- * @param {number} v - 제한할 값
- * @param {number} a - 최소값
- * @param {number} b - 최대값
- * @returns {number} 제한된 값
- */
 function clamp(v, a, b) {
-    if (v < a) {
-        console.log(`제한할 값 (v: ${v})이 최소값 (a: ${a})보다 작습니다.`);
-    }
-    if (v > b) {
-        console.log(`제한할 값 (v: ${v})이 최대값 (b: ${b})보다 큽니다.`);
-    }
+    if (v < a) console.warn(`clamp: v(${v}) < a(${a})`);
+    if (v > b) console.warn(`clamp: v(${v}) > b(${b})`);
     return Math.max(a, Math.min(b, v));
 }
 
-/**
- * @description
- *
- *
- */
 function ensureArray(v) {
     return Array.isArray(v) ? v : v ? [v] : [];
 }
 
-/**
- * @description
- */
 function primaryId() {
-    return globalThis.crypto?.randomUUID?.();
+    return (
+        globalThis.crypto?.randomUUID?.() ||
+        `id_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+    );
 }
 
-/**
- *
- */
 function getId(payload) {
     if (Array.isArray(payload)) return payload;
     if (Array.isArray(payload?.ids)) return payload.ids;

@@ -1,109 +1,23 @@
 .header {
-    width: 100%;
-    position: fixed;
-    top: var(--default-figure);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    padding: var(--default-figure);
-    background:
-        radial-gradient(
-            60% 80% at 15% 10%,
-            rgba(255, 255, 255, 0.18) 0%,
-            rgba(255, 255, 255, 0) 60%
-        ),
-        radial-gradient(
-            70% 90% at 85% 20%,
-            rgba(255, 255, 255, 0.1) 0%,
-            rgba(255, 255, 255, 0) 55%
-        ),
-        linear-gradient(
-            135deg,
-            #cfd5da 0%,
-            #babfcb 22%,
-            #a7a2c1 48%,
-            #7d8899 72%,
-            #5e6b77 100%
-        );
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    color: var(--background-color);
-    backdrop-filter: saturate(140%) blur(8px);
-    box-shadow: var(--box-shadow);
-    z-index: calc(var(--z-index) + 5);
-}
-
-.left {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.center {
-    display: flex;
-    justify-content: center;
-}
-
-.right {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.navItem {
     position: relative;
-}
 
-.navButton {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    background: transparent;
-    cursor: pointer;
-}
-.navButton:hover {
-    border-color: #e5e7eb;
-    background: #f9fafb;
+    z-index: calc(var(--z-index) + 4);
 }
 
-/* DropDown에 전달하는 컨테이너 */
-.dropdownWrap {
-    position: relative;
-}
-
-/* ↓ 오른쪽으로 펼치기 (옆으로) */
-.dropdownRight {
+.leftRail {
     position: absolute;
-    top: 0;
-    left: 100%;
-    min-width: 220px;
-    padding: 8px;
-    border-radius: 12px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-    z-index: 1000;
+
+    display: flex;
+    flex-direction: column;
+
+    top: calc(var(--default-figure) + 1.5rem);
+    left: var(--default-figure);
+
+    gap: var(--default-figure);
 }
 
-/* 항목 */
 .menuItem {
-    display: grid;
-    grid-template-columns: 1fr auto; /* label | shortcut */
-    align-items: center;
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: transparent;
-    border: 0;
-    cursor: pointer;
-}
-.menuItem:hover {
-    background: #f3f4f6;
-}
-
-.checked {
-    background: #eef2ff;
+    font-size: 1.6rem;
 }

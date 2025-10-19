@@ -8,15 +8,13 @@ const Icon = memo(
             name,
             size = 18,
             stroke = 'currentColor',
-            fill = 'none',
+            fill = 'currentColor',
             strokeWidth = 1.5,
-            title,
             ...rest
         },
         ref
     ) {
         if (!ICONS[name]) return null;
-
         return (
             <svg
                 ref={ref}
@@ -25,7 +23,6 @@ const Icon = memo(
                 height={size}
                 {...rest}
             >
-                {title ? <title>{title}</title> : null}
                 {ICONS[name].g.map((n, i) =>
                     React.createElement(n.el, {
                         key: i,

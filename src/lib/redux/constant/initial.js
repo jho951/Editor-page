@@ -71,9 +71,10 @@ const VIEWPORT = {
  *  @property {selectionRect} pop 시 일시 저장
  *  @property {cursor} pop 시 일시 저장
  */
-const TOOL_DEFAULT = {
+const TOOL = {
     tool: 'select',
     draft: { stroke: '#111', fill: 'transparent', strokeWidth: 2 },
+    cursor: 'default',
 };
 
 /**
@@ -84,8 +85,9 @@ const EDIT = {
     targetId: null, // 편집 대상 도형 id
     hoverNode: null, // { index } | null
     draggingNode: null, // { index, start:{x,y} } | null
-    handle: null, // 'N'|'NE'|...|'ROTATE' | null  (transform)
-    origin: null, // {x,y}                          (transform)
+    handle: null, // 'N'|'NE'|...|'ROTATE' | null
+    origin: null, // {x,y}
+    marquee: null,
 };
 
 const RENDER = {
@@ -97,7 +99,7 @@ const RENDER = {
  * @property {ids}  현재 선택된 도형 하나의 id
  * @property {anchor} path 노드 선택 { id, index }
  */
-const SELCECTION = {
+const SELECTION = {
     id: null,
     anchor: null,
 };
@@ -111,7 +113,7 @@ export const DEFAULT = {
     HISTORY,
     RENDER,
     SHAPE,
-    SELCECTION,
-    TOOL_DEFAULT,
+    SELECTION,
+    TOOL,
     VIEWPORT,
 };

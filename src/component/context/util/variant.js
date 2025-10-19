@@ -23,4 +23,18 @@ const SafeTrigger = forwardRef(function SafeTrigger(
     );
 });
 
-export { isForwardRefComponent, SafeTrigger };
+const popRight = {
+    initial: { opacity: 0, transform: 'translateX(-6px)' },
+    animate: {
+        opacity: 1,
+        transform: 'translateX(0)',
+        transition: { duration: 0.14 },
+    },
+    exit: {
+        opacity: 0,
+        transform: 'translateX(-6px)',
+        transition: { duration: 0.12 },
+    },
+};
+
+export { isForwardRefComponent, SafeTrigger, popRight };

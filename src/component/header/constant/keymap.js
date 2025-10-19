@@ -1,31 +1,40 @@
 const FEATURE = {
+    // 파일
     'Mod+N': 'new',
     'Mod+S': 'save',
-    'Mod+O': 'export',
+    'Mod+Shift+S': 'quick-save',
+    'Mod+O': 'open',
 
+    // 도구
     V: 'select',
-    R: 'shape-rect',
-    O: 'shape-ellipse',
-    L: 'shape-line',
+    R: 'rect',
+    O: 'ellipse',
+    L: 'line',
     P: 'path',
     T: 'text',
-    S: 'shape-star',
-    G: 'shape-polygon',
+    S: 'star',
+    G: 'polygon',
 
-    'Mod+Plus': 'zoom-in',
-    'Mod+=': 'zoom-in',
-    'Mod+-': 'zoom-out',
+    // 줌 (키보드/레이아웃 차이 대응)
+    'Mod+Plus': 'in',
+    'Mod+=': 'in',
+    'Mod+Shift+Plus': 'in', // 🔸추가 (일부 키보드 + 가 Shift+=)
+    'Mod+-': 'out',
     'Mod+0': 'fit',
 
+    // 히스토리
     'Mod+Z': 'undo',
     'Mod+Shift+Z': 'redo',
     'Mod+Y': 'redo',
 
-    'Alt+R': 'rotate',
+    // 변형 (회전 세분화)
+    'Alt+R': 'rotate-90',
+    'Alt+Shift+R': 'rotate-180',
     'Shift+H': 'flipH',
     'Shift+V': 'flipV',
     'Shift+K': 'skew',
 
+    // 선택 이동(nudge)
     ArrowUp: 'nudge-up',
     ArrowDown: 'nudge-down',
     ArrowLeft: 'nudge-left',
@@ -35,9 +44,11 @@ const FEATURE = {
     'Shift+ArrowLeft': 'nudge10-left',
     'Shift+ArrowRight': 'nudge10-right',
 
+    // 편집 모드
     Enter: 'edit-enter',
     Escape: 'edit-exit',
     Delete: 'node-delete',
+    Backspace: 'node-delete', // 🔸추가(윈도우 노트북 등)
     Insert: 'node-insert',
 };
 

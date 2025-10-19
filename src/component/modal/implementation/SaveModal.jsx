@@ -1,7 +1,8 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { closeSaveModal } from '../../../lib/redux/slice/docSlice';
 import { saveDrawingByName } from '../../../lib/redux/util/async';
+import styles from '../style/Modal.module.css';
 
 function SaveModal() {
     const dispatch = useDispatch();
@@ -15,6 +16,16 @@ function SaveModal() {
         [items, title]
     );
 
+    // ESC 닫기
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e) => {
+            if (e.key === 'Escape') dispatch(closeSaveModal());
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [open, dispatch]);
+
     if (!open) return null;
 
     const onSave = async () => {
@@ -25,9 +36,8 @@ function SaveModal() {
         if (
             exists &&
             !window.confirm('동일한 제목이 있습니다. 계속 저장할까요?')
-        ) {
+        )
             return;
-        }
 
         try {
             await dispatch(saveDrawingByName(title)).unwrap();
@@ -39,48 +49,59 @@ function SaveModal() {
     };
 
     return (
-        <div className="modal-backdrop">
+        <div
+            className={styles.backdrop}
+            role="none"
+            onClick={() => dispatch(closeSaveModal())}
+        >
             <div
-                className="modal"
+                className={styles.modal}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="save-title"
+                onClick={(e) => e.stopPropagation()}
             >
-                <h3 id="save-title">저장</h3>
-
-                <input
-                    placeholder="제목 입력"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    style={{ width: '100%', marginBottom: 8 }}
-                />
-
-                <div
-                    style={{
-                        fontSize: 12,
-                        color: exists ? '#d00' : '#666',
-                        marginBottom: 8,
-                    }}
-                >
-                    {exists
-                        ? '같은 제목이 이미 있습니다.'
-                        : '새 문서로 저장됩니다.'}
+                <div className={styles.modalHeader}>
+                    <h3 id="save-title" className={styles.modalTitle}>
+                        새 문서로 저장됩니다.
+                    </h3>
+                    <button
+                        className={styles.closeBtn}
+                        onClick={() => dispatch(closeSaveModal())}
+                        aria-label="닫기"
+                        type="button"
+                    >
+                        ×
+                    </button>
                 </div>
 
-                <div
-                    style={{
-                        display: 'flex',
-                        gap: 8,
-                        justifyContent: 'flex-end',
-                    }}
-                >
+                <div className={styles.modalBody}>
+                    <input
+                        className={styles.input}
+                        placeholder="제목 입력"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                    />
+                    <div className={styles.helpText}>
+                        {exists && '같은 제목이 이미 있습니다.'}
+                    </div>
+                </div>
+
+                <div className={styles.modalFooter}>
                     <button
+                        className={styles.btn}
                         onClick={() => dispatch(closeSaveModal())}
                         disabled={loading}
+                        type="button"
                     >
                         취소
                     </button>
-                    <button onClick={onSave} disabled={loading}>
+                    <button
+                        className={`${styles.btn} ${styles.btnPrimary}`}
+                        onClick={onSave}
+                        disabled={loading}
+                        type="button"
+                    >
                         {loading ? '저장 중…' : '저장'}
                     </button>
                 </div>

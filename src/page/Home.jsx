@@ -1,21 +1,16 @@
-import EditorCanvas from '../component/dashboard/implementation/EditCanvas';
-import { Header } from '../component/header/implementation/Header';
+import CanvasStage from '../component/canvas/CanvasStage';
+import CanvasStageRobustRedux from '../component/canvas/Canvs';
+
+import ToolHeader from '../component/header/implementation/ToolHeader';
 
 function Home() {
     return (
-        <main>
-            <Header />
-            <div
-                style={{
-                    display: 'grid',
-                    placeItems: 'center',
-                    height: 'calc(100vh - 56px)',
-                    overflow: 'auto',
-                }}
-            >
-                <EditorCanvas key={'new'} />
-            </div>
-        </main>
+        <div className="page fill-viewport">
+            <ToolHeader />
+            <main style={{ flex: 1, minHeight: 0 }}>
+                <CanvasStageRobustRedux />
+            </main>
+        </div>
     );
 }
 

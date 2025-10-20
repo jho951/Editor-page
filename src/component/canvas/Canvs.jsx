@@ -22,9 +22,6 @@ import {
     setTool,
     selectView,
     setView,
-    zoomTo,
-    panBy,
-    resetView,
     selectCanvasBg,
 } from '../../lib/redux/slice/uiSlice';
 

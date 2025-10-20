@@ -1,5 +1,4 @@
 import CanvasStageRobustRedux from '../component/canvas/Canvs';
-import { Header } from '../component/header/implementation/Header';
 
 import ToolHeader from '../component/header/implementation/ToolHeader';
 

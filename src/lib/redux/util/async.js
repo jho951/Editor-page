@@ -1,25 +1,26 @@
-// lib/redux/util/async.js
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { hydrateFromDoc, takeSnapshot } from './serde';
+import { takeSnapshot } from './serde';
 import { setCurrentMeta, markClean } from '../slice/docSlice';
 
 import { drawings } from '../../../lib/axios/drawings';
+import { http } from '../../axios/http';
+import { parseVectorJson } from '../../../component/header/util/transform';
+import { setCanvasBg, setView } from '../slice/uiSlice';
+import { replaceAll } from '../slice/canvasSlice';
 
-/** 목록 불러오기 */
-export const fetchDrawings = createAsyncThunk(
+const fetchDrawings = createAsyncThunk(
     'doc/list',
     async (_, { rejectWithValue }) => {
         try {
-            const res = await drawings.list(1, 100);
-            // 서버 응답 형식에 맞게 items 추출
-            return Array.isArray(res?.items) ? res.items : res || [];
+            const res = await http.get('/drawings');
+            const data = res.data;
+            return Array.isArray(data) ? data.data : (data?.data ?? []);
         } catch (e) {
             return rejectWithValue(e?.message || 'list failed');
         }
     }
 );
 
-/** 항목 삭제 */
 export const deleteDrawing = createAsyncThunk(
     'doc/delete',
     async (id, { rejectWithValue, dispatch }) => {
@@ -34,31 +35,45 @@ export const deleteDrawing = createAsyncThunk(
     }
 );
 
-/** 문서 로드 */
 export const loadDrawingById = createAsyncThunk(
-    'doc/loadOne',
-    async (id, { rejectWithValue, dispatch }) => {
+    'doc/loadById',
+    async (id, { dispatch, rejectWithValue }) => {
         try {
-            const data = await drawings.get(id);
-            // 서버에서 { id, title, version, vectorJson } 형태라고 가정
-            const doc = data?.vectorJson || data?.doc || data;
-            await dispatch(hydrateFromDoc(doc));
+            const res = await http.get(`/drawings/${id}`);
+            const payload = res?.data?.data;
+            console.log(payload);
+            if (!payload) throw new Error('invalid response');
+
+            // 1) 메타 주입
             dispatch(
                 setCurrentMeta({
-                    id: data.id,
-                    title: data.title || '',
-                    version: data.version || 1,
+                    id: payload.id,
+                    title: payload.title || '',
+                    version: payload.version ?? null,
                 })
             );
-            dispatch(markClean());
-            return true;
-        } catch (e) {
-            return rejectWithValue(e?.message || 'load failed');
+
+            const { view, canvas, shapes } = parseVectorJson(
+                payload.vectorJson
+            );
+            dispatch(
+                setView({
+                    tx: Number(view.tx) || 0,
+                    ty: Number(view.ty) || 0,
+                    scale: Number(view.scale) || 1,
+                })
+            );
+            if (canvas?.background) dispatch(setCanvasBg(canvas.background));
+
+            dispatch(replaceAll({ shapes }));
+
+            return payload;
+        } catch (err) {
+            return rejectWithValue(err?.message || 'load failed');
         }
     }
 );
 
-/** 새 이름으로 저장(최초 저장) */
 export const saveDrawingByName = createAsyncThunk(
     'doc/saveNew',
     async (title, { getState, rejectWithValue, dispatch }) => {
@@ -109,3 +124,5 @@ export const saveCurrentDrawing = createAsyncThunk(
         }
     }
 );
+
+export { fetchDrawings };

@@ -1,23 +1,16 @@
 import { createSlice } from '@reduxjs/toolkit';
 import {
     fetchDrawings,
-    deleteDrawing,
     loadDrawingById,
     saveDrawingByName,
     saveCurrentDrawing,
 } from '../util/async';
-
-const initialState = {
-    items: [], // 목록
-    loading: false,
-    error: null,
-    ui: { loadOpen: false, saveOpen: false },
-    current: { id: null, title: '', version: null, dirty: false },
-};
+import { toArray } from '../util/guide';
+import { DOC_STATE } from '../constant/initial';
 
 const docSlice = createSlice({
     name: 'doc',
-    initialState,
+    initialState: DOC_STATE,
     reducers: {
         openLoadModal(state) {
             state.ui.loadOpen = true;
@@ -42,6 +35,7 @@ const docSlice = createSlice({
         markClean(state) {
             state.current.dirty = false;
         },
+
         setCurrentMeta(state, action) {
             const {
                 id = null,
@@ -55,54 +49,63 @@ const docSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        // 목록
+        // ─── 목록 ───────────────────────────────────────────────────────────
         builder.addCase(fetchDrawings.pending, (s) => {
             s.loading = true;
             s.error = null;
         });
         builder.addCase(fetchDrawings.fulfilled, (s, a) => {
             s.loading = false;
-            s.items = a.payload;
+            s.items = toArray(a.payload); // ✅ 항상 배열 보장
         });
         builder.addCase(fetchDrawings.rejected, (s, a) => {
             s.loading = false;
             s.error = a.payload || a.error?.message || 'list failed';
+            s.items = []; // ✅ 에러여도 배열 유지
         });
 
-        // 삭제는 thunk에서 목록 재로딩
-
-        // 로드
+        // ─── 단건 로드 ──────────────────────────────────────────────────────
         builder.addCase(loadDrawingById.pending, (s) => {
             s.loading = true;
             s.error = null;
         });
-        builder.addCase(loadDrawingById.fulfilled, (s) => {
-            s.loading = false;
+        builder.addCase(loadDrawingById.fulfilled, (state, { payload }) => {
+            state.loading = false;
+            const d = payload?.data || payload; // thunk 리턴 형태에 맞춰 유연 처리
+            state.current.id = d.id;
+            state.current.title = d.title;
+            state.current.width = d.width;
+            state.current.height = d.height;
+            state.current.version = d.version ?? 0;
+            state.current.vectorJson = d.vectorJson || null; // 👈 여기!
+            state.current.dirty = false;
         });
         builder.addCase(loadDrawingById.rejected, (s, a) => {
             s.loading = false;
             s.error = a.payload || a.error?.message || 'load failed';
         });
 
-        // 새로 저장
+        // ─── 새로 저장 ──────────────────────────────────────────────────────
         builder.addCase(saveDrawingByName.pending, (s) => {
             s.loading = true;
             s.error = null;
         });
-        builder.addCase(saveDrawingByName.fulfilled, (s) => {
+        builder.addCase(saveDrawingByName.fulfilled, (s /*, a */) => {
             s.loading = false;
+            // 필요하면 성공 응답으로 items 갱신 / current 갱신
+            // s.items = toArray(a.payload?.list);  // 서버 설계에 맞춰 사용
         });
         builder.addCase(saveDrawingByName.rejected, (s, a) => {
             s.loading = false;
             s.error = a.payload || a.error?.message || 'save failed';
         });
 
-        // 업데이트 저장
+        // ─── 업데이트 저장 ──────────────────────────────────────────────────
         builder.addCase(saveCurrentDrawing.pending, (s) => {
             s.loading = true;
             s.error = null;
         });
-        builder.addCase(saveCurrentDrawing.fulfilled, (s) => {
+        builder.addCase(saveCurrentDrawing.fulfilled, (s /*, a */) => {
             s.loading = false;
             s.current.dirty = false;
         });

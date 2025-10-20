@@ -1,15 +1,8 @@
 import { createSlice, createAction } from '@reduxjs/toolkit';
+import { CAMVAS_STATE } from '../constant/initial';
 export const updateShapeStyle = createAction('canvas/updateShapeStyle');
 
-const initialState = {
-    shapes: [],
-    focusId: null,
-    nextId: 1,
-    past: [], // ← undo 스택
-    future: [], // ← redo 스택
-};
-
-const MAX_HISTORY = 100;
+const MAX_HISTORY = 10;
 
 function cloneShapes(shapes) {
     return shapes.map((s) => ({
@@ -49,7 +42,7 @@ function snapshot(state) {
 }
 const canvasSlice = createSlice({
     name: 'canvas',
-    initialState,
+    initialState: CAMVAS_STATE,
     reducers: {
         historyStart(state) {
             state.past.push(snapshot(state));
@@ -161,10 +154,13 @@ const canvasSlice = createSlice({
             if (align != null) s.align = align;
             if (lineHeight != null) s.lineHeight = lineHeight;
         },
-        resetAll(state) {
-            state.shapes = [];
+        replaceAll(state, action) {
+            const shapes = action.payload?.shapes || [];
+            state.shapes = shapes;
+            // nextId 재계산 (id 최대값+1)
+            const maxId = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0);
+            state.nextId = Math.max(1, maxId + 1);
             state.focusId = null;
-            state.nextId = 1;
             state.past = [];
             state.future = [];
         },
@@ -204,6 +200,7 @@ export const {
     undo,
     redo,
     resetAll,
+    replaceAll,
 } = canvasSlice.actions;
 
 export const selectShapes = (s) => s.canvas.shapes;

@@ -11,6 +11,17 @@ function OpenModal() {
     const loading = useSelector((s) => s.doc?.loading);
     const error = useSelector((s) => s.doc?.error);
 
+    const openInNewTab = (it) =>
+        window.open(`/edit/${it.id}`, '_blank', 'noopener');
+
+    const onDelete = async (e, id) => {
+        e.stopPropagation();
+        if (!window.confirm('삭제하시겠습니까?')) return;
+        const res = await dispatch(deleteDrawing(id));
+        if (res.meta.requestStatus === 'fulfilled') dispatch(fetchDrawings());
+        else alert('삭제에 실패했습니다.');
+    };
+
     useEffect(() => {
         if (open) dispatch(fetchDrawings());
     }, [open, dispatch]);
@@ -25,17 +36,6 @@ function OpenModal() {
     }, [open, dispatch]);
 
     if (!open) return null;
-
-    const openInNewTab = (it) =>
-        window.open(`/edit/${it.id}`, '_blank', 'noopener');
-
-    const onDelete = async (e, id) => {
-        e.stopPropagation();
-        if (!window.confirm('삭제하시겠습니까?')) return;
-        const res = await dispatch(deleteDrawing(id));
-        if (res.meta.requestStatus === 'fulfilled') dispatch(fetchDrawings());
-        else alert('삭제에 실패했습니다.');
-    };
 
     return (
         <div

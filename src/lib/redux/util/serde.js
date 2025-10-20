@@ -1,5 +1,3 @@
-// Redux 상태 ↔ 서버 JSON 스냅샷/복원
-
 import {
     selectShapes,
     addShape,

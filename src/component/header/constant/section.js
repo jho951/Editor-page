@@ -10,6 +10,7 @@ const DROPDOWN_SECTION = [
         icon: getIcon('open', SECTION_SIZE),
         items: HEADER_ELEMENTS.FILE_ITEM,
     },
+    HEADER_ELEMENTS.DEFAULT_ITEM[0],
     {
         key: 'shape',
         label: '도형',

@@ -11,10 +11,12 @@ function SaveModal() {
     const loading = useSelector((s) => s.doc?.loading);
     const [title, setTitle] = useState('');
 
-    const exists = useMemo(
-        () => items.some((d) => (d.title || '').trim() === title.trim()),
-        [items, title]
-    );
+    const exists = useMemo(() => {
+        const norm = (s) => (s || '').trim().toLowerCase();
+        const t = norm(title);
+        if (!t) return false;
+        return Array.isArray(items) && items.some((d) => norm(d.title) === t);
+    }, [items, title]);
 
     // ESC 닫기
     useEffect(() => {
@@ -33,11 +35,14 @@ function SaveModal() {
             alert('제목을 입력하세요.');
             return;
         }
-        if (
-            exists &&
-            !window.confirm('동일한 제목이 있습니다. 계속 저장할까요?')
-        )
-            return;
+        <div
+            className={styles.helpText}
+            style={{ color: exists ? 'crimson' : '#6b7280' }}
+        >
+            {exists
+                ? '같은 제목이 이미 있습니다.'
+                : '새 문서 제목을 입력하세요.'}
+        </div>;
 
         try {
             await dispatch(saveDrawingByName(title)).unwrap();
@@ -96,10 +101,11 @@ function SaveModal() {
                     >
                         취소
                     </button>
+                    +{' '}
                     <button
                         className={`${styles.btn} ${styles.btnPrimary}`}
                         onClick={onSave}
-                        disabled={loading}
+                        disabled={loading || !title.trim() || exists}
                         type="button"
                     >
                         {loading ? '저장 중…' : '저장'}

@@ -1,77 +1,24 @@
-import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-
-import {
-    setTool,
-    setCanvasBg,
-    selectTool,
-    selectView,
-    setView,
-    selectCanvasBg,
-} from '../../../lib/redux/slice/uiSlice';
-
-import {
-    selectFocusId,
-    historyStart,
-    undo,
-    redo,
-    updateShapeStyle,
-} from '../../../lib/redux/slice/canvasSlice';
-
-import {
-    markDirty,
-    openLoadModal,
-    openSaveModal,
-} from '../../../lib/redux/slice/docSlice';
-import { saveCurrentDrawing } from '../../../lib/redux/util/async';
 import { OpenModal } from '../../modal/implementation/OpenModal';
 import { SaveModal } from '../../modal/implementation/SaveModal';
+import { useHeaderAction } from '../hook/useHeaderAction';
 
 export default function ToolHeader({ title, onTitleChange }) {
-    const dispatch = useDispatch();
-
-    const tool = useSelector(selectTool);
-    const view = useSelector(selectView);
-    const canvasBg = useSelector(selectCanvasBg);
-    const focusId = useSelector(selectFocusId);
-    const docMeta = useSelector((s) => s.doc.current);
-
-    const setZoom = useCallback(
-        (next) => {
-            const clamped = Math.min(8, Math.max(0.125, next));
-            dispatch(setView({ ...view, scale: clamped }));
-        },
-        [dispatch, view]
-    );
-
-    const nudgeZoom = (mul) => setZoom(view.scale * mul);
-
-    const onPickStroke = (e) => {
-        if (!focusId) return;
-        const val = e.target.value;
-        dispatch(historyStart());
-        dispatch(updateShapeStyle({ id: focusId, patch: { stroke: val } }));
-        dispatch(markDirty());
-    };
-    const onPickFill = (e) => {
-        if (!focusId) return;
-        const val = e.target.value;
-        dispatch(historyStart());
-        dispatch(updateShapeStyle({ id: focusId, patch: { fill: val } }));
-        dispatch(markDirty());
-    };
-    const onStrokeWidth = (e) => {
-        if (!focusId) return;
-        const n = Number(e.target.value) || 1;
-        dispatch(historyStart());
-        dispatch(updateShapeStyle({ id: focusId, patch: { strokeWidth: n } }));
-        dispatch(markDirty());
-    };
-    const onPickCanvasBg = (e) => {
-        const val = e.target.value;
-        dispatch(setCanvasBg(val));
-        dispatch(markDirty());
-    };
+    const {
+        tool,
+        view,
+        canvasBg,
+        setZoom,
+        nudgeZoom,
+        handleOpen,
+        handleSave,
+        handleUndo,
+        handleRedo,
+        handleSetTool,
+        onPickStroke,
+        onPickFill,
+        onStrokeWidth,
+        onPickCanvasBg,
+    } = useHeaderAction();
 
     return (
         <header
@@ -99,21 +46,14 @@ export default function ToolHeader({ title, onTitleChange }) {
 
             {/* 파일 */}
             <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={() => dispatch(openLoadModal())}>열기</button>
-                <button
-                    onClick={() => {
-                        if (!docMeta?.id) dispatch(openSaveModal());
-                        else dispatch(saveCurrentDrawing());
-                    }}
-                >
-                    저장
-                </button>
+                <button onClick={handleOpen}>열기</button>
+                <button onClick={handleSave}>저장</button>
             </div>
 
             {/* Undo / Redo */}
             <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
-                <button onClick={() => dispatch(undo())}>Undo</button>
-                <button onClick={() => dispatch(redo())}>Redo</button>
+                <button onClick={handleUndo}>Undo</button>
+                <button onClick={handleRedo}>Redo</button>
             </div>
 
             {/* 툴 선택 */}
@@ -130,7 +70,7 @@ export default function ToolHeader({ title, onTitleChange }) {
                 ].map(([name, label]) => (
                     <button
                         key={name}
-                        onClick={() => dispatch(setTool(name))}
+                        onClick={() => handleSetTool(name)}
                         style={{
                             fontWeight: tool === name ? 700 : 400,
                             borderColor:

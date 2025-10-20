@@ -12,17 +12,18 @@
 
     color: inherit;
 
-    padding: 0 1rem;
+    padding: 0 var(--default-figure);
 
-    gap: 8px;
-    cursor: pointer;
+    gap: var(--default-figure);
     transition:
         background 0.15s ease,
         border-color 0.15s ease,
         transform 0.05s ease,
         color 0.2s ease-in-out;
+    cursor: pointer;
     user-select: none;
 }
+
 .wrap:hover,
 .wrap:active,
 .active {

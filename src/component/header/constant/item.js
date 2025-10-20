@@ -3,6 +3,17 @@ import { displayShortcut } from '../util/keymap';
 
 const ITEM_SIZE = 26;
 
+const DEFAULT_ITEM = [
+    {
+        key: 'select',
+        label: '선택',
+        icon: getIcon('select', ITEM_SIZE),
+        shortcut: 'V',
+        shortcutLabel: displayShortcut('V'),
+        cursor: 'crosshair',
+    },
+];
+
 const FILE_ITEM = [
     {
         key: 'new',
@@ -181,6 +192,7 @@ const HISTORY_ITEM = [
 ];
 
 export const HEADER_ELEMENTS = {
+    DEFAULT_ITEM,
     ITEM_SIZE,
     FILE_ITEM,
     SHAPE_ITEM,

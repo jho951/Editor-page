@@ -1,18 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
-
-// tool: 'select' | 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'freedraw' | 'text'
-const initialState = {
-    tool: 'select',
-    polygonSides: 5,
-    starPoints: 5,
-    starInnerRatio: 0.5,
-    view: { scale: 1, tx: 0, ty: 0 },
-    canvasBg: '#f5f5f5',
-};
+import { UI_STATE } from '../constant/initial';
 
 const uiSlice = createSlice({
     name: 'ui',
-    initialState,
+    initialState: UI_STATE,
     reducers: {
         setTool(state, action) {
             state.tool = action.payload;

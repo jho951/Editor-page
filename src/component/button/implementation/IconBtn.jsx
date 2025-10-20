@@ -7,18 +7,12 @@ const IconBtn = forwardRef(function ToolBtn(
 ) {
     return (
         <button
-            ref={ref}
-            type="button"
             className={`${style.wrap} ${className || ''}`}
+            type="button"
             {...rest}
+            ref={ref}
         >
-            {icon ? (
-                <span
-                    className={`${style.btnIcon} ${active ? style.active : ''}`}
-                >
-                    {icon}
-                </span>
-            ) : null}
+            {icon && <span className={active ? style.active : ''}>{icon}</span>}
             {children}
         </button>
     );

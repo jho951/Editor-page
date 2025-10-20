@@ -1,23 +1,22 @@
-.header {
+.wrap {
     position: relative;
-
     display: flex;
     align-items: center;
-    z-index: calc(var(--z-index) + 4);
 }
 
-.leftRail {
+.container {
     position: absolute;
+    top: calc(var(--default-figure) + 1.5rem);
+    left: var(--default-figure);
 
     display: flex;
     flex-direction: column;
 
-    top: calc(var(--default-figure) + 1.5rem);
-    left: var(--default-figure);
+    background-color: var(--background-color);
+
+    font-size: 1.6rem;
 
     gap: var(--default-figure);
-}
 
-.menuItem {
-    font-size: 1.6rem;
+    z-index: calc(var(--z-index) + 4);
 }

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,6 +8,7 @@ import { loadDrawingById } from '../lib/redux/util/async';
 import ToolHeader from '../component/header/implementation/ToolHeader';
 import CanvasStageRobustRedux from '../component/canvas/Canvs';
 
+// pages/Edit.jsx (네 코드 그대로 사용 가능)
 function Edit() {
     const { id } = useParams();
     const dispatch = useDispatch();
@@ -27,7 +28,6 @@ function Edit() {
                 title={meta?.title}
                 onTitleChange={(t) => dispatch(setTitle(t))}
             />
-
             {loading ? (
                 <div style={{ padding: 16 }}>불러오는 중…</div>
             ) : (
@@ -43,4 +43,5 @@ function Edit() {
         </div>
     );
 }
+
 export default Edit;

@@ -6,7 +6,9 @@
     flex-direction: column;
 
     border: 1px solid transparent;
+
     border-radius: var(--default-figure);
+
     box-shadow: var(--box-shadow);
 
     background-color: var(--background-color);
@@ -14,12 +16,17 @@
     padding: var(--default-figure) 0.5rem;
     gap: var(--default-figure);
 
-    z-index: calc(var(--z-index) + 5);
+    z-index: calc(var(--z-index) + 4);
+}
+
+.right {
+    right: 10%;
 }
 
 .checked {
     color: var(--primary-color);
 }
+
 .item kbd {
     margin-left: auto;
     font-size: 1rem;

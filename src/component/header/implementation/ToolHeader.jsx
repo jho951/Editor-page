@@ -1,6 +1,7 @@
 import { OpenModal } from '../../modal/implementation/OpenModal';
 import { SaveModal } from '../../modal/implementation/SaveModal';
 import { useHeaderAction } from '../hook/useHeaderAction';
+import { useHeaderShortcuts } from '../hook/useHeaderShortcuts';
 
 export default function ToolHeader({ title, onTitleChange }) {
     const {
@@ -10,7 +11,7 @@ export default function ToolHeader({ title, onTitleChange }) {
         setZoom,
         nudgeZoom,
         handleOpen,
-        handleSave,
+        handleSave, // ✅ handleSave({ quick: true }) = 덮어쓰기, handleSave({ quick: false }) = 다른 이름으로 저장
         handleUndo,
         handleRedo,
         handleSetTool,
@@ -19,6 +20,56 @@ export default function ToolHeader({ title, onTitleChange }) {
         onStrokeWidth,
         onPickCanvasBg,
     } = useHeaderAction();
+
+    // 단축키 -> 명령 라우팅
+    const dispatchCommand = (command) => {
+        switch (command) {
+            // 파일
+            case 'new':
+                return handleOpen?.({ createNew: true });
+            case 'open':
+                return handleOpen?.();
+            case 'save':
+                // ✅ Mod+S -> 덮어쓰기
+                return handleSave?.({ quick: true });
+            case 'quick-save':
+                // ✅ Mod+Shift+S -> 다른 이름으로 저장
+                return handleSave?.({ quick: false });
+
+            // 히스토리
+            case 'undo':
+                return handleUndo?.();
+            case 'redo':
+                return handleRedo?.();
+
+            // 도구 (주의: P는 'path' 이지만 실제 버튼 키는 'freedraw')
+            case 'select':
+            case 'rect':
+            case 'ellipse':
+            case 'line':
+            case 'polygon':
+            case 'star':
+            case 'text':
+                return handleSetTool?.(command);
+            case 'path':
+                return handleSetTool?.('freedraw');
+
+            // 줌
+            case 'in':
+                return nudgeZoom?.(1.25);
+            case 'out':
+                return nudgeZoom?.(1 / 1.25);
+            case 'fit':
+                return setZoom?.(1);
+
+            // 그 외(핸들/넛지/편집모드)는 캔버스 쪽에서 처리
+            default:
+                return;
+        }
+    };
+
+    // 전역 단축키 연결
+    useHeaderShortcuts({ dispatchCommand });
 
     return (
         <header
@@ -47,7 +98,14 @@ export default function ToolHeader({ title, onTitleChange }) {
             {/* 파일 */}
             <div style={{ display: 'flex', gap: 6 }}>
                 <button onClick={handleOpen}>열기</button>
-                <button onClick={handleSave}>저장</button>
+                {/* ✅ 저장 = 덮어쓰기 */}
+                <button onClick={() => handleSave({ quick: true })}>
+                    저장
+                </button>
+                {/* ✅ 다른 이름으로 저장 = 새로 저장 */}
+                <button onClick={() => handleSave({ quick: false })}>
+                    다른 이름으로 저장
+                </button>
             </div>
 
             {/* Undo / Redo */}
@@ -138,6 +196,7 @@ export default function ToolHeader({ title, onTitleChange }) {
                 <button onClick={() => setZoom(0.5)}>50%</button>
                 <button onClick={() => setZoom(2)}>200%</button>
             </div>
+
             <OpenModal />
             <SaveModal />
         </header>

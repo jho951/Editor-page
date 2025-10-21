@@ -1,3 +1,11 @@
+/**
+ * 에디터 전역 단축키 맵(Feature/Handle)
+ * --------------------------------------------
+ * - FEATURE: 기능/도구/줌/히스토리/편집 등
+ * - HANDLE/HANDLE_KEYS/HANDLE_KEYMAP: 리사이즈/회전 핸들에 대한 키 바인딩
+ */
+
+/** @type {Record<string, string>} */
 const FEATURE = {
     // 파일
     'Mod+N': 'new',
@@ -10,15 +18,15 @@ const FEATURE = {
     R: 'rect',
     O: 'ellipse',
     L: 'line',
-    P: 'path',
+    P: 'path', // ToolHeader에서는 'freedraw'로 매핑해서 사용
     T: 'text',
     S: 'star',
     G: 'polygon',
 
-    // 줌 (키보드/레이아웃 차이 대응)
+    // 줌
     'Mod+Plus': 'in',
     'Mod+=': 'in',
-    'Mod+Shift+Plus': 'in', // 🔸추가 (일부 키보드 + 가 Shift+=)
+    'Mod+Shift+Plus': 'in',
     'Mod+-': 'out',
     'Mod+0': 'fit',
 
@@ -27,7 +35,7 @@ const FEATURE = {
     'Mod+Shift+Z': 'redo',
     'Mod+Y': 'redo',
 
-    // 변형 (회전 세분화)
+    // 변형
     'Alt+R': 'rotate-90',
     'Alt+Shift+R': 'rotate-180',
     'Shift+H': 'flipH',
@@ -48,7 +56,7 @@ const FEATURE = {
     Enter: 'edit-enter',
     Escape: 'edit-exit',
     Delete: 'node-delete',
-    Backspace: 'node-delete', // 🔸추가(윈도우 노트북 등)
+    Backspace: 'node-delete',
     Insert: 'node-insert',
 };
 
@@ -77,6 +85,7 @@ const HANDLE_KEYS = [
     HANDLE.ROTATE,
 ];
 
+/** @type {Record<string, number>} */
 const HANDLE_KEYMAP = {
     'Alt+1': HANDLE.N,
     'Alt+2': HANDLE.NE,

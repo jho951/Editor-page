@@ -36,8 +36,6 @@ import { useCanvasHotkeys } from '../hook/useCanvasHotkeys';
 import { useStageInteractions } from '../hook/useStageInteractions';
 
 function Canvas() {
-    const [editingId, setEditingId] = useState(null);
-
     const dispatch = useDispatch();
     const shapes = useSelector(selectShapes);
     const focusId = useSelector(selectFocusId);
@@ -48,15 +46,19 @@ function Canvas() {
     const canvasBg = useSelector(selectCanvasBg);
     const view = useSelector(selectView);
 
-    // DOM refs
     const wrapRef = useRef(null);
     const vecRef = useRef(null);
     const hitRef = useRef(null);
     const ovRef = useRef(null);
     const textRef = useRef(null);
 
-    // State mirrors in refs
+    const toolRef = useRef(tool);
+    const editingIdRef = useRef(null);
     const shapesRef = useRef(shapes);
+    const viewRef = useRef({ scale: 1, tx: 0, ty: 0 });
+
+    const [editingId, setEditingId] = useState(null);
+
     useEffect(() => {
         shapesRef.current = shapes;
     }, [shapes]);
@@ -64,13 +66,13 @@ function Canvas() {
     useEffect(() => {
         focusRef.current = focusId;
     }, [focusId]);
-    const viewRef = useRef({ scale: 1, tx: 0, ty: 0 });
+
     useEffect(() => {
         if (!view) return;
         viewRef.current = { ...viewRef.current, ...view };
         requestAnimationFrame(renderAllOnce);
     }, [view]);
-    const toolRef = useRef(tool);
+
     useEffect(() => {
         toolRef.current = tool;
     }, [tool, polygonSides, starPoints, starInnerRatio]);
@@ -80,7 +82,7 @@ function Canvas() {
     const { size } = useStableSize(wrapRef, { w: 640, h: 420 });
 
     // Keep editingId in a ref to sync with vector render skip
-    const editingIdRef = useRef(null);
+
     useEffect(() => {
         editingIdRef.current = editingId;
     }, [editingId]);

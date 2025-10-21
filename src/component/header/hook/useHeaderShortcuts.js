@@ -1,10 +1,23 @@
-import { useEffect } from 'react';
-import { eventToCombo, isTypingTarget } from '../util/keymap';
+/**
+ * 헤더 전역 단축키 훅
+ * --------------------------------------------
+ * - 파일/도구/줌/히스토리 등 "헤더 영역"에서 처리하는 명령을 전역 키다운으로 바인딩합니다.
+ * - 입력 중일 때(Mod+S/Mod+O/Mod+N 등만 예외적으로 preventDefault) 외에는 폼 타이핑을 방해하지 않습니다.
+ */
 
+import { useEffect } from 'react';
+
+import { KEYMAP } from '../constant/keymap.js';
+import { eventToCombo, isTypingTarget } from '../util/keymap.js';
+
+/**
+ * @param {{ dispatchCommand: DispatchCommand }} props
+ */
 function useHeaderShortcuts({ dispatchCommand }) {
     useEffect(() => {
         function onKeyDown(e) {
             if (isTypingTarget(e.target)) {
+                // 입력 중에도 저장/열기/새로 만들기 단축키는 브라우저 기본 동작을 막아줌
                 const comboInInput = eventToCombo(e);
                 if (
                     comboInInput === 'Mod+S' ||
@@ -16,66 +29,15 @@ function useHeaderShortcuts({ dispatchCommand }) {
                 return;
             }
 
+            // 콤보 표준화(+키 보정)
             const raw = eventToCombo(e);
             const combo = raw === 'Mod+Shift+=' ? 'Mod+Plus' : raw;
 
-            if (combo === 'Mod+N') {
+            // FEATURE 맵에서 곧바로 처리 가능하면 공통 처리
+            const feature = KEYMAP.FEATURE[combo];
+            if (feature) {
                 e.preventDefault();
-                return dispatchCommand('new');
-            }
-            if (combo === 'Mod+S') {
-                e.preventDefault();
-                return dispatchCommand('save');
-            }
-            if (combo === 'Mod+O') {
-                e.preventDefault();
-                return dispatchCommand('open');
-            }
-
-            if (combo === 'Mod+Z') {
-                e.preventDefault();
-                return dispatchCommand('undo');
-            }
-            if (combo === 'Mod+Y' || combo === 'Mod+Shift+Z') {
-                e.preventDefault();
-                return dispatchCommand('redo');
-            }
-
-            // ── 툴/도형 ──
-            const featureKey =
-                combo === 'V'
-                    ? 'select'
-                    : combo === 'T'
-                      ? 'text'
-                      : combo === 'P'
-                        ? 'path'
-                        : combo === 'R'
-                          ? 'rect'
-                          : combo === 'O'
-                            ? 'ellipse'
-                            : combo === 'L'
-                              ? 'line'
-                              : combo === 'G'
-                                ? 'polygon'
-                                : combo === 'S'
-                                  ? 'star'
-                                  : null;
-            if (featureKey) {
-                e.preventDefault();
-                return dispatchCommand(featureKey);
-            }
-
-            if (combo === 'Mod+=' || combo === 'Mod+Plus') {
-                e.preventDefault();
-                return dispatchCommand('in');
-            }
-            if (combo === 'Mod+-') {
-                e.preventDefault();
-                return dispatchCommand('out');
-            }
-            if (combo === 'Mod+0') {
-                e.preventDefault();
-                return dispatchCommand('fit');
+                return dispatchCommand(feature);
             }
         }
 
@@ -84,4 +46,5 @@ function useHeaderShortcuts({ dispatchCommand }) {
             window.removeEventListener('keydown', onKeyDown, { capture: true });
     }, [dispatchCommand]);
 }
+
 export { useHeaderShortcuts };

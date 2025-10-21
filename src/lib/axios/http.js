@@ -28,6 +28,13 @@ http.interceptors.request.use((config) => {
     return config;
 });
 
+// http.interceptors.request.use((config) => {
+//     const state = store.getState();
+//     const token = state?.auth?.accessToken;
+//     if (token) config.headers.Authorization = `Bearer ${token}`;
+//     return config;
+// });
+
 /**
  * 응답 인터셉터 - 에러 표준화
  * @param {object} res - Axios 응답 객체

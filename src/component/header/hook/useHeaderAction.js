@@ -19,7 +19,10 @@ import {
     openLoadModal,
     openSaveModal,
 } from '../../../lib/redux/slice/docSlice';
-import { saveCurrentDrawing } from '../../../lib/redux/util/async';
+import {
+    saveCurrentDrawing,
+    saveDrawingById,
+} from '../../../lib/redux/util/async';
 
 /**
  * ToolHeader 컴포넌트에서 사용되는 모든 Redux 기반 로직과 액션 핸들러를 캡슐화하는 커스텀 훅입니다.
@@ -31,7 +34,10 @@ function useHeaderAction() {
     const view = useSelector((s) => s.ui.view);
     const canvasBg = useSelector((s) => s.ui.canvasBg);
     const focusId = useSelector((s) => s.canvas.focusId);
-    const docMeta = useSelector((s) => s.doc.current);
+
+    const meta = useSelector((s) => s.doc?.current);
+    const loading = useSelector((s) => s.doc?.loading);
+
     // --- 줌 액션 ---
     const setZoom = useCallback(
         (next) => {
@@ -51,15 +57,6 @@ function useHeaderAction() {
     const handleOpen = useCallback(() => {
         dispatch(openLoadModal());
     }, [dispatch]);
-
-    const handleSave = useCallback(() => {
-        // 이미 저장된 문서(ID가 있는 경우)는 바로 저장하고, 아니면 SaveModal을 엽니다.
-        if (!docMeta?.id) {
-            dispatch(openSaveModal());
-        } else {
-            dispatch(saveCurrentDrawing());
-        }
-    }, [dispatch, docMeta?.id]);
 
     // --- Undo/Redo 액션 ---
     const handleUndo = useCallback(() => dispatch(undo()), [dispatch]);
@@ -117,13 +114,34 @@ function useHeaderAction() {
         [dispatch]
     );
 
+    const handleSave = async (opts = {}) => {
+        // Shift+Cmd+S 등으로 'quick: false'가 들어오면 Save As로 강제
+        if (opts.quick === false) {
+            return dispatch(openSaveModal()); // 새 문서로 저장
+        }
+
+        if (meta?.id) {
+            // ✅ 이미 열린 문서 → 덮어쓰기
+            try {
+                await dispatch(saveDrawingById(meta.id)).unwrap();
+                // 토스트/알림은 기호에 맞게
+                console.info('저장 완료(덮어쓰기).');
+            } catch (e) {
+                alert('저장 실패: ' + (e?.message || String(e)));
+            }
+        } else {
+            // 신규 문서 → Save As 모달
+            dispatch(openSaveModal());
+        }
+    };
+
     return {
         // State
         tool,
         view,
         canvasBg,
         focusId,
-        docMeta,
+        meta,
         // Actions
         setZoom,
         nudgeZoom,

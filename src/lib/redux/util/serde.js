@@ -11,14 +11,12 @@ import {
     selectView,
 } from '../slice/uiSlice';
 
-/** 현재 Redux 상태를 서버 저장용 JSON 스냅샷으로 변환 */
 export function takeSnapshot(rootState) {
     const shapes = selectShapes(rootState);
-    const bg = selectCanvasBg(rootState) || '#ffffff';
-    const view = selectView(rootState) || { scale: 1, tx: 0, ty: 0 };
+    const bg = selectCanvasBg(rootState);
+    const view = selectView(rootState);
 
     return {
-        // 여러분 서버 스키마에 맞춰 메타는 별도 필드에서 전달(여기선 vectorJson으로 감싸 보냄)
         canvas: { width: 1920, height: 1080, background: bg },
         view,
         layers: [

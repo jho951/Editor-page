@@ -14,19 +14,34 @@ import { api } from './method';
  * // 도면 생성
  * const res = await drawings.create({ title: 'New Drawing', vectorJson: {} });
  * // 도면 수정
- * const res = await drawings.update('drawingId', { title: 'Updated Title' });
+ * const res = await drawings.update({ title: 'Updated Title' });
  * // 도면 삭제
  * const res = await drawings.remove('drawingId');
  *
  * @returns {Promise} Axios Response Promise
  */
+// drawings.js (권장)
 const drawings = {
     list: (page = 1, size = 20) =>
         api.get(`/drawings?page=${page}&size=${size}`),
     get: (id) => api.get(`/drawings/${encodeURIComponent(id)}`),
     create: (body) => api.post('/drawings', body),
-    update: (id, body) => api.put(`/drawings/${encodeURIComponent(id)}`, body),
+
+    update: (body) => {
+        const id = body?.id;
+        if (!id) throw new Error('update body에 id가 없습니다.');
+        return api.put(`/drawings/${encodeURIComponent(id)}`, body);
+    },
+
+    softDelete: (id, body) =>
+        api.post(`/drawings/${encodeURIComponent(id)}/soft-delete`, body),
+
+    restore: (id, body) =>
+        api.post(`/drawings/${encodeURIComponent(id)}/restore`, body),
+
     remove: (id) => api.delete(`/drawings/${encodeURIComponent(id)}`),
 };
+
+export default drawings;
 
 export { drawings };

@@ -1,4 +1,4 @@
-import CanvasStageRobustRedux from '../component/canvas/Canvs';
+import { Canvas } from '../component/canvas/implementation/Canvas';
 
 import ToolHeader from '../component/header/implementation/ToolHeader';
 
@@ -7,7 +7,7 @@ function Home() {
         <div className="page fill-viewport">
             <ToolHeader />
             <main>
-                <CanvasStageRobustRedux />
+                <Canvas />
             </main>
         </div>
     );

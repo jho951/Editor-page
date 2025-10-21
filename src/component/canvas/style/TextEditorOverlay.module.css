@@ -1,0 +1,134 @@
+/* 테마 변수와 잘 섞이도록 보수적 기본값 + fallback */
+:root {
+    --overlay-editor-bg: color-mix(
+        in srgb,
+        var(--surface-overlay, #ffffff) 82%,
+        transparent
+    );
+    --overlay-editor-border: var(
+        --overlay-marquee-stroke,
+        rgba(76, 139, 245, 0.9)
+    );
+    --overlay-editor-shadow:
+        0 6px 24px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+    --overlay-editor-radius: 12px;
+    --overlay-editor-padding: 10px;
+    --overlay-editor-caret: var(--color-accent, #4c8bf5);
+    --overlay-editor-placeholder: color-mix(
+        in srgb,
+        var(--color-fg, #111) 40%,
+        transparent
+    );
+    --overlay-editor-selection-bg: color-mix(
+        in srgb,
+        var(--color-accent, #4c8bf5) 22%,
+        transparent
+    );
+    --overlay-editor-border-focus: var(--color-accent, #4c8bf5);
+}
+
+/* 다크모드 대응 (프로젝트 테마 방식에 맞춰 .dark 또는 data-theme 등으로 교체 가능) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --overlay-editor-bg: color-mix(
+            in srgb,
+            var(--surface-overlay, #1a1b1e) 86%,
+            transparent
+        );
+        --overlay-editor-shadow:
+            0 10px 28px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.3);
+        --overlay-editor-placeholder: color-mix(
+            in srgb,
+            var(--color-fg, #eaeaea) 40%,
+            transparent
+        );
+    }
+}
+
+.overlay {
+    position: absolute;
+    z-index: 10000;
+
+    /* 시각 */
+    background: var(--overlay-editor-bg);
+    border: 1px solid var(--overlay-editor-border);
+    border-radius: var(--overlay-editor-radius);
+    box-shadow: var(--overlay-editor-shadow);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+
+    /* 내부 여백/타이포 */
+    padding: var(--overlay-editor-padding);
+    margin: 0;
+
+    /* 입력 UX */
+    resize: none;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    outline: none;
+    caret-color: var(--overlay-editor-caret);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* 터치 UX */
+    touch-action: manipulation;
+
+    /* 최소 사이즈 - 너무 작아져서 포커스 링/핸들이 깨지는 것 방지 */
+    min-width: 32px;
+    min-height: 28px;
+
+    /* 부드러운 전환 */
+    transition:
+        border-color 120ms ease,
+        box-shadow 120ms ease,
+        background-color 120ms ease;
+}
+
+/* 포커스 상태: 선명한 포커스 링 (접근성) */
+.overlay:focus {
+    border-color: var(--overlay-editor-border-focus);
+    box-shadow:
+        0 0 0 2px
+            color-mix(
+                in srgb,
+                var(--overlay-editor-border-focus) 25%,
+                transparent
+            ),
+        var(--overlay-editor-shadow);
+}
+
+/* placeholder 톤다운 */
+.overlay::placeholder {
+    color: var(--overlay-editor-placeholder);
+}
+
+/* 텍스트 드래그 선택 색 */
+.overlay::selection {
+    background: var(--overlay-editor-selection-bg);
+}
+
+/* 스크롤바(웹킷) */
+.overlay::-webkit-scrollbar {
+    width: 10px;
+}
+.overlay::-webkit-scrollbar-track {
+    background: transparent;
+}
+.overlay::-webkit-scrollbar-thumb {
+    background: color-mix(
+        in srgb,
+        var(--overlay-editor-border) 35%,
+        transparent
+    );
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+.overlay::-webkit-scrollbar-thumb:hover {
+    background: color-mix(
+        in srgb,
+        var(--overlay-editor-border) 48%,
+        transparent
+    );
+}

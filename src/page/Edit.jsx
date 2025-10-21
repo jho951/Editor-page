@@ -6,9 +6,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setTitle } from '../lib/redux/slice/docSlice';
 import { loadDrawingById } from '../lib/redux/util/async';
 import ToolHeader from '../component/header/implementation/ToolHeader';
-import CanvasStageRobustRedux from '../component/canvas/Canvs';
 
-// pages/Edit.jsx (네 코드 그대로 사용 가능)
+import { Canvas } from '../component/canvas/implementation/Canvas';
+
 function Edit() {
     const { id } = useParams();
     const dispatch = useDispatch();
@@ -23,7 +23,7 @@ function Edit() {
     }, [id, dispatch]);
 
     return (
-        <div className="page app main" style={{ height: '100%' }}>
+        <div className="page fill-viewport">
             <ToolHeader
                 title={meta?.title}
                 onTitleChange={(t) => dispatch(setTitle(t))}
@@ -31,13 +31,8 @@ function Edit() {
             {loading ? (
                 <div style={{ padding: 16 }}>불러오는 중…</div>
             ) : (
-                <main style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-                    <div
-                        className="canvas-stage-wrap"
-                        style={{ flex: 1, minHeight: 0 }}
-                    >
-                        <CanvasStageRobustRedux />
-                    </div>
+                <main>
+                    <Canvas />
                 </main>
             )}
         </div>

@@ -85,8 +85,8 @@ function denormPath(pathUV, x, y, w, h) {
  * @param {{x: number, y: number}} B - 선분의 끝점입니다.
  * @returns {{d: number, t: number, H: {x: number, y: number}}}
  * d: 점 P에서 선분 AB까지의 최소 거리.
- * t: 선분 AB 위에서 P에 가장 가까운 점 H의 위치 매개변수 (A에서 B로 가는 선분의 비율: 0 <= t <= 1).
- * H: 선분 AB 위에서 P에 가장 가까운 점 (수선의 발).
+ * t: 선분 AB 위에서 P에 가장 가까운 점 H의 위치 매개변수
+ * H: 선분 AB 위에서 P에 가장 가까운 점
  */
 function distPointToSegment(P, A, B) {
     // A 또는 B가 없으면 무한대 거리를 반환합니다. H는 유효한 점을 따릅니다.
@@ -103,9 +103,8 @@ function distPointToSegment(P, A, B) {
     const vv = vx * vx + vy * vy;
 
     // 점 P에 가장 가까운 선분 상의 점 H를 찾기 위한 매개변수 t를 계산합니다.
-    // t = (w.v) / (v.v) 입니다.
-    // t는 0과 1 사이로 클램프(제한)됩니다.
-    // t=0은 가장 가까운 점이 A라는 의미, t=1은 B라는 의미입니다.
+    // t = (w.v) / (v.v) 로 0과 1 사이로 제한됩니다.
+    // t = 0은 가장 가까운 점이 A라는 의미, t = 1은 B라는 의미입니다.
     const t = vv === 0 ? 0 : Math.max(0, Math.min(1, (wx * vx + wy * vy) / vv));
 
     // 선분 상에서 P에 가장 가까운 점 H의 좌표를 계산합니다 (H = A + t * v).

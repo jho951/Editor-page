@@ -3,7 +3,7 @@ import { SaveModal } from '../../modal/implementation/SaveModal';
 import { useHeaderAction } from '../hook/useHeaderAction';
 import { useHeaderShortcuts } from '../hook/useHeaderShortcuts';
 
-function Header({ title, onTitleChange }) {
+function Header() {
     const {
         tool,
         view,
@@ -148,7 +148,7 @@ function Header({ title, onTitleChange }) {
                     />
                 </label>
                 <label
-                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: -4 }}
                 >
                     글자 크기
                     <input
@@ -158,6 +158,13 @@ function Header({ title, onTitleChange }) {
                         defaultValue={12}
                         onChange={onStrokeWidth}
                     />
+                </label>
+
+                <label
+                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                    글자 색
+                    <input type="color" onChange={onPickStroke} />
                 </label>
             </div>
 

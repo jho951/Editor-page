@@ -11,4 +11,24 @@ const idToRGB = (id) => ({
 });
 const rgbToId = (r, g, b) => ((r << 16) | (g << 8) | b) >>> 0;
 
-export { MAX_SCALE, MIN_CSS, MIN_SCALE, RETRY_FRAMES, DPR, idToRGB, rgbToId };
+/**
+ * Overlay 렌더링 상수: 스타일과 핸들 박스 크기 등을 한 군데에서 관리
+ */
+const OVERLAY = Object.freeze({
+    focusStroke: 'rgba(0, 0, 0, 0.1)',
+    focusFill: '#ffffff',
+    dash: [6, 4],
+    lineWidth: 1,
+    handleSize: 8, // CSS 픽셀 기준(뷰 스케일 적용 전 좌표계)
+});
+
+export {
+    MAX_SCALE,
+    MIN_CSS,
+    MIN_SCALE,
+    RETRY_FRAMES,
+    DPR,
+    idToRGB,
+    rgbToId,
+    OVERLAY,
+};

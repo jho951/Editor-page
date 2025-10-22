@@ -2,9 +2,8 @@
  * @file initial.js
  * @author YJH
  */
-/**
- * @proper
- */
+
+const DOC_NAME = 'doc';
 const DOC_STATE = {
     items: [],
     loading: false,
@@ -13,17 +12,20 @@ const DOC_STATE = {
     current: { id: null, title: '', version: null, dirty: false },
 };
 
+const CANVAS_NAME = 'canvas';
 const CAMVAS_STATE = {
     shapes: [],
     focusId: null,
     nextId: 1,
-    past: [], // ← undo 스택
-    future: [], // ← redo 스택
+    past: [],
+    future: [],
 };
 
 /**
  * @property{tool}  'select' | 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'freedraw' | 'text'
  */
+
+const UI_NAME = 'ui';
 const UI_STATE = {
     tool: 'select',
     polygonSides: 5,
@@ -33,4 +35,4 @@ const UI_STATE = {
     canvasBg: '#f5f5f5',
 };
 
-export { DOC_STATE, CAMVAS_STATE, UI_STATE };
+export { DOC_NAME, DOC_STATE, CANVAS_NAME, CAMVAS_STATE, UI_NAME, UI_STATE };

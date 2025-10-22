@@ -37,32 +37,34 @@ import { useStageInteractions } from '../hook/useStageInteractions';
 
 function Canvas() {
     const dispatch = useDispatch();
-    const shapes = useSelector(selectShapes);
-    const focusId = useSelector(selectFocusId);
-    const tool = useSelector(selectTool);
-    const polygonSides = useSelector(selectPoly);
-    const starPoints = useSelector(selectStarPts);
+    const view = useSelector((s) => s.ui.view);
+    const tool = useSelector((st) => st.ui.tool);
+    const shapes = useSelector((s) => s.canvas.shapes);
+    const focusId = useSelector((s) => s.canvas.focusId);
+    const canvasBg = useSelector((st) => st.ui.starPoints);
+    const starPoints = useSelector((st) => st.ui.starPoints);
+    const polygonSides = useSelector((s) => s.ui.polygonSides);
     const starInnerRatio = useSelector(selectStarRatio);
-    const canvasBg = useSelector(selectCanvasBg);
-    const view = useSelector(selectView);
 
-    const wrapRef = useRef(null);
+    const ovRef = useRef(null);
     const vecRef = useRef(null);
     const hitRef = useRef(null);
-    const ovRef = useRef(null);
     const textRef = useRef(null);
-
+    const wrapRef = useRef(null);
     const toolRef = useRef(tool);
-    const editingIdRef = useRef(null);
+    const focusRef = useRef(focusId);
     const shapesRef = useRef(shapes);
+    const editingIdRef = useRef(null);
     const viewRef = useRef({ scale: 1, tx: 0, ty: 0 });
 
     const [editingId, setEditingId] = useState(null);
 
+    const { size } = useStableSize(wrapRef, { w: 640, h: 420 });
+
     useEffect(() => {
         shapesRef.current = shapes;
     }, [shapes]);
-    const focusRef = useRef(focusId);
+
     useEffect(() => {
         focusRef.current = focusId;
     }, [focusId]);
@@ -78,19 +80,14 @@ function Canvas() {
     }, [tool, polygonSides, starPoints, starInnerRatio]);
     const editingRef = useRef(false);
 
-    // Size
-    const { size } = useStableSize(wrapRef, { w: 640, h: 420 });
-
-    // Keep editingId in a ref to sync with vector render skip
-
     useEffect(() => {
         editingIdRef.current = editingId;
     }, [editingId]);
+
     useEffect(() => {
         if (editingId != null && focusId !== editingId) endTextEdit(true);
-    }, [focusId]);
+    }, [editingId, endTextEdit, focusId]);
 
-    // Canvas pixels on size change
     useEffect(() => {
         const { w, h } = size;
         if (!vecRef.current || !hitRef.current || !ovRef.current) return;
@@ -104,7 +101,6 @@ function Canvas() {
         requestAnimationFrame(renderAllOnce);
     }, [size.w, size.h, size]);
 
-    // Renderers
     function renderAllOnce() {
         const vctx = vecRef.current?.getContext('2d');
         const hctx = hitRef.current?.getContext('2d');
@@ -136,6 +132,7 @@ function Canvas() {
         editingRef.current = true;
         requestAnimationFrame(renderAllOnce);
     }
+
     function endTextEdit(commit = true) {
         const id = editingIdRef.current ?? editingId;
         const val = textRef.current?.value ?? '';

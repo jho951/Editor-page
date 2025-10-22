@@ -101,7 +101,6 @@ function SaveModal() {
                     >
                         취소
                     </button>
-                    +{' '}
                     <button
                         className={`${styles.btn} ${styles.btnPrimary}`}
                         onClick={onSave}

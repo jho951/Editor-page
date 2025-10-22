@@ -1,7 +1,6 @@
 const MIN_CSS = 16;
 const RETRY_FRAMES = 30;
-const DPR = () =>
-    (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+const DPR = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 8;
 

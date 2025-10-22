@@ -1,6 +1,5 @@
 import { createSlice, createAction } from '@reduxjs/toolkit';
 import { CAMVAS_STATE } from '../constant/initial';
-export const updateShapeStyle = createAction('canvas/updateShapeStyle');
 
 const MAX_HISTORY = 10;
 
@@ -16,15 +15,15 @@ function cloneShapes(shapes) {
         stroke: s.stroke,
         fill: s.fill,
         strokeWidth: s.strokeWidth,
-        // polygon/star
+
         sides: s.sides,
         points: s.points,
         innerRatio: s.innerRatio,
-        // freedraw path (u,v 배열)
+
         path: Array.isArray(s.path)
             ? s.path.map((p) => ({ u: p.u, v: p.v }))
             : undefined,
-        // text
+
         text: s.text,
         font: s.font,
         color: s.color,
@@ -40,6 +39,7 @@ function snapshot(state) {
         nextId: state.nextId,
     };
 }
+
 const canvasSlice = createSlice({
     name: 'canvas',
     initialState: CAMVAS_STATE,
@@ -96,12 +96,12 @@ const canvasSlice = createSlice({
                 sides: base.sides,
                 points: base.points,
                 innerRatio: base.innerRatio,
-                path: base.path, // freedraw
+                path: base.path,
                 text: base.text,
                 font: base.font,
                 color: base.color,
                 align: base.align,
-                lineHeight: base.lineHeight, // text
+                lineHeight: base.lineHeight,
             });
             state.focusId = id;
         },
@@ -157,12 +157,46 @@ const canvasSlice = createSlice({
         replaceAll(state, action) {
             const shapes = action.payload?.shapes || [];
             state.shapes = shapes;
-            // nextId 재계산 (id 최대값+1)
             const maxId = shapes.reduce((m, s) => Math.max(m, s.id || 0), 0);
             state.nextId = Math.max(1, maxId + 1);
             state.focusId = null;
             state.past = [];
             state.future = [];
+        },
+
+        updatePathNode(state, action) {
+            const { id, index, x, y } = action.payload;
+            const s = state.shapes.find(
+                (v) => v.id === id && v.type === 'path'
+            );
+            if (!s || !Array.isArray(s.path) || s.w === 0 || s.h === 0) return;
+            const u = (x - s.x) / (s.w || 1);
+            const v = (y - s.y) / (s.h || 1);
+            if (s.path[index]) {
+                s.path[index].u = Math.max(0, Math.min(1, u));
+                s.path[index].v = Math.max(0, Math.min(1, v));
+            }
+        },
+        insertPathNode(state, action) {
+            const { id, index, x, y } = action.payload;
+            const s = state.shapes.find(
+                (v) => v.id === id && v.type === 'path'
+            );
+            if (!s || !Array.isArray(s.path)) return;
+            const u = (x - s.x) / (s.w || 1);
+            const v = (y - s.y) / (s.h || 1);
+            s.path.splice(index + 1, 0, {
+                u: Math.max(0, Math.min(1, u)),
+                v: Math.max(0, Math.min(1, v)),
+            });
+        },
+        deletePathNode(state, action) {
+            const { id, index } = action.payload;
+            const s = state.shapes.find(
+                (v) => v.id === id && v.type === 'path'
+            );
+            if (!s || !Array.isArray(s.path) || s.path.length <= 2) return;
+            s.path.splice(index, 1);
         },
     },
     extraReducers: (builder) => {
@@ -170,18 +204,14 @@ const canvasSlice = createSlice({
             const { id, patch } = action.payload || {};
             const s = state.shapes.find((v) => v.id === id);
             if (!s) return;
-            // 필요한 키만 덮어쓰기
             if (patch.stroke !== undefined) s.stroke = patch.stroke;
             if (patch.fill !== undefined) {
-                if (s.type === 'line') {
-                    // 라인은 면 없음: 무시하거나, 별도 정책으로 저장하지 않음
-                } else {
+                if (s.type !== 'line') {
                     s.fill = patch.fill;
                 }
             }
             if (patch.strokeWidth !== undefined)
                 s.strokeWidth = Number(patch.strokeWidth) || 1;
-            // 텍스트 색(도형 타입에 따라 선택)
             if (patch.color !== undefined) s.color = patch.color;
         });
     },
@@ -197,12 +227,16 @@ export const {
     updateText,
     setTextStyle,
     historyStart,
+    updatePathNode,
+    insertPathNode,
+    deletePathNode,
     undo,
     redo,
     resetAll,
     replaceAll,
 } = canvasSlice.actions;
 
+export const updateShapeStyle = createAction('canvas/updateShapeStyle');
 export const selectShapes = (s) => s.canvas.shapes;
 export const selectFocusId = (s) => s.canvas.focusId;
 export default canvasSlice.reducer;

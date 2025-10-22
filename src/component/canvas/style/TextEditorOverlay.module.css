@@ -66,6 +66,7 @@
     overflow: auto;
     white-space: pre-wrap;
     word-break: break-word;
+    pointer-events: none;
     outline: none;
     caret-color: var(--overlay-editor-caret);
     -webkit-font-smoothing: antialiased;

@@ -1,14 +1,12 @@
 import { Canvas } from '../component/canvas/implementation/Canvas';
 
-import ToolHeader from '../component/header/implementation/ToolHeader';
+import { Header } from '../component/header/implementation/Header';
 
 function Home() {
     return (
         <div className="page fill-viewport">
-            <ToolHeader />
-            <main>
-                <Canvas />
-            </main>
+            <Header />
+            <main>{/* <Canvas /> */}</main>
         </div>
     );
 }

@@ -18,12 +18,12 @@ function useStageInteractions(params) {
         starPoints,
         starInnerRatio,
         dispatch,
-        actions, // { setView, setTool, setFocus, clearFocus, historyStart, addShape, moveShape, resizeShape }
+        actions,
         beginTextEdit,
+        isNodeDraggingRef,
     } = params;
 
-    const dragRef = useRef(null); // { type, start, id, handle, origBBox, last, tool, path:[] }
-
+    const dragRef = useRef(null);
     useEffect(() => {
         const ov = ovRef.current;
         if (!ov) return;
@@ -198,6 +198,11 @@ function useStageInteractions(params) {
         }
 
         function onDown(e) {
+            if (isNodeDraggingRef?.current) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
             e.preventDefault();
             const p = toCanvasPt(e);
             const currentTool = toolRef.current;
@@ -320,6 +325,7 @@ function useStageInteractions(params) {
 
         function onMove(e) {
             const ds = dragRef.current;
+            if (isNodeDraggingRef?.current) return;
             if (!ds) return;
             const p = toCanvasPt(e);
 
@@ -375,6 +381,7 @@ function useStageInteractions(params) {
 
         function onUp(e) {
             const ds = dragRef.current;
+            if (isNodeDraggingRef?.current) return;
             if (!ds) return;
             if (ds.type === 'maybeClear') {
                 const end = toCanvasPt(e);
@@ -527,6 +534,7 @@ function useStageInteractions(params) {
         dispatch,
         actions,
         beginTextEdit,
+        isNodeDraggingRef,
     ]);
 }
 

@@ -5,9 +5,9 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { setTitle } from '../lib/redux/slice/docSlice';
 import { loadDrawingById } from '../lib/redux/util/async';
-import ToolHeader from '../component/header/implementation/ToolHeader';
 
 import { Canvas } from '../component/canvas/implementation/Canvas';
+import { Header } from '../component/header/implementation/Header';
 
 function Edit() {
     const { id } = useParams();
@@ -24,16 +24,14 @@ function Edit() {
 
     return (
         <div className="page fill-viewport">
-            <ToolHeader
+            <Header
                 title={meta?.title}
                 onTitleChange={(t) => dispatch(setTitle(t))}
             />
             {loading ? (
                 <div style={{ padding: 16 }}>불러오는 중…</div>
             ) : (
-                <main>
-                    <Canvas />
-                </main>
+                <main>{/* <Canvas /> */}</main>
             )}
         </div>
     );

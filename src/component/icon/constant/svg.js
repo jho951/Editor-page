@@ -486,6 +486,19 @@ const ICONS = {
             },
         ],
     },
+    close: {
+        vb: '0 0 24 24',
+        g: [
+            {
+                el: 'path',
+                d: 'M6 6 L18 18 M18 6 L6 18',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: 1.7,
+                strokeLinecap: 'round',
+            },
+        ],
+    },
 };
 
 export { ICONS };

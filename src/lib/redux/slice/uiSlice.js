@@ -9,11 +9,11 @@ const uiSlice = createSlice({
             state.tool = action.payload;
         },
         setPolygonSides(state, action) {
-            const v = Number(action.payload) || 5;
+            const v = Number(action.payload);
             state.polygonSides = Math.max(3, v);
         },
         setStarPoints(state, action) {
-            const v = Number(action.payload) || 5;
+            const v = Number(action.payload);
             state.starPoints = Math.max(3, v);
         },
         setStarInnerRatio(state, action) {

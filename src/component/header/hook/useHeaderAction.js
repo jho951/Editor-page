@@ -19,10 +19,7 @@ import {
     openLoadModal,
     openSaveModal,
 } from '../../../lib/redux/slice/docSlice';
-import {
-    saveCurrentDrawing,
-    saveDrawingById,
-} from '../../../lib/redux/util/async';
+import { saveDrawingById } from '../../../lib/redux/util/async';
 
 /**
  * ToolHeader 컴포넌트에서 사용되는 모든 Redux 기반 로직과 액션 핸들러를 캡슐화하는 커스텀 훅입니다.
@@ -30,22 +27,19 @@ import {
 function useHeaderAction() {
     const dispatch = useDispatch();
 
-    const tool = useSelector((st) => st.ui.tool);
     const view = useSelector((s) => s.ui.view);
+    const tool = useSelector((st) => st.ui.tool);
+    const meta = useSelector((s) => s.doc?.current);
     const canvasBg = useSelector((s) => s.ui.canvasBg);
     const focusId = useSelector((s) => s.canvas.focusId);
 
-    const meta = useSelector((s) => s.doc?.current);
-    const loading = useSelector((s) => s.doc?.loading);
-
-    // --- 줌 액션 ---
     const setZoom = useCallback(
-        (next) => {
-            // 줌 레벨을 0.125 (12.5%) 와 8 (800%) 사이로 제한합니다.
-            const clamped = Math.min(8, Math.max(0.125, next));
-            dispatch(setView({ ...view, scale: clamped }));
+        (next, view) => {
+            dispatch(
+                setView({ ...view, scale: Math.min(8, Math.max(0.125, next)) })
+            );
         },
-        [dispatch, view]
+        [dispatch]
     );
 
     const nudgeZoom = useCallback(
@@ -53,7 +47,6 @@ function useHeaderAction() {
         [view.scale, setZoom]
     );
 
-    // --- 파일 액션 ---
     const handleOpen = useCallback(() => {
         dispatch(openLoadModal());
     }, [dispatch]);
@@ -121,11 +114,8 @@ function useHeaderAction() {
         }
 
         if (meta?.id) {
-            // ✅ 이미 열린 문서 → 덮어쓰기
             try {
                 await dispatch(saveDrawingById(meta.id)).unwrap();
-                // 토스트/알림은 기호에 맞게
-                console.info('저장 완료(덮어쓰기).');
             } catch (e) {
                 alert('저장 실패: ' + (e?.message || String(e)));
             }
@@ -136,13 +126,11 @@ function useHeaderAction() {
     };
 
     return {
-        // State
         tool,
         view,
         canvasBg,
         focusId,
         meta,
-        // Actions
         setZoom,
         nudgeZoom,
         handleOpen,

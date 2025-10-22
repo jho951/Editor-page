@@ -9,7 +9,7 @@
 // -------------------------------------------------------------
 
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { drawings } from '../../../lib/axios/drawings'; // ✅ 네가 쓰던 axios 래퍼 경로 유지
+import { drawings } from '../../../lib/axios/drawings';
 import { takeSnapshot } from './serde';
 import { setCurrentMeta, markClean } from '../slice/docSlice';
 import { parseVectorJson } from '../../../component/header/util/transform';
@@ -22,13 +22,6 @@ import { replaceAll } from '../slice/canvasSlice';
  *   혹은 바로 본문을 주는 경우 둘 다 대응
  */
 const unwrap = (res) => res?.data?.data ?? res?.data ?? null;
-
-/**
- * (선택) 직렬화 함수
- * - 현재 Redux 상태를 서버 vectorJson 규격으로 변환
- * - 네 프로젝트는 takeSnapshot이 이미 올바른 JSON을 반환하므로 그대로 사용
- */
-const serializeVectorJson = (state) => takeSnapshot(state);
 
 /* -------------------------------------------------------------
  * 목록 조회: GET /drawings?page=1&size=20
@@ -59,8 +52,6 @@ export const loadDrawingById = createAsyncThunk(
             const res = await drawings.get(id);
             const payload = unwrap(res);
             if (!payload) throw new Error('invalid response');
-
-            // 메타 업데이트
             dispatch(
                 setCurrentMeta({
                     id: payload.id,
@@ -68,10 +59,8 @@ export const loadDrawingById = createAsyncThunk(
                     version: payload.version ?? null,
                 })
             );
-
-            // vectorJson → 상태로 적용
             const { view, canvas, shapes } = parseVectorJson(
-                payload.vectorJson || {}
+                payload.vectorJson
             );
             dispatch(
                 setView({
@@ -103,20 +92,20 @@ export const saveDrawingByName = createAsyncThunk(
     async (title, { getState, dispatch, rejectWithValue }) => {
         try {
             if (!String(title).trim()) throw new Error('제목이 비었습니다.');
-            const snapshot = serializeVectorJson(getState());
+            const snapshot = takeSnapshot(getState());
             const res = await drawings.create({ title, vectorJson: snapshot });
             const data = unwrap(res);
             if (!data) throw new Error('invalid create response');
 
             dispatch(
                 setCurrentMeta({
-                    id: data.id, // 서버의 idOnly(id) 기준
-                    title: data.title || title, // 서버가 title을 돌려주면 반영
-                    version: data.version ?? 1, // 없으면 1부터 시작
+                    id: data.id,
+                    title: data.title || title,
+                    version: data.version ?? 0,
                 })
             );
             dispatch(markClean());
-            return data; // { id, ... }
+            return data;
         } catch (e) {
             return rejectWithValue(e?.message || 'save failed');
         }
@@ -136,19 +125,17 @@ export const saveCurrentDrawing = createAsyncThunk(
             const meta = state?.doc?.current;
             if (!meta?.id) throw new Error('문서 ID가 없습니다.');
 
-            const snapshot = serializeVectorJson(state);
+            const snapshot = takeSnapshot(state);
             const req = {
-                id: meta.id, // URL path에 사용됨 (drawings.update 내부에서 encode)
+                id: meta.id,
                 title: meta.title || 'Untitled',
-                version: meta.version, // 낙관적 락을 쓰는 경우
-                vectorJson: snapshot, // 서버에서 쓰면 반영
+                version: meta.version,
+                vectorJson: snapshot,
             };
 
-            const res = await drawings.update(req); // PUT /drawings/{id}
+            const res = await drawings.update(req);
             const data = unwrap(res);
             if (!data) throw new Error('invalid update response');
-
-            // 서버가 최신 메타를 돌려주면 갱신(버전 증가 등)
             dispatch(
                 setCurrentMeta({
                     id: data.id ?? meta.id,
@@ -159,7 +146,6 @@ export const saveCurrentDrawing = createAsyncThunk(
             dispatch(markClean());
             return data;
         } catch (e) {
-            // 409 충돌 등도 이쪽으로 들어옴
             return rejectWithValue(e?.message || 'update failed');
         }
     }
@@ -175,7 +161,7 @@ export const saveDrawingById = createAsyncThunk(
         try {
             if (!id) throw new Error('id가 없습니다.');
             const state = getState();
-            const snapshot = serializeVectorJson(state);
+            const snapshot = takeSnapshot(state);
             const title = state.doc?.current?.title || 'Untitled';
             const version = state.doc?.current?.version ?? null;
 
@@ -194,42 +180,49 @@ export const saveDrawingById = createAsyncThunk(
 );
 
 /* -------------------------------------------------------------
- * 소프트 삭제: POST /drawings/{id}/soft-delete
+ * 소프트 삭제: DELETE /drawings/{id}
+ *  - 이제 remove(id)만 호출 (hard=false 기본)
+ *  - id 인자 없으면 state.doc.current.id로 fallback
  *  - 삭제 후 목록 재조회
  * ----------------------------------------------------------- */
 export const softDeleteDrawing = createAsyncThunk(
     'doc/softDelete',
-    async (_arg, { getState, dispatch, rejectWithValue }) => {
+    async (arg, { getState, dispatch, rejectWithValue }) => {
         try {
-            const { id, version } = getState().doc?.current || {};
-            if (!id) throw new Error('문서 ID가 없습니다.');
+            const idFromArg = typeof arg === 'string' ? arg : arg?.id;
+            const id = idFromArg ?? getState()?.doc?.current?.id;
+            if (!id) return rejectWithValue('문서 ID가 없습니다.');
 
-            const res = await drawings.softDelete(id, { id, version });
-            const data = unwrap(res);
-            if (!data) throw new Error('invalid soft-delete response');
+            // DELETE = 소프트 삭제(기본)
+            await drawings.remove(id); // == remove(id, { hard: false })
 
-            // 삭제 반영 후 리스트 갱신
             await dispatch(fetchDrawings());
-            return data;
+            return { id };
         } catch (e) {
-            return rejectWithValue(e?.message || 'soft-delete failed');
+            return rejectWithValue(
+                e?.response?.data?.message || e?.message || 'soft-delete failed'
+            );
         }
     }
 );
 
 /* -------------------------------------------------------------
- * 완전 삭제: DELETE /drawings/{id}
+ * 완전 삭제(하드 삭제): DELETE /drawings/{id}?hard=true
  *  - 삭제 후 목록 재조회
  * ----------------------------------------------------------- */
 export const deleteDrawing = createAsyncThunk(
     'doc/delete',
     async (id, { dispatch, rejectWithValue }) => {
         try {
-            await drawings.remove(id);
+            if (!id) return rejectWithValue('문서 ID가 없습니다.');
+            await drawings.remove(id, { hard: true }); // 하드 삭제
+
             await dispatch(fetchDrawings());
             return true;
         } catch (e) {
-            return rejectWithValue(e?.message || 'delete failed');
+            return rejectWithValue(
+                e?.response?.data?.message || e?.message || 'delete failed'
+            );
         }
     }
 );

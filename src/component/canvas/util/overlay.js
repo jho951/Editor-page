@@ -1,3 +1,5 @@
+import { denormPath } from './geometry';
+
 export function renderOverlay(ctx, focusedShape, view) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     if (!focusedShape) return;
@@ -37,6 +39,19 @@ export function renderOverlay(ctx, focusedShape, view) {
     for (const r of boxes) {
         ctx.fillRect(r.x, r.y, s, s);
         ctx.strokeRect(r.x, r.y, s, s);
+    }
+
+    if (focusedShape.type === 'path' && Array.isArray(focusedShape.path)) {
+        const pts = denormPath(focusedShape.path, f.x, f.y, f.w, f.h);
+        const r = Math.max(3, 3 / scale);
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = 'rgb(76,139,245)';
+        for (const p of pts) {
+            ctx.beginPath();
+            ctx.rect(p.x - r, p.y - r, 2 * r, 2 * r);
+            ctx.fill();
+            ctx.stroke();
+        }
     }
     ctx.restore();
 }

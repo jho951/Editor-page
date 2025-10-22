@@ -1,179 +1,196 @@
-import { useDispatch, useSelector } from 'react-redux';
-import styles from '../style/Header.module.css';
-import { DROPDOWN_SECTION } from '../constant/section';
-import { useMemo, useRef, useState } from 'react';
-import { Icon } from '../../icon/implementation/Icon';
-import { IconBtn } from '../../button/implementation/IconBtn';
-import { DropDown } from '../../context/implementation/DropDown';
-import { setTool } from '../../../lib/redux/slice/uiSlice';
+import { OpenModal } from '../../modal/implementation/OpenModal';
+import { SaveModal } from '../../modal/implementation/SaveModal';
+import { useHeaderAction } from '../hook/useHeaderAction';
+import { useHeaderShortcuts } from '../hook/useHeaderShortcuts';
 
-function Header() {
-    const buttonRefs = useRef({});
-    const dispatch = useDispatch();
+function Header({ title, onTitleChange }) {
+    const {
+        tool,
+        view,
+        canvasBg,
+        setZoom,
+        nudgeZoom,
+        handleOpen,
+        handleSave,
+        handleUndo,
+        handleRedo,
+        handleSetTool,
+        onPickStroke,
+        onPickFill,
+        onStrokeWidth,
+        onPickCanvasBg,
+    } = useHeaderAction();
 
-    const tool = useSelector((st) => st.ui.tool);
-    const view = useSelector((s) => s.ui.view);
-    const canvasBg = useSelector((s) => s.ui.canvasBg);
-    const focusId = useSelector((s) => s.canvas.focusId);
-    const docMeta = useSelector((s) => s.doc.current);
+    const dispatchCommand = (command) => {
+        switch (command) {
+            case 'new':
+                return handleOpen?.({ createNew: true });
+            case 'open':
+                return handleOpen?.();
+            case 'save':
+                return handleSave?.({ quick: true });
+            case 'quick-save':
+                return handleSave?.({ quick: false });
+            case 'undo':
+                return handleUndo?.();
+            case 'redo':
+                return handleRedo?.();
 
-    const [open, setOpen] = useState(false);
+            case 'select':
+            case 'rect':
+            case 'ellipse':
+            case 'line':
+            case 'polygon':
+            case 'star':
+            case 'text':
+                return handleSetTool?.(command);
+            case 'path':
+                return handleSetTool?.('freedraw');
 
-    const [openId, setOpenId] = useState(null);
+            case 'in':
+                return nudgeZoom?.(1.25);
+            case 'out':
+                return nudgeZoom?.(1 / 1.25);
+            case 'fit':
+                return setZoom?.(1);
 
-    const currentSection = useMemo(
-        () => DROPDOWN_SECTION.find((s) => s?.key === openId),
-        [openId]
-    );
+            default:
+                return;
+        }
+    };
+
+    useHeaderShortcuts({ dispatchCommand });
 
     return (
-        <header className={styles.wrap}>
-            <section className={styles.container}>
-                {DROPDOWN_SECTION.map((section) => {
-                    if (!section.key) return null;
-                    return (
-                        <IconBtn
-                            key={section.key}
-                            title={section.label}
-                            active={open && openId === section.key}
-                            icon={<Icon name={section.key} size={26} />}
-                            onClick={console.log(section.key)}
-                            ref={(r) => (buttonRefs.current[section.key] = r)}
-                        />
-                    );
-                })}
-            </section>
-            <DropDown
-                open={open}
-                items={currentSection?.items}
-                onSelect={() => dispatch(setTool(name))}
-                // selectedKey={selectedKey === it.key}
-            />
+        <header
+            style={{
+                display: 'flex',
+                gap: 12,
+                alignItems: 'center',
+                padding: '8px 12px',
+                borderBottom: '1px solid var(--border-color)',
+                background: 'var(--background-color)',
+            }}
+        >
+            {/* 파일 */}
+            <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={handleOpen}>열기</button>
+                <button onClick={() => handleSave({ quick: true })}>
+                    저장
+                </button>
+                <button onClick={() => handleSave({ quick: false })}>
+                    다른 이름으로 저장
+                </button>
+                <button onClick={() => handleSave({ quick: false })}>
+                    복원
+                </button>
+            </div>
+
+            {/* Undo / Redo */}
+            <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
+                <button onClick={handleUndo}>Undo</button>
+                <button onClick={handleRedo}>Redo</button>
+            </div>
+
+            {/* 툴 선택 */}
+            <div style={{ display: 'flex', gap: 6, marginLeft: 12 }}>
+                {[
+                    ['select', '선택'],
+                    ['rect', '사각형'],
+                    ['ellipse', '원'],
+                    ['line', '직선'],
+                    ['polygon', '다각형'],
+                    ['star', '별'],
+                    ['freedraw', '프리드로우'],
+                    ['text', '텍스트'],
+                ].map(([name, label]) => (
+                    <button
+                        key={name}
+                        onClick={() => handleSetTool(name)}
+                        style={{
+                            fontWeight: tool === name ? 700 : 400,
+                            borderColor:
+                                tool === name
+                                    ? 'var(--active-color)'
+                                    : 'var(--border-color)',
+                        }}
+                    >
+                        {label}
+                    </button>
+                ))}
+                <input />
+            </div>
+
+            {/* 스타일(선택된 도형에 적용) */}
+            <div style={{ display: 'flex', gap: 6, marginLeft: 12 }}>
+                <label
+                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                    선색
+                    <input type="color" onChange={onPickStroke} />
+                </label>
+                <label
+                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                    배경
+                    <input type="color" onChange={onPickFill} />
+                </label>
+                <label
+                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                    선굵기
+                    <input
+                        type="number"
+                        min="1"
+                        max="64"
+                        defaultValue={2}
+                        onChange={onStrokeWidth}
+                    />
+                </label>
+                <label
+                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                    글자 크기
+                    <input
+                        type="number"
+                        min="1"
+                        max="128"
+                        defaultValue={12}
+                        onChange={onStrokeWidth}
+                    />
+                </label>
+            </div>
+
+            {/* 캔버스 배경 */}
+            <div style={{ display: 'flex', gap: 6, marginLeft: 12 }}>
+                <label
+                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                    캔버스
+                    <input
+                        type="color"
+                        value={canvasBg}
+                        onChange={onPickCanvasBg}
+                    />
+                </label>
+            </div>
+
+            {/* 줌 */}
+            <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+                <button onClick={() => nudgeZoom(1 / 1.25)}>-</button>
+                <span style={{ minWidth: 72, textAlign: 'center' }}>
+                    {(view.scale * 100).toFixed(0)}%
+                </span>
+                <button onClick={() => nudgeZoom(1.25)}>+</button>
+                <button onClick={() => setZoom(1)}>100%</button>
+                <button onClick={() => setZoom(0.5)}>50%</button>
+                <button onClick={() => setZoom(2)}>200%</button>
+            </div>
+
+            <OpenModal />
+            <SaveModal />
         </header>
     );
 }
 
 export { Header };
-//     const dispatch = useDispatch();
-//     const zoom = useSelector((s) => s.viewport?.zoom);
-
-//     const tool = useSelector((s) => s.tool);
-
-//     const ITEM_INDEX = useMemo(() => buildItemIndex(DROPDOWN_SECTION), []);
-
-//     const dispatchCommand = useMemo(
-//         () =>
-//             makeDispatchCommand(
-//                 ITEM_INDEX,
-//                 dispatch,
-//                 () => window.__REDUX_STORE__?.getState?.() || {}
-//             ),
-//         [ITEM_INDEX, dispatch]
-//     );
-
-//     useHeaderShortcuts({ dispatchCommand });
-
-//     const [open, setOpen] = useState(false);
-
-//     const [openId, setOpenId] = useState(null);
-
-//     const [anchorRect, setAnchorRect] = useState(null);
-
-//     const buttonRefs = useRef({});
-
-//     const onClickSection = useCallback(
-//         (id) => (e) => {
-//             const rect = e.currentTarget.getBoundingClientRect();
-//             setOpenId((prev) => (prev === id && open ? null : id));
-//             setOpen((prev) => (openId !== id ? true : !prev));
-//             setAnchorRect(rect);
-//         },
-//         [open, openId]
-//     );
-
-//     const closeMenu = useCallback(() => {
-//         setOpen(false);
-//         setOpenId(null);
-//         setAnchorRect(null);
-//     }, []);
-
-//     const closeDropdownOnly = useCallback(() => {
-//         setOpen(false);
-//         setAnchorRect(null);
-//     }, []);
-
-//     const selectedShapeKey = useMemo(() => {
-//         for (const [k, v] of Object.entries(TOOL_FROM_KEY))
-//             if (v === tool.tool) return k;
-//         return null;
-//     }, [tool]);
-
-//     const currentSection = useMemo(
-//         () => DROPDOWN_SECTION.find((s) => s?.key === openId),
-//         [openId]
-//     );
-
-//     const customContent = useMemo(() => {
-//         if (openId === 'style') {
-//             return <StylePanel draft={tool.draft} dispatch={dispatch} />;
-//         }
-//         if (openId === 'zoom') {
-//             return <ZoomPanel zoom={zoom} dispatch={dispatch} />;
-//         }
-//         return null;
-//     }, [openId, tool, dispatch, zoom]);
-
-//     return (
-//         <>
-//             <header className={styles.header}>
-//                 <div className={styles.leftRail}>
-//                     {DROPDOWN_SECTION.map((section) => {
-//                         if (!section.key) return null;
-
-//                         const active = open && openId === section.key;
-//                         const title = section.title || section.label;
-
-//                         const isHistoryItem =
-//                             section.key === 'undo' || section.key === 'redo';
-
-//                         const onClickHandler = isHistoryItem
-//                             ? () => dispatchCommand(section.key)
-//                             : onClickSection(section.key);
-
-//                         return (
-//                             <IconBtn
-//                                 key={section.key}
-//                                 ref={(r) =>
-//                                     (buttonRefs.current[section.key] = r)
-//                                 }
-//                                 type="button"
-//                                 active={active}
-//                                 icon={<Icon name={section.key} size={26} />}
-//                                 title={title}
-//                                 onClick={onClickHandler}
-//                             />
-//                         );
-//                     })}
-//                 </div>
-//             </header>
-
-//             <DropDown
-//                 open={open}
-//                 onClose={closeMenu}
-//                 anchorRect={anchorRect}
-//                 items={currentSection?.items}
-//                 onSelect={(key) => {
-//                     dispatchCommand(key);
-//                     closeDropdownOnly();
-//                 }}
-//                 selectedKey={selectedShapeKey}
-//                 content={customContent}
-//             />
-
-//             <SaveModal />
-//             <OpenModal />
-//         </>
-//     );
-// }
-
-// export { Header };

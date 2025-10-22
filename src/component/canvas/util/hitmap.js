@@ -34,7 +34,7 @@ export function renderHitmap(ctx, shapes, view) {
             const pts = denormPath(s.path, s.x, s.y, s.w, s.h);
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.lineWidth = Math.max(s.strokeWidth || 2, 16);
+            ctx.lineWidth = Math.max(s.strokeWidth || 2, 10);
             strokePath(ctx, pts);
         } else if (s.type === 'text') {
             ctx.fillRect(s.x, s.y, s.w, s.h);
@@ -43,7 +43,7 @@ export function renderHitmap(ctx, shapes, view) {
         } else {
             if (s.type === 'ellipse') drawEllipsePath(ctx, s.x, s.y, s.w, s.h);
             else if (s.type === 'polygon')
-                drawPolygonPath(ctx, s.x, s.y, s.w, s.h, s.sides || 5);
+                drawPolygonPath(ctx, s.x, s.y, s.w, s.h, s.sides);
             else if (s.type === 'star')
                 drawStarPath(
                     ctx,

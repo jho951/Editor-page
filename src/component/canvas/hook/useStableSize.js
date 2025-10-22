@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { MIN_CSS, RETRY_FRAMES } from '../constant/constants';
 
 function useStableSize(wrapRef, init = { w: 640, h: 420 }) {
-    const [size, setSize] = useState(init);
     const lastGood = useRef(init);
+    const [size, setSize] = useState(init);
 
     useEffect(() => {
         const el = wrapRef.current;

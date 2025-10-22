@@ -1,4 +1,3 @@
-// ✅ 교체 권장: header/util/keymap.js
 import { isMac, MOD } from '../constant/os';
 
 export function displayShortcut(combo) {

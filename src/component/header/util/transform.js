@@ -11,7 +11,6 @@ export function parseVectorJson(vectorJson) {
     const view = doc.view || { tx: 0, ty: 0, scale: 1 };
     const canvas = doc.canvas || { background: '#f5f5f5' };
 
-    // "vector" 타입 레이어 찾기 (없으면 첫 레이어 사용)
     const layers = Array.isArray(doc.layers) ? doc.layers : [];
     const vectorLayer = layers.find(
         (l) => (l.type || '').toLowerCase() === 'vector'

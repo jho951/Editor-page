@@ -17,7 +17,6 @@ function useHeaderShortcuts({ dispatchCommand }) {
     useEffect(() => {
         function onKeyDown(e) {
             if (isTypingTarget(e.target)) {
-                // 입력 중에도 저장/열기/새로 만들기 단축키는 브라우저 기본 동작을 막아줌
                 const comboInInput = eventToCombo(e);
                 if (
                     comboInInput === 'Mod+S' ||

@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { closeLoadModal } from '../../../lib/redux/slice/docSlice';
-import { deleteDrawing, fetchDrawings } from '../../../lib/redux/util/async';
+import {
+    fetchDrawings,
+    softDeleteDrawing,
+} from '../../../lib/redux/util/async';
 import styles from '../style/Modal.module.css';
 
 function OpenModal() {
@@ -17,7 +20,7 @@ function OpenModal() {
     const onDelete = async (e, id) => {
         e.stopPropagation();
         if (!window.confirm('삭제하시겠습니까?')) return;
-        const res = await dispatch(deleteDrawing(id));
+        const res = await dispatch(softDeleteDrawing(id));
         if (res.meta.requestStatus === 'fulfilled') dispatch(fetchDrawings());
         else alert('삭제에 실패했습니다.');
     };

@@ -20,12 +20,12 @@ import { api } from './method';
  *
  * @returns {Promise} Axios Response Promise
  */
-// drawings.js (권장)
 const drawings = {
+    create: (body) => api.post('/drawings', body),
+
     list: (page = 1, size = 20) =>
         api.get(`/drawings?page=${page}&size=${size}`),
     get: (id) => api.get(`/drawings/${encodeURIComponent(id)}`),
-    create: (body) => api.post('/drawings', body),
 
     update: (body) => {
         const id = body?.id;
@@ -33,13 +33,13 @@ const drawings = {
         return api.put(`/drawings/${encodeURIComponent(id)}`, body);
     },
 
-    softDelete: (id, body) =>
-        api.post(`/drawings/${encodeURIComponent(id)}/soft-delete`, body),
+    remove: (id, { hard = false } = {}) =>
+        api.delete(
+            `/drawings/${encodeURIComponent(id)}${hard ? '?hard=true' : ''}`
+        ),
 
     restore: (id, body) =>
         api.post(`/drawings/${encodeURIComponent(id)}/restore`, body),
-
-    remove: (id) => api.delete(`/drawings/${encodeURIComponent(id)}`),
 };
 
 export default drawings;

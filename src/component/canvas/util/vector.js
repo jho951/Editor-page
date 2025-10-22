@@ -58,7 +58,7 @@ export function renderVector(ctx, shapes, view, { editingId } = {}) {
         } else {
             if (s.type === 'ellipse') drawEllipsePath(ctx, s.x, s.y, s.w, s.h);
             else if (s.type === 'polygon')
-                drawPolygonPath(ctx, s.x, s.y, s.w, s.h, s.sides || 5);
+                drawPolygonPath(ctx, s.x, s.y, s.w, s.h, s.sides);
             else if (s.type === 'star')
                 drawStarPath(
                     ctx,

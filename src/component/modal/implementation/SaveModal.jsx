@@ -18,7 +18,6 @@ function SaveModal() {
         return Array.isArray(items) && items.some((d) => norm(d.title) === t);
     }, [items, title]);
 
-    // ESC 닫기
     useEffect(() => {
         if (!open) return;
         const onKey = (e) => {

@@ -35,4 +35,15 @@ const UI_STATE = {
     canvasBg: '#f5f5f5',
 };
 
-export { DOC_NAME, DOC_STATE, CANVAS_NAME, CAMVAS_STATE, UI_NAME, UI_STATE };
+/** 히스토리 최대 저장 횟수(과거/미래 각각) */
+const MAX_HISTORY = 10;
+
+export {
+    DOC_NAME,
+    DOC_STATE,
+    CANVAS_NAME,
+    CAMVAS_STATE,
+    UI_NAME,
+    UI_STATE,
+    MAX_HISTORY,
+};

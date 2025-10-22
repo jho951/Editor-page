@@ -56,12 +56,12 @@ const docSlice = createSlice({
         });
         builder.addCase(fetchDrawings.fulfilled, (s, a) => {
             s.loading = false;
-            s.items = toArray(a.payload); // ✅ 항상 배열 보장
+            s.items = toArray(a.payload);
         });
         builder.addCase(fetchDrawings.rejected, (s, a) => {
             s.loading = false;
             s.error = a.payload || a.error?.message || 'list failed';
-            s.items = []; // ✅ 에러여도 배열 유지
+            s.items = [];
         });
 
         // ─── 단건 로드 ──────────────────────────────────────────────────────
@@ -71,13 +71,13 @@ const docSlice = createSlice({
         });
         builder.addCase(loadDrawingById.fulfilled, (state, { payload }) => {
             state.loading = false;
-            const d = payload?.data || payload; // thunk 리턴 형태에 맞춰 유연 처리
+            const d = payload?.data || payload;
             state.current.id = d.id;
             state.current.title = d.title;
             state.current.width = d.width;
             state.current.height = d.height;
             state.current.version = d.version ?? 0;
-            state.current.vectorJson = d.vectorJson || null; // 👈 여기!
+            state.current.vectorJson = d.vectorJson || null;
             state.current.dirty = false;
         });
         builder.addCase(loadDrawingById.rejected, (s, a) => {

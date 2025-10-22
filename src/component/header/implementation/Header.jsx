@@ -3,6 +3,16 @@ import { SaveModal } from '../../modal/implementation/SaveModal';
 import { useHeaderAction } from '../hook/useHeaderAction';
 import { useHeaderShortcuts } from '../hook/useHeaderShortcuts';
 
+import { useDispatch, useSelector } from 'react-redux';
+import {
+    historyStart,
+    setTextStyle,
+    selectFocusId,
+} from '../../../lib/redux/slice/canvasSlice';
+import { useEffect, useMemo, useState } from 'react';
+
+import { setPolygonSides, selectPoly } from '../../../lib/redux/slice/uiSlice';
+
 function Header() {
     const {
         tool,
@@ -21,6 +31,56 @@ function Header() {
         onPickCanvasBg,
     } = useHeaderAction();
 
+    const dispatch = useDispatch();
+
+    const focusId = useSelector(selectFocusId);
+    const polygonSides = useSelector(selectPoly);
+    const [sidesDraft, setSidesDraft] = useState(String(polygonSides));
+    const textShape = useSelector((s) =>
+        s.canvas.shapes.find((v) => v.id === focusId && v.type === 'text')
+    );
+
+    useEffect(() => {
+        setSidesDraft(String(polygonSides));
+    }, [polygonSides]);
+
+    const clampSides = (n) => Math.max(3, Math.min(64, Math.floor(n || 3)));
+    const changeSides = (n) => dispatch(setPolygonSides(clampSides(n)));
+    const stepSides = (delta) => changeSides(polygonSides + delta);
+    const commitSidesDraft = () => {
+        const n = parseInt(sidesDraft, 10);
+        if (Number.isFinite(n)) changeSides(n);
+        else setSidesDraft(String(polygonSides));
+    };
+
+    // ── 텍스트 스타일 ──
+    const textColor = textShape?.color ?? '#000000';
+    const fontPx = useMemo(() => {
+        const m = /(\d+(?:\.\d+)?)px/.exec(textShape?.font || '');
+        return m ? Number(m[1]) : 12;
+    }, [textShape?.font]);
+
+    const setColor = (color) => {
+        if (!textShape) return;
+        dispatch(historyStart());
+        dispatch(setTextStyle({ id: textShape.id, color }));
+    };
+
+    const setFontPx = (px) => {
+        if (!textShape) return;
+        const safe = Math.max(1, Math.min(128, Math.round(px)));
+        const prev = textShape.font || '';
+        const replaced = prev
+            ? prev.replace(/(\d+(?:\.\d+)?)px/, `${safe}px`)
+            : `${safe}px sans-serif`;
+        const nextFont = replaced === prev ? `${safe}px sans-serif` : replaced;
+        dispatch(historyStart());
+        dispatch(setTextStyle({ id: textShape.id, font: nextFont }));
+    };
+
+    const stepFont = (delta) => setFontPx(fontPx + delta);
+
+    // ── 단축키 디스패치 ──
     const dispatchCommand = (command) => {
         switch (command) {
             case 'new':
@@ -53,7 +113,6 @@ function Header() {
                 return nudgeZoom?.(1 / 1.25);
             case 'fit':
                 return setZoom?.(1);
-
             default:
                 return;
         }
@@ -118,10 +177,9 @@ function Header() {
                         {label}
                     </button>
                 ))}
-                <input />
             </div>
 
-            {/* 스타일(선택된 도형에 적용) */}
+            {/* 스타일(도형 공통) */}
             <div style={{ display: 'flex', gap: 6, marginLeft: 12 }}>
                 <label
                     style={{ display: 'flex', alignItems: 'center', gap: 4 }}
@@ -147,24 +205,106 @@ function Header() {
                         onChange={onStrokeWidth}
                     />
                 </label>
+            </div>
+
+            {/* ───────── 다각형 sides 컨트롤 ───────── */}
+            <div
+                style={{
+                    display: 'flex',
+                    gap: 8,
+                    marginLeft: 12,
+                    alignItems: 'center',
+                }}
+            >
                 <label
-                    style={{ display: 'flex', alignItems: 'center', gap: -4 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                    변 개수
+                    <button
+                        type="button"
+                        onClick={() => stepSides(-1)}
+                        disabled={polygonSides <= 3}
+                    >
+                        -
+                    </button>
+                    <input
+                        type="number"
+                        min="3"
+                        max="64"
+                        value={sidesDraft}
+                        onChange={(e) => setSidesDraft(e.target.value)}
+                        onBlur={commitSidesDraft}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.currentTarget.blur();
+                        }}
+                        style={{ width: 64, textAlign: 'center' }}
+                        inputMode="numeric"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => stepSides(+1)}
+                        disabled={polygonSides >= 64}
+                    >
+                        +
+                    </button>
+                </label>
+            </div>
+
+            {/* ───────── 텍스트 전용 스타일 ───────── */}
+            <div
+                style={{
+                    display: 'flex',
+                    gap: 8,
+                    marginLeft: 12,
+                    alignItems: 'center',
+                }}
+            >
+                <label
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                 >
                     글자 크기
+                    <button
+                        type="button"
+                        onClick={() => stepFont(-1)}
+                        disabled={!textShape}
+                    >
+                        -
+                    </button>
                     <input
                         type="number"
                         min="1"
                         max="128"
-                        defaultValue={12}
-                        onChange={onStrokeWidth}
+                        value={fontPx}
+                        onChange={(e) =>
+                            setFontPx(Number(e.target.value || 12))
+                        }
+                        style={{ width: 64 }}
+                        disabled={!textShape}
                     />
+                    <button
+                        type="button"
+                        onClick={() => stepFont(+1)}
+                        disabled={!textShape}
+                    >
+                        +
+                    </button>
                 </label>
 
                 <label
-                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        marginLeft: 10,
+                    }}
                 >
                     글자 색
-                    <input type="color" onChange={onPickStroke} />
+                    <input
+                        type="color"
+                        value={textColor}
+                        onChange={(e) => setColor(e.target.value)}
+                        disabled={!textShape}
+                    />
                 </label>
             </div>
 

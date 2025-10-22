@@ -6,7 +6,9 @@ function Home() {
     return (
         <div className="page fill-viewport">
             <Header />
-            <main>{/* <Canvas /> */}</main>
+            <main>
+                <Canvas />
+            </main>
         </div>
     );
 }

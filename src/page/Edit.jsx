@@ -31,7 +31,10 @@ function Edit() {
             {loading ? (
                 <div style={{ padding: 16 }}>불러오는 중…</div>
             ) : (
-                <main>{/* <Canvas /> */}</main>
+                <main>
+                    {' '}
+                    <Canvas />{' '}
+                </main>
             )}
         </div>
     );

@@ -3,25 +3,31 @@ import { SaveModal } from '../../modal/implementation/SaveModal';
 import { useHeaderAction } from '../hook/useHeaderAction';
 import { useHeaderShortcuts } from '../hook/useHeaderShortcuts';
 
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import {
     historyStart,
     setTextStyle,
-    selectFocusId,
 } from '../../../lib/redux/slice/canvasSlice';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
-import { setPolygonSides, selectPoly } from '../../../lib/redux/slice/uiSlice';
+import { setPolygonSides } from '../../../lib/redux/slice/uiSlice';
+import RestoreModal from '../../modal/implementation/RestoreModal';
+
+import styles from '../style/Header.module.css';
 
 function Header() {
     const {
+        dispatch,
         tool,
         view,
         canvasBg,
+        focusId,
+        polygonSides,
         setZoom,
         nudgeZoom,
         handleOpen,
         handleSave,
+        handleRestore,
         handleUndo,
         handleRedo,
         handleSetTool,
@@ -31,29 +37,24 @@ function Header() {
         onPickCanvasBg,
     } = useHeaderAction();
 
-    const dispatch = useDispatch();
-
-    const focusId = useSelector(selectFocusId);
-    const polygonSides = useSelector(selectPoly);
-    const [sidesDraft, setSidesDraft] = useState(String(polygonSides));
     const textShape = useSelector((s) =>
         s.canvas.shapes.find((v) => v.id === focusId && v.type === 'text')
     );
+    const polygonSidesRef = useRef(polygonSides);
 
     useEffect(() => {
-        setSidesDraft(String(polygonSides));
+        polygonSidesRef.current = String(polygonSides);
     }, [polygonSides]);
 
     const clampSides = (n) => Math.max(3, Math.min(64, Math.floor(n || 3)));
     const changeSides = (n) => dispatch(setPolygonSides(clampSides(n)));
     const stepSides = (delta) => changeSides(polygonSides + delta);
     const commitSidesDraft = () => {
-        const n = parseInt(sidesDraft, 10);
+        const n = parseInt(polygonSidesRef.current, 10);
         if (Number.isFinite(n)) changeSides(n);
-        else setSidesDraft(String(polygonSides));
+        else polygonSidesRef.current = String(polygonSides);
     };
 
-    // ── 텍스트 스타일 ──
     const textColor = textShape?.color ?? '#000000';
     const fontPx = useMemo(() => {
         const m = /(\d+(?:\.\d+)?)px/.exec(textShape?.font || '');
@@ -69,7 +70,7 @@ function Header() {
     const setFontPx = (px) => {
         if (!textShape) return;
         const safe = Math.max(1, Math.min(128, Math.round(px)));
-        const prev = textShape.font || '';
+        const prev = textShape.font;
         const replaced = prev
             ? prev.replace(/(\d+(?:\.\d+)?)px/, `${safe}px`)
             : `${safe}px sans-serif`;
@@ -78,9 +79,20 @@ function Header() {
         dispatch(setTextStyle({ id: textShape.id, font: nextFont }));
     };
 
+    const setAlign = (align) => {
+        if (!textShape) return;
+        dispatch(historyStart());
+        dispatch(setTextStyle({ id: textShape.id, align }));
+    };
+
+    const setInnerHeight = (lineHeight) => {
+        if (!textShape) return;
+        dispatch(historyStart());
+        dispatch(setTextStyle({ id: textShape.id, lineHeight }));
+    };
+
     const stepFont = (delta) => setFontPx(fontPx + delta);
 
-    // ── 단축키 디스패치 ──
     const dispatchCommand = (command) => {
         switch (command) {
             case 'new':
@@ -121,18 +133,9 @@ function Header() {
     useHeaderShortcuts({ dispatchCommand });
 
     return (
-        <header
-            style={{
-                display: 'flex',
-                gap: 12,
-                alignItems: 'center',
-                padding: '8px 12px',
-                borderBottom: '1px solid var(--border-color)',
-                background: 'var(--background-color)',
-            }}
-        >
+        <header className={styles.wrap}>
             {/* 파일 */}
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div>
                 <button onClick={handleOpen}>열기</button>
                 <button onClick={() => handleSave({ quick: true })}>
                     저장
@@ -140,19 +143,17 @@ function Header() {
                 <button onClick={() => handleSave({ quick: false })}>
                     다른 이름으로 저장
                 </button>
-                <button onClick={() => handleSave({ quick: false })}>
-                    복원
-                </button>
+                <button onClick={handleRestore}>복원</button>
             </div>
 
             {/* Undo / Redo */}
-            <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
+            <div>
                 <button onClick={handleUndo}>Undo</button>
                 <button onClick={handleRedo}>Redo</button>
             </div>
 
             {/* 툴 선택 */}
-            <div style={{ display: 'flex', gap: 6, marginLeft: 12 }}>
+            <div>
                 {[
                     ['select', '선택'],
                     ['rect', '사각형'],
@@ -180,22 +181,16 @@ function Header() {
             </div>
 
             {/* 스타일(도형 공통) */}
-            <div style={{ display: 'flex', gap: 6, marginLeft: 12 }}>
-                <label
-                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                >
+            <div>
+                <label>
                     선색
                     <input type="color" onChange={onPickStroke} />
                 </label>
-                <label
-                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                >
-                    배경
+                <label>
+                    색넣기
                     <input type="color" onChange={onPickFill} />
                 </label>
-                <label
-                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                >
+                <label>
                     선굵기
                     <input
                         type="number"
@@ -208,17 +203,8 @@ function Header() {
             </div>
 
             {/* ───────── 다각형 sides 컨트롤 ───────── */}
-            <div
-                style={{
-                    display: 'flex',
-                    gap: 8,
-                    marginLeft: 12,
-                    alignItems: 'center',
-                }}
-            >
-                <label
-                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
+            <div>
+                <label>
                     변 개수
                     <button
                         type="button"
@@ -231,8 +217,10 @@ function Header() {
                         type="number"
                         min="3"
                         max="64"
-                        value={sidesDraft}
-                        onChange={(e) => setSidesDraft(e.target.value)}
+                        value={polygonSidesRef.current}
+                        onChange={(e) =>
+                            (polygonSidesRef.current = e.target.value)
+                        }
                         onBlur={commitSidesDraft}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') e.currentTarget.blur();
@@ -251,17 +239,8 @@ function Header() {
             </div>
 
             {/* ───────── 텍스트 전용 스타일 ───────── */}
-            <div
-                style={{
-                    display: 'flex',
-                    gap: 8,
-                    marginLeft: 12,
-                    alignItems: 'center',
-                }}
-            >
-                <label
-                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
+            <div>
+                <label>
                     글자 크기
                     <button
                         type="button"
@@ -290,14 +269,7 @@ function Header() {
                     </button>
                 </label>
 
-                <label
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        marginLeft: 10,
-                    }}
-                >
+                <label>
                     글자 색
                     <input
                         type="color"
@@ -306,14 +278,19 @@ function Header() {
                         disabled={!textShape}
                     />
                 </label>
+                <button onClick={() => setAlign('left')}>왼쪽</button>
+                <button onClick={() => setAlign('center')}>가운데</button>
+                <button onClick={() => setAlign('right')}>오른쪽</button>
+
+                <button onClick={() => setInnerHeight(1)}>100%</button>
+                <button onClick={() => setInnerHeight(1.5)}>150%</button>
+                <button onClick={() => setInnerHeight()}>200%</button>
             </div>
 
             {/* 캔버스 배경 */}
-            <div style={{ display: 'flex', gap: 6, marginLeft: 12 }}>
-                <label
-                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                >
-                    캔버스
+            <div>
+                <label>
+                    배경
                     <input
                         type="color"
                         value={canvasBg}
@@ -323,11 +300,9 @@ function Header() {
             </div>
 
             {/* 줌 */}
-            <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+            <div>
                 <button onClick={() => nudgeZoom(1 / 1.25)}>-</button>
-                <span style={{ minWidth: 72, textAlign: 'center' }}>
-                    {(view.scale * 100).toFixed(0)}%
-                </span>
+                <span>{(view.scale * 100).toFixed(0)}%</span>
                 <button onClick={() => nudgeZoom(1.25)}>+</button>
                 <button onClick={() => setZoom(1)}>100%</button>
                 <button onClick={() => setZoom(0.5)}>50%</button>
@@ -336,6 +311,7 @@ function Header() {
 
             <OpenModal />
             <SaveModal />
+            <RestoreModal />
         </header>
     );
 }

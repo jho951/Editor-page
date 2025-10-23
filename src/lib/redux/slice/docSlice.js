@@ -25,6 +25,14 @@ const docSlice = createSlice({
             state.ui.saveOpen = false;
         },
 
+        openRestoreModal(state) {
+            state.ui.restoreOpen = true;
+        },
+
+        closeRestoreModal(state) {
+            state.ui.restoreOpen = false;
+        },
+
         setTitle(state, action) {
             state.current.title = action.payload || '';
             state.current.dirty = true;
@@ -121,6 +129,8 @@ export const {
     closeLoadModal,
     openSaveModal,
     closeSaveModal,
+    openRestoreModal,
+    closeRestoreModal,
     setTitle,
     markDirty,
     markClean,

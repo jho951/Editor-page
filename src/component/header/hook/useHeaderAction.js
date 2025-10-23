@@ -17,6 +17,7 @@ import {
 import {
     markDirty,
     openLoadModal,
+    openRestoreModal,
     openSaveModal,
 } from '../../../lib/redux/slice/docSlice';
 import { saveDrawingById } from '../../../lib/redux/util/async';
@@ -32,6 +33,7 @@ function useHeaderAction() {
     const meta = useSelector((s) => s.doc?.current);
     const canvasBg = useSelector((s) => s.ui.canvasBg);
     const focusId = useSelector((s) => s.canvas.focusId);
+    const polygonSides = useSelector((s) => s.ui.polygonSides);
 
     const setZoom = useCallback(
         (next, view) => {
@@ -51,6 +53,10 @@ function useHeaderAction() {
         dispatch(openLoadModal());
     }, [dispatch]);
 
+    const handleRestore = useCallback(() => {
+        dispatch(openRestoreModal());
+    }, [dispatch]);
+
     // --- Undo/Redo 액션 ---
     const handleUndo = useCallback(() => dispatch(undo()), [dispatch]);
     const handleRedo = useCallback(() => dispatch(redo()), [dispatch]);
@@ -61,7 +67,6 @@ function useHeaderAction() {
         [dispatch]
     );
 
-    // --- 도형 스타일 변경 액션 (선색, 배경색, 선굵기) ---
     const onPickStroke = useCallback(
         (e) => {
             if (!focusId) return;
@@ -97,7 +102,6 @@ function useHeaderAction() {
         [dispatch, focusId]
     );
 
-    // --- 캔버스 배경색 변경 액션 ---
     const onPickCanvasBg = useCallback(
         (e) => {
             const val = e.target.value;
@@ -108,9 +112,8 @@ function useHeaderAction() {
     );
 
     const handleSave = async (opts = {}) => {
-        // Shift+Cmd+S 등으로 'quick: false'가 들어오면 Save As로 강제
         if (opts.quick === false) {
-            return dispatch(openSaveModal()); // 새 문서로 저장
+            return dispatch(openSaveModal());
         }
 
         if (meta?.id) {
@@ -120,21 +123,23 @@ function useHeaderAction() {
                 alert('저장 실패: ' + (e?.message || String(e)));
             }
         } else {
-            // 신규 문서 → Save As 모달
             dispatch(openSaveModal());
         }
     };
 
     return {
+        dispatch,
         tool,
         view,
         canvasBg,
         focusId,
         meta,
+        polygonSides,
         setZoom,
         nudgeZoom,
         handleOpen,
         handleSave,
+        handleRestore,
         handleUndo,
         handleRedo,
         handleSetTool,

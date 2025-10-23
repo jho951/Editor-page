@@ -4,6 +4,7 @@ function drawEllipsePath(ctx, x, y, w, h) {
     ctx.beginPath();
     ctx.ellipse(cx, cy, Math.abs(w / 2), Math.abs(h / 2), 0, 0, Math.PI * 2);
 }
+
 function drawPolygonPath(ctx, x, y, w, h, sides = 5) {
     const cx = x + w / 2,
         cy = y + h / 2;
@@ -17,6 +18,7 @@ function drawPolygonPath(ctx, x, y, w, h, sides = 5) {
     }
     ctx.closePath();
 }
+
 function drawStarPath(ctx, x, y, w, h, points = 5, innerRatio = 0.5) {
     const cx = x + w / 2,
         cy = y + h / 2;
@@ -32,11 +34,13 @@ function drawStarPath(ctx, x, y, w, h, points = 5, innerRatio = 0.5) {
     }
     ctx.closePath();
 }
+
 function drawLinePath(ctx, x, y, w, h) {
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.lineTo(x + w, y + h);
 }
+
 function strokePath(ctx, pts) {
     if (!pts || pts.length < 2) return;
     ctx.beginPath();

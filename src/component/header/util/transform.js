@@ -18,7 +18,6 @@ export function parseVectorJson(vectorJson) {
         layers[0] || { shapes: [] };
     const arr = Array.isArray(vectorLayer.shapes) ? vectorLayer.shapes : [];
 
-    // 서버 shape -> 내부 shape
     const shapes = arr.map((s) => {
         const base = {
             id: Number(s.id) || 0,

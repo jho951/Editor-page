@@ -9,12 +9,11 @@
     --handle-size: 8px;
     --marquee-dash: 6 4;
 
-    --overlay-guideline: rgba(var(--primary-color-rgb), 0.45); /* 가이드라인 */
-    --overlay-marquee-stroke: rgb(76, 139, 245); /* 점선 박스 */
-    --overlay-handle-fill: #ffffff; /* 핸들 내부 */
-    --overlay-handle-stroke: rgb(76, 139, 245); /* 핸들 테두리 */
+    --overlay-guideline: rgba(var(--primary-color-rgb), 0.45);
+    --overlay-marquee-stroke: rgb(76, 139, 245);
+    --overlay-handle-fill: #ffffff;
+    --overlay-handle-stroke: rgb(76, 139, 245);
 
-    /* 캔버스 기본 배경 (원하면 투명 가능) */
     --canvas-bg: var(--background-color);
 
     --primary-color-rgb: 61, 133, 228;
@@ -41,6 +40,8 @@
 *::before,
 *::after {
     box-sizing: border-box;
+    padding: 0;
+    margin: 0;
 }
 
 html {

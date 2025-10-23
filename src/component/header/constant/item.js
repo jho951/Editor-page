@@ -31,7 +31,6 @@ const FILE_ITEM = [
         shortcutLabel: displayShortcut('Mod+S'),
         cursor: 'default',
     },
-    // 빠른 저장(서버 저장 바로 수행)
     {
         key: 'quick-save',
         label: '빠른 저장',

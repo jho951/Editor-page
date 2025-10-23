@@ -1,21 +1,28 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import Modal from './Modal';
+import styles from '../style/Modal.module.css';
+
 import { closeLoadModal } from '../../../lib/redux/slice/docSlice';
 import {
     fetchDrawings,
     softDeleteDrawing,
 } from '../../../lib/redux/util/async';
-import styles from '../style/Modal.module.css';
+
+import { getIcon } from '../../icon/util/get-icon';
+import { IconBtn } from '../../button/implementation/IconBtn';
 
 function OpenModal() {
     const dispatch = useDispatch();
-    const open = useSelector((s) => s.doc?.ui?.loadOpen);
-    const items = useSelector((s) => s.doc?.items || []);
-    const loading = useSelector((s) => s.doc?.loading);
-    const error = useSelector((s) => s.doc?.error);
 
-    const openInNewTab = (it) =>
-        window.open(`/edit/${it.id}`, '_blank', 'noopener');
+    const items = useSelector((s) => s.doc?.items);
+    const error = useSelector((s) => s.doc?.error);
+    const loading = useSelector((s) => s.doc?.loading);
+    const open = useSelector((s) => s.doc?.ui?.loadOpen);
+
+    const openInNewTab = (id) => {
+        window.open(`/edit/${id}`, '_blank', 'noopener,noreferrer');
+    };
 
     const onDelete = async (e, id) => {
         e.stopPropagation();
@@ -29,94 +36,51 @@ function OpenModal() {
         if (open) dispatch(fetchDrawings());
     }, [open, dispatch]);
 
-    useEffect(() => {
-        if (!open) return;
-        const onKey = (e) => {
-            if (e.key === 'Escape') dispatch(closeLoadModal());
-        };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-    }, [open, dispatch]);
-
-    if (!open) return null;
-
     return (
-        <div
-            className={styles.backdrop}
-            role="none"
-            onClick={() => dispatch(closeLoadModal())}
+        <Modal
+            open={open}
+            title="불러오기"
+            onClose={() => dispatch(closeLoadModal())}
         >
-            <div
-                className={styles.modal}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="open-title"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className={styles.modalHeader}>
-                    <h3 id="open-title" className={styles.modalTitle}>
-                        불러오기
-                    </h3>
-                    <button
-                        className={styles.closeBtn}
-                        onClick={() => dispatch(closeLoadModal())}
-                        aria-label="닫기"
-                        type="button"
+            {/* 본문 */}
+            {loading && <div>불러오는 중…</div>}
+            {!loading && error && (
+                <div style={{ color: 'crimson' }}>{String(error)}</div>
+            )}
+            {!loading && !error && items.length === 0 && (
+                <div>저장된 문서가 없습니다.</div>
+            )}
+
+            <ul>
+                {items.map((it) => (
+                    <li
+                        className={`${styles.row} ${styles.active}`}
+                        key={it.id}
+                        onClick={() => openInNewTab(it.id)}
+                        title="클릭하면 새 탭에서 열립니다"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ')
+                                openInNewTab(it.id);
+                        }}
                     >
-                        ×
-                    </button>
-                </div>
-
-                <div className={styles.modalBody} style={{ maxHeight: 420 }}>
-                    {loading && <div>불러오는 중…</div>}
-                    {!loading && error && (
-                        <div style={{ color: 'crimson' }}>{String(error)}</div>
-                    )}
-                    {!loading && !error && items.length === 0 && (
-                        <div>저장된 문서가 없습니다.</div>
-                    )}
-
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                        {items.map((it) => (
-                            <li
-                                key={it.id}
-                                className={styles.row}
-                                onClick={() => openInNewTab(it)}
-                                title="클릭하면 새 탭에서 열립니다"
-                            >
-                                <div>
-                                    <div style={{ fontWeight: 700 }}>
-                                        {it.title || '(제목없음)'}
-                                    </div>
-                                    <div
-                                        style={{
-                                            fontSize: 12,
-                                            color: '#6b7280',
-                                        }}
-                                    >
-                                        {it.updatedAt
-                                            ? new Date(
-                                                  it.updatedAt
-                                              ).toLocaleString()
-                                            : ''}
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    className={styles.btn}
-                                    onClick={(e) => onDelete(e, it.id)}
-                                    aria-label="삭제"
-                                    title="삭제"
-                                >
-                                    삭제
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-        </div>
+                        <p className={styles.meta}>
+                            <span>{it.title}</span>
+                            <span>
+                                {it.updatedAt &&
+                                    new Date(it.updatedAt).toLocaleString()}
+                            </span>
+                        </p>
+                        <IconBtn
+                            icon={getIcon('trash')}
+                            onClick={(e) => onDelete(e, it.id)}
+                            title="삭제"
+                        />
+                    </li>
+                ))}
+            </ul>
+        </Modal>
     );
 }
 

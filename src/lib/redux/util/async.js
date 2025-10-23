@@ -1,4 +1,3 @@
-// lib/redux/util/async.js
 // -------------------------------------------------------------
 // 서버 연동 비동기 Thunk 모음
 // - 목록 조회
@@ -28,9 +27,9 @@ const unwrap = (res) => res?.data?.data ?? res?.data ?? null;
  * ----------------------------------------------------------- */
 export const fetchDrawings = createAsyncThunk(
     'doc/list',
-    async ({ page = 1, size = 20 } = {}, { rejectWithValue }) => {
+    async ({ deleted, page = 1, size = 20 } = {}, { rejectWithValue }) => {
         try {
-            const res = await drawings.list(page, size);
+            const res = await drawings.list(page, size, deleted);
             const pageObj = unwrap(res);
             const items = pageObj?.rows ?? res?.data?.rows ?? [];
             return Array.isArray(items) ? items : [];
@@ -151,10 +150,10 @@ export const saveCurrentDrawing = createAsyncThunk(
     }
 );
 
-/* -------------------------------------------------------------
- * (선택) 명시적 덮어쓰기: id를 인자로 받아서 저장
+/*
+ * 명시적 덮어쓰기: id를 인자로 받아서 저장
  *  - 헤더/단축키에서 현재 id로 바로 저장하고 싶을 때 사용 가능
- * ----------------------------------------------------------- */
+ */
 export const saveDrawingById = createAsyncThunk(
     'doc/saveById',
     async (id, { getState, rejectWithValue }) => {
@@ -166,7 +165,7 @@ export const saveDrawingById = createAsyncThunk(
             const version = state.doc?.current?.version ?? null;
 
             const body = { id, title, version, vectorJson: snapshot };
-            const res = await drawings.update(body); // PUT /drawings/{id}
+            const res = await drawings.update(body);
             const data = unwrap(res);
             if (!data) throw new Error('invalid update response');
 
@@ -179,12 +178,12 @@ export const saveDrawingById = createAsyncThunk(
     }
 );
 
-/* -------------------------------------------------------------
+/*
  * 소프트 삭제: DELETE /drawings/{id}
  *  - 이제 remove(id)만 호출 (hard=false 기본)
  *  - id 인자 없으면 state.doc.current.id로 fallback
  *  - 삭제 후 목록 재조회
- * ----------------------------------------------------------- */
+ */
 export const softDeleteDrawing = createAsyncThunk(
     'doc/softDelete',
     async (arg, { getState, dispatch, rejectWithValue }) => {
@@ -206,16 +205,19 @@ export const softDeleteDrawing = createAsyncThunk(
     }
 );
 
-/* -------------------------------------------------------------
- * 완전 삭제(하드 삭제): DELETE /drawings/{id}?hard=true
- *  - 삭제 후 목록 재조회
- * ----------------------------------------------------------- */
+/*
+ * DELETE /drawings/{id}?hard=true
+ *
+ * 완전 삭제(하드 삭제)
+ * - 삭제 후 목록 재조회
+ *
+ */
 export const deleteDrawing = createAsyncThunk(
     'doc/delete',
     async (id, { dispatch, rejectWithValue }) => {
         try {
             if (!id) return rejectWithValue('문서 ID가 없습니다.');
-            await drawings.remove(id, { hard: true }); // 하드 삭제
+            await drawings.delete(id, { hard: true });
 
             await dispatch(fetchDrawings());
             return true;
@@ -227,24 +229,17 @@ export const deleteDrawing = createAsyncThunk(
     }
 );
 
-// /* -------------------------------------------------------------
-//  * 로그인
-//  * ----------------------------------------------------------- */
-// export const login = createAsyncThunk(
-//     'auth/login',
-//     async ({ email, password }, { rejectWithValue }) => {
-//         try {
-//             const { data } = await http.post('/auth/login', {
-//                 email,
-//                 password,
-//             });
-//             // ApiResponse 래퍼 가정
-//             const payload = data?.data ?? data;
-//             return payload; // { accessToken, refreshToken }
-//         } catch (e) {
-//             return rejectWithValue(
-//                 e?.response?.data || e?.message || 'login failed'
-//             );
-//         }
-//     }
-// );
+export const restoreDrawing = createAsyncThunk(
+    'doc/restore',
+    async (id, { dispatch, rejectWithValue }) => {
+        try {
+            if (!id) return rejectWithValue('문서 id가 없습니다.');
+            await drawings.restore(id);
+
+            await dispatch(fetchDrawings());
+            return true;
+        } catch (e) {
+            return rejectWithValue(e.respnse || 'restore failed');
+        }
+    }
+);

@@ -8,7 +8,7 @@ const DOC_STATE = {
     items: [],
     loading: false,
     error: null,
-    ui: { loadOpen: false, saveOpen: false },
+    ui: { loadOpen: false, saveOpen: false, restoreOpen: false },
     current: { id: null, title: '', version: null, dirty: false },
 };
 

@@ -315,7 +315,6 @@ const canvasSlice = createSlice({
 
             if (patch.stroke !== undefined) s.stroke = patch.stroke;
 
-            // line은 fill을 적용하지 않음
             if (patch.fill !== undefined) {
                 if (s.type !== 'line') {
                     s.fill = patch.fill;

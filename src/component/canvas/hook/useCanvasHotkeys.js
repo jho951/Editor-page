@@ -6,14 +6,6 @@
  * - 현재 텍스트/경로 편집 등 "에디팅 모드"일 때도 간섭하지 않습니다.
  * - Mac/Windows 모두에서 동작하도록 Cmd/Ctrl 판별 로직을 포함합니다.
  *
- * 사용 예:
- * useCanvasHotkeys({
- *   dispatch,
- *   focusRef,     // 현재 포커스된 도형 ID 또는 상태를 참조하는 ref (null이면 삭제 불가)
- *   editingRef,   // 텍스트 편집 등 에디팅 중 여부를 나타내는 ref (true면 단축키 비활성)
- *   actions: { historyStart, deleteFocused, undo, redo }
- * });
- *
  * 주의:
  * - 이 훅은 window 수준의 keydown 리스너를 등록합니다. 컴포넌트 unmount 시 반드시 해제합니다.
  * - 의존성 배열을 통해 최신 dispatch/actions를 유지하며, 메모리 누수나 오래된 클로저를 피합니다.
@@ -101,8 +93,6 @@ function useCanvasHotkeys({ dispatch, focusRef, editingRef, actions }) {
         // 컴포넌트 언마운트 시 정리
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [
-        // 의존성:
-        // - dispatch/actions가 바뀌면 최신 핸들러로 교체
         dispatch,
         focusRef,
         editingRef,

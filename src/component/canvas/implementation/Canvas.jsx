@@ -24,6 +24,10 @@ import { renderOverlay } from '../util/overlay';
 import { useCanvasHotkeys } from '../hook/useCanvasHotkeys';
 import { useStageInteractions } from '../hook/useStageInteractions';
 import styles from '../style/Canvas.module.css';
+import PolygonTool from '../../../../Polygon';
+
+let __pick = 1000;
+const nextPickId = () => ++__pick;
 
 function Canvas() {
     const dispatch = useDispatch();
@@ -71,19 +75,6 @@ function Canvas() {
         viewRef.current = { ...viewRef.current, ...view };
         requestAnimationFrame(renderAllOnce);
     }, [view]);
-
-    useEffect(() => {
-        const { w, h } = size;
-        if (!vecRef.current || !hitRef.current || !ovRef.current) return;
-        setCanvasSize(vecRef.current, w, h, { dpr: DPR(), alpha: true });
-        setCanvasSize(hitRef.current, w, h, {
-            dpr: DPR(),
-            alpha: false,
-            willRead: true,
-        });
-        setCanvasSize(ovRef.current, w, h, { dpr: DPR(), alpha: true });
-        requestAnimationFrame(renderAllOnce);
-    }, [size.w, size.h, size]);
 
     function renderAllOnce() {
         try {
@@ -178,6 +169,18 @@ function Canvas() {
         beginTextEdit,
     });
 
+    useEffect(() => {
+        const { w, h } = size;
+        if (!vecRef.current || !hitRef.current || !ovRef.current) return;
+        setCanvasSize(vecRef.current, w, h, { alpha: true });
+        setCanvasSize(hitRef.current, w, h, {
+            alpha: false,
+            willRead: true,
+        });
+        setCanvasSize(ovRef.current, w, h, { alpha: true });
+        requestAnimationFrame(renderAllOnce);
+    }, [size.w, size.h, size]);
+
     return (
         <div className={styles.wrap}>
             <div
@@ -200,6 +203,40 @@ function Canvas() {
                             endTextEdit(false);
                         }}
                         onCancel={() => endTextEdit(false)}
+                    />
+                )}
+
+                {/* 자유다각형: tool === 'polygon'일 때만 최상단 오버레이로 활성화 */}
+                {tool === 'polygon' && size.w > 0 && size.h > 0 && (
+                    <PolygonTool
+                        width={size.w}
+                        height={size.h}
+                        view={viewRef.current}
+                        onCommit={(pts) => {
+                            const id =
+                                (crypto.randomUUID && crypto.randomUUID()) ||
+                                String(Date.now());
+                            const pickId = nextPickId(); // ← 당신의 pickId 할당 유틸로 교체 가능
+                            dispatch(historyStart());
+                            dispatch(
+                                addShape({
+                                    id,
+                                    type: 'polygon',
+                                    points: pts, // 자유다각형 좌표
+                                    stroke: '#333',
+                                    strokeWidth: 2,
+                                    fill: '#fff',
+                                    pickId,
+                                })
+                            );
+
+                            dispatch(setFocus(id));
+
+                            // dispatch(setTool('select'));
+                        }}
+                        onCancel={() => {
+                            dispatch(setTool('select'));
+                        }}
                     />
                 )}
             </div>

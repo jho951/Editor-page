@@ -4,6 +4,7 @@
  */
 
 const DOC_NAME = 'doc';
+
 const DOC_STATE = {
     items: [],
     loading: false,
@@ -13,6 +14,7 @@ const DOC_STATE = {
 };
 
 const CANVAS_NAME = 'canvas';
+
 const CAMVAS_STATE = {
     shapes: [],
     focusId: null,
@@ -24,8 +26,8 @@ const CAMVAS_STATE = {
 /**
  * @property{tool}  'select' | 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'freedraw' | 'text'
  */
-
 const UI_NAME = 'ui';
+
 const UI_STATE = {
     tool: 'select',
     polygonSides: 5,

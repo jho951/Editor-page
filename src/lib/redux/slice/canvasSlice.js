@@ -1,5 +1,5 @@
 import { createSlice, createAction } from '@reduxjs/toolkit';
-import { CAMVAS_STATE, MAX_HISTORY } from '../constant/initial';
+import { CAMVAS_STATE, MAX_HISTORY } from '../initial/initial';
 
 /**
  *  @file canvasSlice.js

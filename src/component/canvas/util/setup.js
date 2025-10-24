@@ -1,11 +1,20 @@
 import { MIN_CSS, DPR } from '../constant/constants';
 
+/**
+ * 캔버스 초기 설정
+ * @param {*} canvas 3개의 캔버스 중 해당하는 캔버스 ref
+ * @param {*} cssW   canvas의 css 너비
+ * @param {*} cssH   canvas의 css 높이
+ * @param {*} param3
+ * @returns
+ */
 function setCanvasSize(
     canvas,
     cssW,
     cssH,
-    { dpr = DPR(), alpha = true, willRead = false } = {}
+    { alpha = true, willRead = false } = {}
 ) {
+    const dpr = DPR();
     const prevW = Number(canvas?.dataset?.cssw) || 0;
     const prevH = Number(canvas?.dataset?.cssh) || 0;
     let w = cssW,

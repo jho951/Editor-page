@@ -105,6 +105,8 @@ main {
 
 /* 히트맵: 비가시 + 이벤트 없음 */
 .layer-hitmap {
+    position: absolute;
+    inset: 0;
     z-index: 101;
     opacity: 0;
     pointer-events: none;

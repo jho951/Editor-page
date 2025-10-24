@@ -6,7 +6,7 @@ import {
     saveCurrentDrawing,
 } from '../util/async';
 import { toArray } from '../util/guide';
-import { DOC_STATE } from '../constant/initial';
+import { DOC_STATE } from '../initial/initial';
 
 const docSlice = createSlice({
     name: 'doc',

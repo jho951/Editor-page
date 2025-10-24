@@ -46,15 +46,6 @@ function Header() {
         polygonSidesRef.current = String(polygonSides);
     }, [polygonSides]);
 
-    const clampSides = (n) => Math.max(3, Math.min(64, Math.floor(n || 3)));
-    const changeSides = (n) => dispatch(setPolygonSides(clampSides(n)));
-    const stepSides = (delta) => changeSides(polygonSides + delta);
-    const commitSidesDraft = () => {
-        const n = parseInt(polygonSidesRef.current, 10);
-        if (Number.isFinite(n)) changeSides(n);
-        else polygonSidesRef.current = String(polygonSides);
-    };
-
     const textColor = textShape?.color ?? '#000000';
     const fontPx = useMemo(() => {
         const m = /(\d+(?:\.\d+)?)px/.exec(textShape?.font || '');
@@ -199,42 +190,6 @@ function Header() {
                         defaultValue={2}
                         onChange={onStrokeWidth}
                     />
-                </label>
-            </div>
-
-            {/* ───────── 다각형 sides 컨트롤 ───────── */}
-            <div>
-                <label>
-                    변 개수
-                    <button
-                        type="button"
-                        onClick={() => stepSides(-1)}
-                        disabled={polygonSides <= 3}
-                    >
-                        -
-                    </button>
-                    <input
-                        type="number"
-                        min="3"
-                        max="64"
-                        value={polygonSidesRef.current}
-                        onChange={(e) =>
-                            (polygonSidesRef.current = e.target.value)
-                        }
-                        onBlur={commitSidesDraft}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') e.currentTarget.blur();
-                        }}
-                        style={{ width: 64, textAlign: 'center' }}
-                        inputMode="numeric"
-                    />
-                    <button
-                        type="button"
-                        onClick={() => stepSides(+1)}
-                        disabled={polygonSides >= 64}
-                    >
-                        +
-                    </button>
                 </label>
             </div>
 

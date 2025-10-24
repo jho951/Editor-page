@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { UI_STATE } from '../constant/initial';
+import { UI_STATE } from '../initial/initial';
 
 const uiSlice = createSlice({
     name: 'ui',

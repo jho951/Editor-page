@@ -56,10 +56,23 @@ export function renderVector(ctx, shapes, view, { editingId } = {}) {
                 ctx.fillText(lines[i], x, yy, s.w);
             }
         } else {
-            if (s.type === 'ellipse') drawEllipsePath(ctx, s.x, s.y, s.w, s.h);
-            else if (s.type === 'polygon')
-                drawPolygonPath(ctx, s.x, s.y, s.w, s.h, s.sides);
-            else if (s.type === 'star')
+            // ellipse / star / polygon 처리
+            if (s.type === 'ellipse') {
+                drawEllipsePath(ctx, s.x, s.y, s.w, s.h);
+            } else if (s.type === 'polygon') {
+                // ① 자유 다각형(points 배열) 우선
+                if (Array.isArray(s.points) && s.points.length >= 3) {
+                    ctx.beginPath();
+                    ctx.moveTo(s.points[0].x, s.points[0].y);
+                    for (let i = 1; i < s.points.length; i++) {
+                        ctx.lineTo(s.points[i].x, s.points[i].y);
+                    }
+                    ctx.closePath();
+                } else {
+                    // ② 레거시(사각형 + sides) 지원
+                    drawPolygonPath(ctx, s.x, s.y, s.w, s.h, s.sides || 3);
+                }
+            } else if (s.type === 'star') {
                 drawStarPath(
                     ctx,
                     s.x,
@@ -69,10 +82,14 @@ export function renderVector(ctx, shapes, view, { editingId } = {}) {
                     s.points || 5,
                     s.innerRatio || 0.5
                 );
+            }
+
             if (s.fill) ctx.fill();
             ctx.stroke();
         }
+
         ctx.restore();
     }
+
     ctx.restore();
 }

@@ -3,5 +3,5 @@
         "jsx": "react-jsx",
         "checkJs": false
     },
-    "include": ["src"]
+    "include": ["src", "Polygon.jsx"]
 }

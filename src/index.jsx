@@ -1,26 +1,21 @@
-/**
- * @file index.jsx
- * @author YJH
- */
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import { store } from './lib/redux/store/index';
+import { RouterProvider } from 'react-router-dom';
+import { Provider } from 'react-redux';
 
-import Home from './page/Home';
-import Edit from './page/Edit';
+import { store } from './app/store';
+import { router } from './app/routes';
 
-import './index.css';
+import Spinner from './shared/ui/component/spinner/Spinner';
 
-const root = createRoot(document.getElementById('root'));
-root.render(
+import './style/app/reset.css';
+import './style/app/theme.css';
+import './style/app/class.css';
+
+createRoot(document.getElementById('root')).render(
     <Provider store={store}>
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/edit/:id" element={<Edit />} />
-                <Route path="/edit/new" element={<Edit />} />
-            </Routes>
-        </BrowserRouter>
+        <Suspense fallback={<Spinner />}>
+            <RouterProvider router={router} />
+        </Suspense>
     </Provider>
 );

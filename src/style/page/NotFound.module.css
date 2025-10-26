@@ -1,0 +1,58 @@
+.svg {
+    display: block;
+    max-width: none;
+    max-height: none;
+}
+
+.tile {
+    fill: white;
+    stroke: #e0e0e0;
+    stroke-width: 1.2;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.08));
+    transition: fill 0.3s ease;
+}
+
+.tile:hover {
+    fill: #f0f0f0;
+    cursor: pointer;
+}
+
+.active {
+    stroke: #999;
+    stroke-width: 1.5;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.15));
+}
+
+.message {
+    position: absolute;
+    bottom: 2rem;
+    font-size: 0.9rem;
+    color: #444;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.message a {
+    color: #4153ff;
+    text-decoration: underline;
+}
+
+.wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background-color: #fff;
+    position: relative;
+    overflow-x: hidden;
+}
+
+.scrollOuter {
+    overflow-x: visible;
+}
+@media (max-width: 768px) {
+    .scrollOuter {
+        width: 100vw;
+    }
+}

@@ -354,6 +354,7 @@ export const {
  * dispatch(updateShapeStyle({ id: 10, patch: { stroke: '#000', fill: '#fff' } }))
  */
 export const updateShapeStyle = createAction('canvas/updateShapeStyle');
+export default canvasSlice.reducer;
 
 /** shapes 배열 셀렉터 */
 export const selectShapes = (s) => s.canvas.shapes;
@@ -361,4 +362,3 @@ export const selectShapes = (s) => s.canvas.shapes;
 export const selectFocusId = (s) => s.canvas.focusId;
 
 /** slice reducer */
-export default canvasSlice.reducer;

@@ -24,7 +24,7 @@ import { renderOverlay } from '../util/overlay';
 import { useCanvasHotkeys } from '../hook/useCanvasHotkeys';
 import { useStageInteractions } from '../hook/useStageInteractions';
 import styles from '../style/Canvas.module.css';
-import PolygonTool from '../../../../Polygon';
+import PolygonTool from '../../../Polygon';
 
 let __pick = 1000;
 const nextPickId = () => ++__pick;

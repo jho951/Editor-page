@@ -16,7 +16,7 @@ import { setTool, setView } from '../../../lib/redux/slice/uiSlice';
 
 import { TextEditorOverlay } from './TextEditorOverlay';
 import { useStableSize } from '../hook/useStableSize';
-import { setCanvasSize } from '../util/setup';
+import { setCanvasSize } from '../../../features/canvas/util/setup';
 import { DPR } from '../constant/constants';
 import { renderVector } from '../util/vector';
 import { renderHitmap } from '../util/hitmap';

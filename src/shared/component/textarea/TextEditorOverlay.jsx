@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { worldToScreen } from '../util/view';
+import { worldToScreen } from '../../../feature/canvas/util/view';
 import styles from './TextEditorOverlay.module.css';
 
 function TextEditorOverlay({ shape, view, textareaRef, onCommit, onCancel }) {

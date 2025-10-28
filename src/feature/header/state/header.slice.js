@@ -8,20 +8,6 @@ const headerSlice = createSlice({
         setTool(state, action) {
             state.tool = action.payload;
         },
-        setPolygonSides(state, action) {
-            const v = Number(action.payload);
-            state.polygonSides = Math.max(3, v);
-        },
-        setStarPoints(state, action) {
-            const v = Number(action.payload);
-            state.starPoints = Math.max(3, v);
-        },
-        setStarInnerRatio(state, action) {
-            let v = Number(action.payload);
-            if (!Number.isFinite(v)) v = 0.5;
-            state.starInnerRatio = Math.min(0.95, Math.max(0.05, v));
-        },
-
         setView(state, action) {
             const v = action.payload || {};
             if (typeof v.scale === 'number') state.view.scale = v.scale;

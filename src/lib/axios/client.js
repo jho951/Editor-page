@@ -10,7 +10,7 @@
  */
 
 import axios from 'axios';
-import { getAuthToken } from '@/shared/http/token';
+import { getAuthToken } from './token';
 
 /**
  * 표준화된 HTTP 에러 객체 형태

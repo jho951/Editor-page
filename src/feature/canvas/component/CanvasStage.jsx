@@ -13,7 +13,7 @@ import {
     undo,
 } from '@/feature/canvas/state/canvas.slice';
 
-import { TextEditorOverlay } from './TextEditorOverlay';
+import { TextEditorOverlay } from '../../../shared/component/textarea/TextEditorOverlay';
 import { useStableSize } from '../hook/useStableSize';
 import { setCanvasSize } from '../../../feature/canvas/util/setup';
 

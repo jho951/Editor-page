@@ -13,11 +13,7 @@ const routes = createBrowserRouter([
             { path: '/', element: <Home /> },
             {
                 path: '/edit/:id',
-                element: (
-                    // <RequireAuth>
-                    <Edit />
-                    // </RequireAuth>
-                ),
+                element: <Edit />,
             },
             { path: '*', element: <NotFound /> },
         ],

@@ -1,4 +1,4 @@
-import { api } from '@/lib/axios/method';
+import { api } from '@/lib/axios/client';
 
 /**
  * @file drawings.js

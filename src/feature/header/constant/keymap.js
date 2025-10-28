@@ -1,24 +1,14 @@
-/**
- * 에디터 전역 단축키 맵(Feature/Handle)
- * --------------------------------------------
- * - FEATURE: 기능/도구/줌/히스토리/편집 등
- * - HANDLE/HANDLE_KEYS/HANDLE_KEYMAP: 리사이즈/회전 핸들에 대한 키 바인딩
- */
-
-/** @type {Record<string, string>} */
 const FEATURE = {
-    // 파일
     'Mod+N': 'new',
     'Mod+S': 'save',
     'Mod+Shift+S': 'quick-save',
     'Mod+O': 'open',
 
-    // 도구
     V: 'select',
     R: 'rect',
     O: 'ellipse',
     L: 'line',
-    P: 'path', // ToolHeader에서는 'freedraw'로 매핑해서 사용
+    P: 'path',
     T: 'text',
     S: 'star',
     G: 'polygon',
@@ -58,6 +48,12 @@ const FEATURE = {
     Delete: 'node-delete',
     Backspace: 'node-delete',
     Insert: 'node-insert',
+
+    'Alt+1': 'toggle-section:file',
+    'Alt+2': 'toggle-section:shape',
+    'Alt+3': 'toggle-section:transform',
+    'Alt+4': 'toggle-section:style',
+    'Alt+5': 'toggle-section:zoom',
 };
 
 const HANDLE = {

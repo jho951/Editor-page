@@ -182,9 +182,9 @@ function CanvasStage() {
     }, [size.w, size.h, size]);
 
     return (
-        <div className={styles.wrap}>
+        <main>
             <div
-                className="canvas-stage-wrap fill-viewport"
+                className={styles.wrap}
                 ref={wrapRef}
                 style={{ background: canvasBg }}
             >
@@ -216,13 +216,13 @@ function CanvasStage() {
                             const id =
                                 (crypto.randomUUID && crypto.randomUUID()) ||
                                 String(Date.now());
-                            const pickId = nextPickId(); // ← 당신의 pickId 할당 유틸로 교체 가능
+                            const pickId = nextPickId();
                             dispatch(historyStart());
                             dispatch(
                                 addShape({
                                     id,
                                     type: 'polygon',
-                                    points: pts, // 자유다각형 좌표
+                                    points: pts,
                                     stroke: '#333',
                                     strokeWidth: 2,
                                     fill: '#fff',
@@ -238,7 +238,7 @@ function CanvasStage() {
                     />
                 )}
             </div>
-        </div>
+        </main>
     );
 }
 

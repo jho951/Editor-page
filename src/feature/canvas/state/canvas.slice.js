@@ -1,6 +1,5 @@
 import { createSlice, createAction } from '@reduxjs/toolkit';
 import { CAMVAS_STATE, CANVAS_NAME } from './canvas.initial';
-import { MAX_HISTORY } from '@/feature/document/state/document.initial';
 
 /**
  *  @file canvasSlice.js
@@ -35,6 +34,7 @@ import { MAX_HISTORY } from '@/feature/document/state/document.initial';
  * @property {number} [lineHeight] 텍스트 줄 간격
  */
 
+const MAX_HISTORY = 10;
 /**
  * 깊은 복제: shapes 배열 내부의 원시값/얕은객체를 안전 복제한다.
  * redux state 스냅샷 용도로 사용(히스토리 저장)
@@ -327,6 +327,15 @@ const canvasSlice = createSlice({
             if (patch.color !== undefined) s.color = patch.color;
         });
     },
+
+    rotateFocused(state, action) {
+        const deg = action.payload || 0;
+        const id = state.focusId;
+        if (!id) return;
+        const shape = state.shapes.find((s) => s.id === id);
+        if (!shape) return;
+        shape.rotation = ((shape.rotation || 0) + deg) % 360;
+    },
 });
 
 /* ===================== 액션/셀렉터/리듀서 export ===================== */
@@ -345,6 +354,7 @@ export const {
     deletePathNode,
     undo,
     redo,
+    rotateFocused,
     // resetAll, // ← 구현이 없으므로 내보내면 오류. 필요하면 reducer 추가하세요.
     replaceAll,
 } = canvasSlice.actions;

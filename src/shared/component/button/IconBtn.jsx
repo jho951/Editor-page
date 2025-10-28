@@ -3,7 +3,7 @@ import style from './IconBtn.module.css';
 import { Icon } from '../icon/Icon';
 
 const IconBtn = forwardRef(function ToolBtn(
-    { active, icon, children, className, ...rest },
+    { active, icon, children, className, size = 20, ...rest },
     ref
 ) {
     return (
@@ -15,7 +15,7 @@ const IconBtn = forwardRef(function ToolBtn(
         >
             {icon && (
                 <span className={active ? style.active : ''}>
-                    <Icon name={icon} />
+                    <Icon name={icon} size={size} />
                 </span>
             )}
             {children}

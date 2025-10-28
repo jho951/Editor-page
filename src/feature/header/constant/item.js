@@ -33,8 +33,8 @@ const FILE_ITEM = [
         cursor: 'default',
     },
     {
-        key: 'quick-save',
-        label: '빠른 저장',
+        key: 'another-save',
+        label: '다른이름으로 저장',
         icon: <Icon name="save" size={ITEM_SIZE} />,
         shortcut: 'Mod+Shift+S',
         shortcutLabel: displayShortcut('Mod+Shift+S'),
@@ -46,6 +46,22 @@ const FILE_ITEM = [
         icon: <Icon name="open" size={ITEM_SIZE} />,
         shortcut: 'Mod+O',
         shortcutLabel: displayShortcut('Mod+O'),
+        cursor: 'default',
+    },
+    {
+        key: 'import',
+        label: '가져오기',
+        icon: <Icon name="import" size={ITEM_SIZE} />,
+        shortcut: 'Mod+Shift+S',
+        shortcutLabel: displayShortcut('Mod+Shift+S'),
+        cursor: 'default',
+    },
+    {
+        key: 'export',
+        label: '내보내기',
+        icon: <Icon name="export" size={ITEM_SIZE} />,
+        shortcut: 'Mod+Shift+S',
+        shortcutLabel: displayShortcut('Mod+Shift+S'),
         cursor: 'default',
     },
 ];
@@ -76,20 +92,20 @@ const SHAPE_ITEM = [
         shortcutLabel: displayShortcut('L'),
     },
     {
-        key: 'polygon',
-        label: '다각형',
-        icon: <Icon name="polygon" size={ITEM_SIZE} />,
-        shortcut: 'G',
-        cursor: 'crosshair',
-        shortcutLabel: displayShortcut('G'),
-    },
-    {
         key: 'star',
         label: '별',
         icon: <Icon name="star" size={ITEM_SIZE} />,
         shortcut: 'S',
         cursor: 'crosshair',
         shortcutLabel: displayShortcut('S'),
+    },
+    {
+        key: 'polygon',
+        label: '다각형',
+        icon: <Icon name="polygon" size={ITEM_SIZE} />,
+        shortcut: 'G',
+        cursor: 'crosshair',
+        shortcutLabel: displayShortcut('G'),
     },
     {
         key: 'path',
@@ -111,8 +127,16 @@ const SHAPE_ITEM = [
 
 const TRANSFORM_ITEM = [
     {
-        key: 'rotate-90',
-        label: '회전 90°',
+        key: 'rotate-left',
+        label: '왼쪽으로 90° 회전°',
+        icon: <Icon name="rotate" size={ITEM_SIZE} />,
+        shortcut: 'Alt+R',
+        cursor: 'alias',
+        shortcutLabel: displayShortcut('Alt+R'),
+    },
+    {
+        key: 'rotate-right',
+        label: '오른쪽으로 90° 회전°',
         icon: <Icon name="rotate" size={ITEM_SIZE} />,
         shortcut: 'Alt+R',
         cursor: 'alias',
@@ -144,7 +168,7 @@ const TRANSFORM_ITEM = [
     },
 ];
 
-const ZOOM_ITEM = [
+const ZOOM_CANVAS = [
     {
         key: 'fit',
         label: '화면에 맞춤',
@@ -168,6 +192,22 @@ const ZOOM_ITEM = [
         shortcut: 'Mod+-',
         cursor: 'zoom-out',
         shortcutLabel: displayShortcut('Mod+-'),
+    },
+    {
+        key: 'rotate-left',
+        label: '왼쪽으로 90° 회전°',
+        icon: <Icon name="rotate" size={ITEM_SIZE} />,
+        shortcut: 'Alt+R',
+        cursor: 'alias',
+        shortcutLabel: displayShortcut('Alt+R'),
+    },
+    {
+        key: 'rotate-right',
+        label: '오른쪽으로 90° 회전°',
+        icon: <Icon name="rotate" size={ITEM_SIZE} />,
+        shortcut: 'Alt+R',
+        cursor: 'alias',
+        shortcutLabel: displayShortcut('Alt+R'),
     },
 ];
 
@@ -196,6 +236,6 @@ export const HEADER_ELEMENTS = {
     FILE_ITEM,
     SHAPE_ITEM,
     TRANSFORM_ITEM,
-    ZOOM_ITEM,
+    ZOOM_CANVAS,
     HISTORY_ITEM,
 };

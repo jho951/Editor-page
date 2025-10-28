@@ -1,96 +1,92 @@
-import { useEffect, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useCallback, useMemo } from 'react';
+import { useDispatch } from 'react-redux';
+
+import { DocumentModalShell } from './DocumentModalShell';
 
 import { fetchDrawings, restoreDrawing } from '../api/async';
-import { Modal } from '@/shared/component/modal/Modal';
-import { closeRestoreModal } from '../state/document.slice';
+import { setModal } from '../state/document.slice';
 import { IconBtn } from '@/shared/component/button/IconBtn';
 
 import styles from './OpenModal.module.css';
+import { useDocumentModal } from '../hook/useDocumentModal';
 
-function RestoreModal() {
+export default function RestoreModal() {
     const dispatch = useDispatch();
-    const open = useSelector((s) => s.doc?.ui?.restoreOpen);
-    const items = useSelector((s) => s.doc?.items || []);
-    const loading = useSelector((s) => s.doc?.loading);
-    const error = useSelector((s) => s.doc?.error);
 
-    useEffect(() => {
-        if (open) dispatch(fetchDrawings({ deleted: true }));
-    }, [open, dispatch]);
+    // 열릴 때 "삭제된 문서" 목록을 불러오도록 설정
+    const { open, items, loading, error, empty } = useDocumentModal('restore', {
+        fetchList: () => fetchDrawings({ deleted: true }),
+    });
 
+    // 삭제일자 최신순 정렬
     const sorted = useMemo(() => {
-        return [...items].sort((a, b) => {
+        const arr = Array.isArray(items) ? items.slice() : [];
+        return arr.sort((a, b) => {
             const da = a?.deletedAt ? new Date(a.deletedAt).getTime() : 0;
             const db = b?.deletedAt ? new Date(b.deletedAt).getTime() : 0;
             return db - da;
         });
     }, [items]);
 
-    const onRestore = async (e, id) => {
-        e.stopPropagation();
-        if (!window.confirm('복구하시겠습니까?')) return;
-        const res = await dispatch(restoreDrawing(id));
-        if (res.meta.requestStatus === 'fulfilled')
-            dispatch(fetchDrawings({ deleted: true }));
-        else alert('복구에 실패했습니다.');
-    };
+    const onClose = useCallback(() => {
+        if (typeof setModal === 'function')
+            dispatch(setModal({ key: 'restore', open: false }));
+    }, [dispatch]);
 
-    // 영구 삭제가 필요하면 이 핸들러 사용
-    // const onPurge = async (id) => {
-    //   if (!window.confirm('이 문서를 영구 삭제하시겠습니까? 되돌릴 수 없습니다.')) return;
-    //   const res = await dispatch(deleteDrawing(id));
-    //   if (res.meta.requestStatus === 'fulfilled') {
-    //     dispatch(fetchDrawings({ page: 1, size: 20, deleted: true }));
-    //   } else {
-    //     alert('영구 삭제에 실패했습니다.');
-    //   }
-    // };
+    const onRestore = useCallback(
+        async (e, id) => {
+            e?.stopPropagation?.();
+            if (!window.confirm('복구하시겠습니까?')) return;
+            const res = await dispatch(restoreDrawing(id));
+            if (res.meta.requestStatus === 'fulfilled') {
+                dispatch(fetchDrawings({ deleted: true }));
+            } else {
+                alert('복구에 실패했습니다.');
+            }
+        },
+        [dispatch]
+    );
 
     return (
-        <Modal
+        <DocumentModalShell
             open={!!open}
             title="삭제된 문서"
-            onClose={() => dispatch(closeRestoreModal())}
+            onClose={onClose}
+            loading={loading}
+            error={error}
+            empty={empty}
+            emptyText="삭제된 문서가 없습니다."
         >
-            {loading && <div>불러오는 중…</div>}
-            {!loading && error && (
-                <div style={{ color: 'crimson' }}>{String(error)}</div>
-            )}
-            {!loading && !error && sorted.length === 0 && (
-                <div>삭제된 문서가 없습니다.</div>
-            )}
             <ul>
-                {items.map((it) => (
-                    <li className={styles.row} key={it.id} tabIndex={0}>
+                {sorted.map((it) => (
+                    <li
+                        key={it.id}
+                        className={styles.row}
+                        tabIndex={0}
+                        role="button"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ')
+                                onRestore(e, it.id);
+                        }}
+                    >
                         <p className={styles.meta}>
                             <span>{it.title}</span>
                             <span>
-                                {it.updatedAt &&
-                                    new Date(it.updatedAt).toLocaleString()}
+                                {it.deletedAt
+                                    ? new Date(it.deletedAt).toLocaleString()
+                                    : it.updatedAt
+                                      ? new Date(it.updatedAt).toLocaleString()
+                                      : ''}
                             </span>
                         </p>
                         <IconBtn
-                            icon={'trash'}
+                            icon="restore" // 아이콘 셋에 따라 'rotate-ccw' 등으로 변경
                             onClick={(e) => onRestore(e, it.id)}
                             title="복원"
                         />
                     </li>
                 ))}
             </ul>
-
-            {/* (선택) 영구 삭제 버튼
-              <button
-                type="button"
-                className={styles.btn}
-                onClick={() => onPurge(it.id)}
-                title="영구 삭제"
-              >
-                영구 삭제
-              </button>
-              */}
-        </Modal>
+        </DocumentModalShell>
     );
 }
-
-export default RestoreModal;

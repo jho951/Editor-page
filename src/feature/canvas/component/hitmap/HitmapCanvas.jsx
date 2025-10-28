@@ -1,6 +1,6 @@
 import { forwardRef, useEffect } from 'react';
-import { renderHitmap } from '../service/render-hitmap';
-import { setCanvasSize } from '../util/setup';
+import { setCanvasSize } from '../../util/setup';
+import { renderHitmap } from '../../service/render-hitmap';
 
 /**
  * 히트맵 레이어: RGB pick-buffer 렌더 전용 (비가시, pointer-events: none)

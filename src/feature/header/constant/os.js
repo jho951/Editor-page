@@ -1,4 +1,4 @@
-const isAppleLike = () => {
+const isMac = () => {
     if (typeof window === 'undefined') return false;
 
     const uaData = navigator.userAgentData;
@@ -15,7 +15,6 @@ const isAppleLike = () => {
     );
 };
 
-const isMac = isAppleLike();
-const MOD = isMac ? 'Meta' : 'Control';
+const MOD = isMac() ? 'Meta' : 'Control';
 
 export { MOD, isMac };

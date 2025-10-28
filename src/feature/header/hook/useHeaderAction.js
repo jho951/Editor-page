@@ -3,12 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { saveDrawingById } from '../../document/api/async';
 import { setCanvasBg, setTool, setView } from '../state/header.slice';
-import {
-    markDirty,
-    openLoadModal,
-    openRestoreModal,
-    openSaveModal,
-} from '@/feature/document/state/document.slice';
+import { markDirty, setModal } from '@/feature/document/state/document.slice';
 import {
     historyStart,
     redo,
@@ -16,86 +11,88 @@ import {
     updateShapeStyle,
 } from '@/feature/canvas/state/canvas.slice';
 
-/**
- * ToolHeader 컴포넌트에서 사용되는 모든 Redux 기반 로직과 액션 핸들러를 캡슐화하는 커스텀 훅입니다.
- */
+import { selectSidebarOpen, selectView } from '../state/header.selector';
+
+import { selectCurrent } from '@/feature/document/state/document.selector';
+import { selectFocusId } from '@/feature/canvas/state/canvas.selector';
+
+import { clamp } from '@/shared/util/clamp';
+
 function useHeaderAction() {
     const dispatch = useDispatch();
-
-    const view = useSelector((s) => s.header.view);
-    const tool = useSelector((st) => st.header.tool);
-    const meta = useSelector((s) => s.document?.current);
-    const canvasBg = useSelector((s) => s.header.canvasBg);
-    const focusId = useSelector((s) => s.canvas.focusId);
-    const polygonSides = useSelector((s) => s.header.polygonSides);
+    const view = useSelector(selectView);
+    const meta = useSelector(selectCurrent);
+    const focusId = useSelector(selectFocusId);
+    const sidebarOpen = useSelector(selectSidebarOpen);
 
     const setZoom = useCallback(
-        (next, view) => {
-            dispatch(
-                setView({ ...view, scale: Math.min(8, Math.max(0.125, next)) })
-            );
+        (next) => {
+            const clamped = clamp(0.125, next, 8);
+            dispatch(setView({ ...view, scale: clamped }));
         },
-        [dispatch]
+        [dispatch, view]
     );
 
     const nudgeZoom = useCallback(
-        (mul) => setZoom(view.scale * mul),
+        (mul) => {
+            setZoom(view.scale * (mul || 1));
+        },
         [view.scale, setZoom]
     );
 
+    // ── Modals (헬퍼 없이 직접 dispatch)
     const handleOpen = useCallback(() => {
-        dispatch(openLoadModal());
+        dispatch(setModal({ key: 'load', open: true }));
     }, [dispatch]);
 
     const handleRestore = useCallback(() => {
-        dispatch(openRestoreModal());
+        dispatch(setModal({ key: 'restore', open: true }));
     }, [dispatch]);
 
-    // --- Undo/Redo 액션 ---
+    // ── Undo/Redo
     const handleUndo = useCallback(() => dispatch(undo()), [dispatch]);
     const handleRedo = useCallback(() => dispatch(redo()), [dispatch]);
 
-    // --- 툴 선택 액션 ---
+    // ── Tool
     const handleSetTool = useCallback(
         (name) => dispatch(setTool(name)),
         [dispatch]
     );
 
-    const onPickStroke = useCallback(
-        (e) => {
+    // ── Style patch 공통
+    const patchFocusedStyle = useCallback(
+        (patch) => {
             if (!focusId) return;
-            const val = e.target.value;
             dispatch(historyStart());
-            dispatch(updateShapeStyle({ id: focusId, patch: { stroke: val } }));
+            dispatch(updateShapeStyle({ id: focusId, patch }));
             dispatch(markDirty());
         },
         [dispatch, focusId]
+    );
+
+    const onPickStroke = useCallback(
+        (e) => {
+            patchFocusedStyle({ stroke: e.target.value });
+        },
+        [patchFocusedStyle]
     );
 
     const onPickFill = useCallback(
         (e) => {
-            if (!focusId) return;
-            const val = e.target.value;
-            dispatch(historyStart());
-            dispatch(updateShapeStyle({ id: focusId, patch: { fill: val } }));
-            dispatch(markDirty());
+            patchFocusedStyle({ fill: e.target.value });
         },
-        [dispatch, focusId]
+        [patchFocusedStyle]
     );
 
     const onStrokeWidth = useCallback(
         (e) => {
-            if (!focusId) return;
             const n = Number(e.target.value) || 1;
-            dispatch(historyStart());
-            dispatch(
-                updateShapeStyle({ id: focusId, patch: { strokeWidth: n } })
-            );
-            dispatch(markDirty());
+            patchFocusedStyle({ strokeWidth: n });
         },
-        [dispatch, focusId]
+        [patchFocusedStyle]
     );
 
+    // ── Canvas BG
     const onPickCanvasBg = useCallback(
         (e) => {
             const val = e.target.value;
@@ -105,30 +102,29 @@ function useHeaderAction() {
         [dispatch]
     );
 
-    const handleSave = async (opts = {}) => {
-        if (opts.quick === false) {
-            return dispatch(openSaveModal());
-        }
-
-        if (meta?.id) {
-            try {
-                await dispatch(saveDrawingById(meta.id)).unwrap();
-            } catch (e) {
-                alert('저장 실패: ' + (e?.message || String(e)));
+    // ── Save
+    const handleSave = useCallback(
+        async (opts = {}) => {
+            if (opts.quick === false) {
+                dispatch(setModal({ key: 'save', open: true }));
+                return;
             }
-        } else {
-            dispatch(openSaveModal());
-        }
-    };
+            if (meta?.id) {
+                try {
+                    await dispatch(saveDrawingById(meta.id)).unwrap();
+                } catch (e) {
+                    alert('저장 실패: ' + (e?.message || String(e)));
+                }
+            } else {
+                dispatch(setModal({ key: 'save', open: true }));
+            }
+        },
+        [dispatch, meta?.id]
+    );
 
     return {
+        sidebarOpen,
         dispatch,
-        tool,
-        view,
-        canvasBg,
-        focusId,
-        meta,
-        polygonSides,
         setZoom,
         nudgeZoom,
         handleOpen,

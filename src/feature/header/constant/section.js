@@ -23,20 +23,6 @@ const DROPDOWN_SECTION = [
         icon: <Icon name="transform" size={HEADER_ELEMENTS.ITEM_SIZE + 4} />,
         items: HEADER_ELEMENTS.TRANSFORM_ITEM,
     },
-    {
-        key: 'style',
-        label: '스타일',
-
-        icon: <Icon name="palette" size={HEADER_ELEMENTS.ITEM_SIZE + 4} />,
-        items: [],
-    },
-    {
-        key: 'zoom',
-        label: '확대/축소',
-
-        icon: <Icon name="zoom" size={HEADER_ELEMENTS.ITEM_SIZE + 4} />,
-        items: HEADER_ELEMENTS.ZOOM_ITEM,
-    },
     HEADER_ELEMENTS.HISTORY_ITEM[0],
     HEADER_ELEMENTS.HISTORY_ITEM[1],
 ];

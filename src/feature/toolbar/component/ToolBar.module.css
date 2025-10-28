@@ -1,0 +1,4 @@
+.wrap {
+    position: relative;
+    z-index: calc(var(--base-z-index) + 4);
+}

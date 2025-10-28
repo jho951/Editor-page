@@ -1,11 +1,11 @@
 import React from 'react';
-import { Header } from '@/feature/header/component/Header';
+import { ToolBar } from '@/feature/toolbar/component/ToolBar';
 import { CanvasStage } from '@/feature/canvas/component/CanvasStage';
 
 function Home() {
     return (
         <React.Fragment>
-            <Header />
+            <ToolBar />
             <CanvasStage />
         </React.Fragment>
     );

@@ -28,5 +28,5 @@
 .wrap:hover,
 .wrap:active,
 .active {
-    color: var(--color-bg);
+    color: var(--color-primary);
 }

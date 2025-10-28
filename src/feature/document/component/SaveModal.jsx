@@ -1,18 +1,18 @@
-import { useState, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useMemo, useState, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 
-import { saveDrawingByName } from '../api/async';
-import { Modal } from '@/shared/component/modal/Modal';
-import { closeSaveModal } from '../state/document.slice';
+import { DocumentModalShell } from './DocumentModalShell';
 
+import { saveDrawingByName, fetchDrawings } from '../api/async';
+import { setModal } from '../state/document.slice'; // 없다면 closeSaveModal 사용
 import styles from './OpenModal.module.css';
+import { useDocumentModal } from '../hook/useDocumentModal';
 
-function SaveModal() {
+export function SaveModal() {
     const dispatch = useDispatch();
-    const open = useSelector((s) => s.doc?.ui?.saveOpen);
-    const items = useSelector((s) => s.doc?.items || []);
-    const loading = useSelector((s) => s.doc?.loading);
-
+    const { open, items, loading, error, empty } = useDocumentModal('save', {
+        fetchList: fetchDrawings,
+    });
     const [title, setTitle] = useState('');
 
     const exists = useMemo(() => {
@@ -22,44 +22,31 @@ function SaveModal() {
         return Array.isArray(items) && items.some((d) => norm(d.title) === t);
     }, [items, title]);
 
-    const onSave = async () => {
+    const onClose = useCallback(() => {
+        if (setModal) dispatch(setModal({ key: 'save', open: false }));
+    }, [dispatch]);
+
+    const onSave = useCallback(async () => {
         const t = title.trim();
         if (!t) return alert('제목을 입력하세요.');
         if (exists) return alert('같은 제목이 이미 있습니다.');
         try {
             await dispatch(saveDrawingByName(t)).unwrap();
-            dispatch(closeSaveModal());
+            onClose();
             alert('저장되었습니다.');
         } catch (e) {
             alert('저장에 실패했습니다.\n' + (e?.message || String(e)));
         }
-    };
+    }, [title, exists, dispatch, onClose]);
 
     return (
-        <Modal
+        <DocumentModalShell
             open={!!open}
             title="저장"
-            onClose={() => dispatch(closeSaveModal())}
-            footer={
-                <div className={styles.footer}>
-                    <button
-                        className={styles.btn}
-                        onClick={() => dispatch(closeSaveModal())}
-                        disabled={loading}
-                        type="button"
-                    >
-                        취소
-                    </button>
-                    <button
-                        className={`${styles.btn} ${styles.btnPrimary}`}
-                        onClick={onSave}
-                        disabled={loading || !title.trim() || exists}
-                        type="button"
-                    >
-                        {loading ? '저장 중…' : '저장'}
-                    </button>
-                </div>
-            }
+            onClose={onClose}
+            loading={loading}
+            error={error}
+            empty={false /* 저장 모달은 리스트 비어있음 표시 불필요 */}
         >
             <input
                 className={styles.input}
@@ -76,8 +63,26 @@ function SaveModal() {
             >
                 {exists && '같은 제목이 이미 있습니다.'}
             </div>
-        </Modal>
+
+            {/* footer는 쉘의 footer prop으로도 넘길 수 있지만, 여기선 간단히 내부 버튼 배치 */}
+            <div className={styles.footer}>
+                <button
+                    className={styles.btn}
+                    onClick={onClose}
+                    disabled={loading}
+                    type="button"
+                >
+                    취소
+                </button>
+                <button
+                    className={`${styles.btn} ${styles.btnPrimary}`}
+                    onClick={onSave}
+                    disabled={loading || !title.trim() || exists}
+                    type="button"
+                >
+                    {loading ? '저장 중…' : '저장'}
+                </button>
+            </div>
+        </DocumentModalShell>
     );
 }
-
-export { SaveModal };

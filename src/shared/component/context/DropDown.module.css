@@ -1,9 +1,9 @@
 .menu {
-    min-width: 15rem;
+    min-width: 20rem;
     position: absolute;
 
-    display: flex;
-    flex-direction: column;
+    top: 0%;
+    left: 48px;
 
     border: 1px solid transparent;
 
@@ -11,25 +11,16 @@
 
     box-shadow: var(--base-shadow);
 
-    background-color: var(--color-gray);
+    background-color: var(--color-bg);
 
-    padding: var(--base-padding) 0.5rem;
-    gap: var(--base-gap);
+    padding: var(--base-padding);
 
     z-index: calc(var(--base-z-index) + 4);
 }
 
-.right {
-    right: 10%;
+.item {
+    display: flex;
 }
-
-.checked {
-    color: var(--color-bg);
-}
-
-.item kbd {
-    margin-left: auto;
-    font-size: var(--font-s);
-    padding: var(--base-padding);
-    border: 1px solid transparent;
+.item:hover {
+    color: var(--color-primary);
 }

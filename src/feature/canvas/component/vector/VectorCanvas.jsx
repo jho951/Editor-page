@@ -9,12 +9,11 @@ const VectorCanvas = forwardRef(function VectorCanvas(
     useEffect(() => {
         if (!ref?.current || width <= 0 || height <= 0) return;
         setCanvasSize(ref.current, width, height, { alpha: true });
-
         const ctx = ref.current.getContext('2d');
         renderVector(ctx, shapes, view, { editingId });
     }, [width, height, shapes, view, editingId, ref]);
 
-    return <canvas ref={ref} className="layer-vector" />;
+    return <canvas ref={ref} className="layer-vector" aria-hidden />;
 });
 
 export { VectorCanvas };

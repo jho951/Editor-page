@@ -13,7 +13,6 @@ function ToolBar() {
         <header className={styles.wrap}>
             <Lnb />
             <ModalManager />
-            <Fnb />
         </header>
     );
 }

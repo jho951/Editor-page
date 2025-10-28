@@ -8,23 +8,21 @@ const DROPDOWN_SECTION = [
         icon: <Icon name="open" size={HEADER_ELEMENTS.ITEM_SIZE + 4} />,
         items: HEADER_ELEMENTS.FILE_ITEM,
     },
-    HEADER_ELEMENTS.DEFAULT_ITEM[0],
+
     {
         key: 'shape',
         label: '도형',
-
         icon: <Icon name="shape" size={HEADER_ELEMENTS.ITEM_SIZE + 4} />,
         items: HEADER_ELEMENTS.SHAPE_ITEM,
     },
     {
         key: 'transform',
         label: '변형',
-
         icon: <Icon name="transform" size={HEADER_ELEMENTS.ITEM_SIZE + 4} />,
         items: HEADER_ELEMENTS.TRANSFORM_ITEM,
     },
-    HEADER_ELEMENTS.HISTORY_ITEM[0],
-    HEADER_ELEMENTS.HISTORY_ITEM[1],
+    // 히스토리는 그대로 확장
+    ...HEADER_ELEMENTS.HISTORY_ITEM,
 ];
 
 export { DROPDOWN_SECTION };

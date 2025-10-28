@@ -81,7 +81,6 @@ const HANDLE_KEYS = [
     HANDLE.ROTATE,
 ];
 
-/** @type {Record<string, number>} */
 const HANDLE_KEYMAP = {
     'Alt+1': HANDLE.N,
     'Alt+2': HANDLE.NE,

@@ -1,49 +1,50 @@
-/**
- * @file Lnb.jsx
- * @description 좌측 도구 선택 바 (Redux 툴바 슬라이스 직접 사용)
- */
 import { useCallback, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-
+import { useSelector, useDispatch } from 'react-redux';
 import { IconBtn } from '@/shared/component/button/IconBtn';
 import { DropDown } from '@/shared/component/context/DropDown';
 import { toArray } from '@/shared/util/to-array';
-
 import styles from './Lnb.module.css';
 
+import { useHeaderAction } from '../hook/useHeaderAction';
 import { toolbarActions } from '@/feature/toolbar/state/toolbar.slice';
-import { HEADER_ELEMENTS } from '@/feature/toolbar/constant/item';
-import { DROPDOWN_SECTION } from '@/feature/toolbar/constant/section';
+
 import {
     selectSectionActive,
     selectSidebarOpen,
 } from '@/feature/toolbar/state/toolbar.selector';
 
+import { HEADER_ELEMENTS } from '@/feature/toolbar/constant/item';
+import { DROPDOWN_SECTION } from '@/feature/toolbar/constant/section';
+
 function Lnb() {
     const dispatch = useDispatch();
-
-    const { toggleSidebar, setTool } = toolbarActions;
+    const { onCommand } = useHeaderAction();
 
     const openKey = useSelector(selectSidebarOpen);
     const sectionActive = useSelector(selectSectionActive);
 
     const toggle = useCallback(
-        (key, hasItems) => {
+        (sec, hasItems) => {
+            const key = typeof sec === 'string' ? sec : sec?.key;
+
             const has = Array.isArray(hasItems)
                 ? hasItems.length > 0
                 : !!hasItems;
 
-            // 드롭다운 항목이 없는 경우: 즉시 도구 선택 실행
+            // 도형 섹션 클릭 시, 먼저 select로 전환
+            if (key === 'shape') {
+                dispatch(toolbarActions.setTool('select')); // toolbarSlice 리듀서:contentReference[oaicite:2]{index=2}
+            }
+
             if (!has) {
-                // 💡 Redux: onCommand 대신 setTool 액션 사용
-                dispatch(setTool(key));
+                onCommand(key);
                 return;
             }
 
-            // 드롭다운 항목이 있는 경우: 사이드바 열기/닫기 토글
-            dispatch(toggleSidebar(key));
+            // 열려있으면 닫고, 닫혀있으면 연다
+            dispatch(toolbarActions.toggleSidebar(key)); // :contentReference[oaicite:3]{index=3}
         },
-        [dispatch, toggleSidebar, setTool] // setTool 추가
+        [dispatch, onCommand]
     );
 
     const getSectionIcon = useCallback(
@@ -52,11 +53,10 @@ function Lnb() {
                 const activeKey = sectionActive?.shape;
                 if (activeKey) {
                     const candidates = [
-                        ...HEADER_ELEMENTS.DEFAULT_ITEM,
+                        ...HEADER_ELEMENTS.DEFAULT_ITEM, // select 아이콘 포함
                         ...HEADER_ELEMENTS.SHAPE_ITEM,
                     ];
                     const it = candidates.find((x) => x.key === activeKey);
-                    // 💡 activeKey는 toolState의 'tool' 값과 동일하므로, 해당 도구의 아이콘을 가져옴
                     if (it?.icon) return it.icon;
                 }
                 return sec.icon;
@@ -69,13 +69,10 @@ function Lnb() {
     const isActiveRow = useCallback(
         (sec) => {
             if (sec.key === 'shape') {
-                // openKey는 sidebarOpen 상태, sectionActive.shape는 tool 상태
                 return openKey === 'shape' || Boolean(sectionActive?.shape);
             }
-            if (sec.key === 'file') {
-                return openKey === 'file';
-            }
-
+            if (sec.key === 'file') return openKey === 'file';
+            if (sec.key === 'transform') return openKey === 'transform';
             return false;
         },
         [openKey, sectionActive]
@@ -83,42 +80,36 @@ function Lnb() {
 
     const onSelectItem = useCallback(
         (itemKey) => {
-            // 💡 Redux: onCommand 대신 setTool 액션 사용
-            // onCommand 대신 setTool 액션을 디스패치하고, 사이드바를 닫음
-            dispatch(setTool(itemKey));
-            dispatch(toggleSidebar(null)); // 사이드바 닫기 (toggleSidebar(null) 또는 setSidebarOpen(null))
+            onCommand(itemKey);
+            // 드롭다운 닫기: 현재 열려있는 key를 토글
+            if (openKey) dispatch(toolbarActions.toggleSidebar(openKey)); // :contentReference[oaicite:4]{index=4}
         },
-        [dispatch, setTool, toggleSidebar]
+        [onCommand, dispatch, openKey]
     );
 
     const sections = useMemo(() => DROPDOWN_SECTION, []);
 
     return (
         <nav className={styles.wrap} aria-label="Toolbar">
-            {sections.map((sec) => {
-                return (
-                    <div className={styles.row} key={sec.key}>
-                        <IconBtn
-                            className={`${styles.btn} ${isActiveRow(sec) ? styles.btnActive : ''}`}
-                            title={sec.label}
-                            icon={getSectionIcon(sec)}
-                            // 💡 toggle 함수 내에서 Redux 액션을 직접 디스패치
-                            onClick={() => toggle(sec.key, toArray(sec.items))}
+            {sections.map((sec) => (
+                <div className={styles.row} key={sec.key}>
+                    <IconBtn
+                        className={`${styles.btn} ${isActiveRow(sec) ? styles.btnActive : ''}`}
+                        title={sec.label}
+                        icon={getSectionIcon(sec)}
+                        onClick={() => toggle(sec, toArray(sec.items))}
+                    />
+                    {openKey === sec.key && toArray(sec.items).length > 0 && (
+                        <DropDown
+                            items={toArray(sec.items)}
+                            onSelect={onSelectItem}
+                            active={sectionActive?.[sec.key]}
+                            open
+                            side="right"
                         />
-
-                        {openKey === sec.key &&
-                            toArray(sec.items).length > 0 && (
-                                <DropDown
-                                    items={toArray(sec.items)}
-                                    onSelect={onSelectItem}
-                                    active={sectionActive?.[sec.key]}
-                                    open
-                                    side="right"
-                                />
-                            )}
-                    </div>
-                );
-            })}
+                    )}
+                </div>
+            ))}
         </nav>
     );
 }

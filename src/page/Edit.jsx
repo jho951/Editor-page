@@ -3,11 +3,11 @@ import { useParams } from 'react-router-dom';
 
 import { useDispatch, useSelector } from 'react-redux';
 
-import { setTitle } from '../lib/redux/slice/docSlice';
-import { loadDrawingById } from '../lib/redux/util/async';
+import { loadDrawingById } from '../feature/document/api/async';
 
-import { Canvas } from '../component/canvas/implementation/Canvas';
-import { Header } from '../component/header/implementation/Header';
+import { Header } from '../feature/header/component/Header';
+import { setTitle } from '@/feature/document/state/document.slice';
+import { CanvasStage } from '@/feature/canvas/component/CanvasStage';
 
 function Edit() {
     const { id } = useParams();
@@ -32,8 +32,7 @@ function Edit() {
                 <div style={{ padding: 16 }}>불러오는 중…</div>
             ) : (
                 <main>
-                    {' '}
-                    <Canvas />{' '}
+                    <CanvasStage />
                 </main>
             )}
         </div>

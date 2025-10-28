@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 
-import styles from '../style/page/NotFound.module.css';
+import styles from './NotFound.module.css';
 
 const FIXED_COLS = 30;
 const FIXED_ROWS = 15;

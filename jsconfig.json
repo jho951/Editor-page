@@ -1,7 +1,16 @@
 {
     "compilerOptions": {
         "jsx": "react-jsx",
-        "checkJs": false
+        "checkJs": false,
+        "baseUrl": "src",
+        "paths": {
+            "@/*": ["*"],
+            "@feature/*": ["feature/*"],
+            "@lib/*": ["lib/*"],
+            "@shared/*": ["shared/*"],
+            "@page/*": ["page/*"],
+            "@asset/*": ["asset/*"]
+        }
     },
     "include": ["src", "src/Polygon.jsx"]
 }

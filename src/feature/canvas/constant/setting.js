@@ -1,0 +1,46 @@
+/**
+ * @constant BASE_DRP
+ * @description
+ * - 현재 디바이스 픽셀 비율 반환
+ * - 브라우저 환경이 아니거나 값이 없으면 1 반환
+ * - 2.5보다 커질 시 성능저하가 발생할 수 있으므로 2.5로 고정
+ */
+const BASE_DRP = () => Math.min(window.devicePixelRatio || 1, 2.5);
+
+/**
+ * @constant MIN_CSS
+ * @description
+ * - 브라우저에 캔버스가 표시되는 최소 CSS 픽셀 크기
+ * - DPR, 줌 배율과 무관하게 화면에 보이는 최소값
+ * - 화질 저하와 가독성 저하 방지
+ * - WCAG 2.2 AA 등급 권장사항으로 24 적용
+ */
+const MIN_CSS = 24;
+
+/**
+ * @constant RETRY_FRAMES
+ * @description
+ * - 리사이즈/레이아웃 안정화 재시도 프레임 수
+ * - 캔버스 초기화 시 컨테이너 크기가 안정되지 않은 경우, 최대 몇 프레임까지 재시도할지 결정
+ * - 이유
+ * - 초기 로딩 시점: 캔버스에 그림을 그리는 자바스크립트 코드가 실행되는 시점에는 캔버스를 감싸는 <div>와 같은 부모 컨테이너(container)의 크기가 아직 최종적으로 확정되지 않았을 수 있습니다.
+ * - 레이아웃 변경: CSS 파일이 로딩되거나 다른 스크립트에 의해 레이아웃이 변경되면서 컨테이너의 크기가 동적으로 바뀔 수 있습니다.
+ * - 크기 불안정: 특히 flexbox나 grid와 같은 복잡한 레이아웃을 사용하는 경우, 혹은 이미지 로딩이 지연되는 경우, 컨테이너의 최종 크기가 바로 결정되지 않고 몇 프레임(몇 밀리초) 동안 크기가 변동될 수 있습니다.
+ */
+const RETRY_FRAMES = 30;
+
+/**
+ * @constant MIN_SCALE
+ * 캔버스 최소/최대 스케일 제한
+ * 너무 축소되는 것을 방지
+ */
+const MIN_SCALE = 0.2;
+
+/**
+ * @constant MAX_SCALE
+ * 캔버스 최소/최대 스케일 제한
+ * 너무 확대되는 것을 방지
+ */
+const MAX_SCALE = 8;
+
+export { BASE_DRP, MIN_CSS, RETRY_FRAMES, MIN_SCALE, MAX_SCALE };

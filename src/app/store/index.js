@@ -1,15 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit';
-
-import canvas from '../../lib/redux/slice/canvasSlice';
-import ui from '../../lib/redux/slice/uiSlice';
-import doc from '../../lib/redux/slice/docSlice';
+import { rootReducer } from './rootReducer';
 
 const store = configureStore({
-    reducer: {
-        doc,
-        canvas,
-        ui,
-    },
+    reducer: rootReducer,
 });
 
 export { store };

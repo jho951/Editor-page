@@ -2,9 +2,9 @@ import { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import AppLayout from './AppLayout';
 
-const Home = lazy(() => import('../page/Home'));
-const Edit = lazy(() => import('../page/Edit'));
-const NotFound = lazy(() => import('../page/NotFound'));
+const Home = lazy(() => import('@/page/Home'));
+const Edit = lazy(() => import('@/page/Edit'));
+const NotFound = lazy(() => import('@/page/NotFound'));
 
 const routes = createBrowserRouter([
     {

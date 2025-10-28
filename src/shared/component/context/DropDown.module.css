@@ -1,0 +1,35 @@
+.menu {
+    min-width: 15rem;
+    position: absolute;
+
+    display: flex;
+    flex-direction: column;
+
+    border: 1px solid transparent;
+
+    border-radius: var(--base-radius);
+
+    box-shadow: var(--base-shadow);
+
+    background-color: var(--color-gray);
+
+    padding: var(--base-padding) 0.5rem;
+    gap: var(--base-gap);
+
+    z-index: calc(var(--base-z-index) + 4);
+}
+
+.right {
+    right: 10%;
+}
+
+.checked {
+    color: var(--color-bg);
+}
+
+.item kbd {
+    margin-left: auto;
+    font-size: var(--font-s);
+    padding: var(--base-padding);
+    border: 1px solid transparent;
+}

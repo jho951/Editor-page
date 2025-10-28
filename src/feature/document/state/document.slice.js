@@ -163,4 +163,4 @@ export const {
     resetCurrent,
 } = documentSlice.actions;
 
-export default documentSlice.reducer;
+export const documentReducer = documentSlice.reducer;

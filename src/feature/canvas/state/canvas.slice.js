@@ -365,4 +365,4 @@ export const {
  * dispatch(updateShapeStyle({ id: 10, patch: { stroke: '#000', fill: '#fff' } }))
  */
 export const updateShapeStyle = createAction('canvas/updateShapeStyle');
-export default canvasSlice.reducer;
+export const canvasReducer = canvasSlice.reducer;

@@ -1,0 +1,196 @@
+/* ───────────────── 공통(기존) ───────────────── */
+.island {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    border-radius: 18px;
+    background: var(--panel-bg, rgba(30, 30, 32, 0.86));
+    color: var(--panel-fg, #fff);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    padding: 0 10px;
+    transition:
+        width 0.16s ease,
+        opacity 0.16s ease,
+        transform 0.16s ease;
+    will-change: width, transform, opacity;
+    pointer-events: auto;
+}
+
+/* 위치 프리셋(비도킹 모드에서 사용) */
+.br {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 40;
+}
+.bl {
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    z-index: 40;
+}
+.bc {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    z-index: 40;
+}
+
+/* 페이즈 */
+.collapsed {
+    opacity: 0.85;
+}
+.expanding,
+.expanded {
+    opacity: 1;
+}
+.collapsing {
+    opacity: 0.9;
+}
+
+/* 컨트롤 */
+.btn {
+    min-width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+.btn:focus-visible {
+    outline: 2px solid var(--focus, #4c8bf5);
+    outline-offset: 2px;
+}
+
+.percent {
+    font-size: 12px;
+    opacity: 0.9;
+    cursor: default;
+}
+
+.sep {
+    width: 1px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.18);
+    margin: 0 2px;
+}
+
+.track {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 120px;
+    height: 24px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.slider {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    opacity: 0; /* 네이티브 슬라이더는 숨기고 커스텀 thumb로 표시 */
+}
+
+.thumb {
+    position: absolute;
+    top: 3px;
+    width: 14px;
+    height: 18px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.85);
+    pointer-events: none;
+    transform: translateX(-50%);
+}
+
+.grip {
+    width: 12px;
+    height: 20px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.12);
+    cursor: ew-resize;
+    margin-left: 6px;
+}
+
+/* ───────────────── 도킹 모드(하단 고정 + 가로 스크롤) ───────────────── */
+.dockWrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 39;
+    /* 바 위/아래 여백 */
+    padding: 8px 12px;
+    /* 콘텐츠가 넘치면 가로 스크롤 */
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* 배경은 투명 (하단에만 살짝 그라데이션 깔고 싶으면 아래 주석 해제)
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.12));
+  */
+    pointer-events: none; /* 내부 컨텐츠만 이벤트 */
+}
+
+.dockInner {
+    display: flex;
+    justify-content: center; /* 중앙 정렬: PPT 하단 바 느낌 */
+    min-width: 560px; /* 너무 좁아지지 않도록 가드 */
+    pointer-events: none;
+}
+
+.docked {
+    position: relative;
+    pointer-events: auto; /* 바 자체는 인터랙션 가능 */
+    /* 도킹 시, 내용이 넘치면 자체적으로도 스크롤 허용 */
+    max-width: 960px; /* 넓은 화면에서 바의 최대 너비 */
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+/* ───────────────── 우측 하단 FAB ───────────────── */
+.fab {
+    position: fixed;
+    right: 16px;
+    bottom: 64px; /* 하단 바와 겹치지 않게 살짝 위로 */
+    z-index: 41;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 22px;
+    background: var(--accent, #4c8bf5);
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+.fab:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+}
+
+.fabIcon {
+    display: inline-block;
+    font-size: 18px;
+    line-height: 44px;
+    text-align: center;
+    width: 100%;
+}
+
+/* (선택) 작은 화면에서 바를 더 콤팩트하게 */
+@media (max-width: 768px) {
+    .dockInner {
+        min-width: 440px;
+    }
+    .island {
+        height: 34px;
+    }
+    .btn {
+        min-width: 26px;
+        height: 26px;
+    }
+    .percent {
+        display: none;
+    } /* 모바일에서 혼잡 시 숨김 */
+}

@@ -10,11 +10,13 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { drawings } from './drawings';
 
-import { parseVectorJson } from '@/feature/header/util/transform';
-import { setCanvasBg, setView } from '@/feature/header/state/header.slice';
+import { parseVectorJson } from '@/feature/toolbar/util/transform';
+import { setBackground } from '@/feature/toolbar/state/toolbar.slice';
 import { replaceAll } from '@/feature/canvas/state/canvas.slice';
 import { markClean, setCurrentMeta } from '../state/document.slice';
 import { takeSnapshot } from '@/feature/canvas/service/serde';
+import { selectViewport } from '@/feature/viewport/state/viewport.selector';
+import { selectBackground } from '@/feature/toolbar/state/toolbar.selector';
 
 /**
  * 서버 ApiResponse 래퍼를 유연하게 뜯는 헬퍼
@@ -63,13 +65,14 @@ export const loadDrawingById = createAsyncThunk(
                 payload.vectorJson
             );
             dispatch(
-                setView({
+                selectViewport({
                     tx: Number(view?.tx) || 0,
                     ty: Number(view?.ty) || 0,
                     scale: Number(view?.scale) || 1,
                 })
             );
-            if (canvas?.background) dispatch(setCanvasBg(canvas.background));
+            if (canvas?.background)
+                dispatch(selectBackground(canvas.background));
             dispatch(
                 replaceAll({ shapes: Array.isArray(shapes) ? shapes : [] })
             );

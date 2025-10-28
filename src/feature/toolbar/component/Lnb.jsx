@@ -1,24 +1,29 @@
-// src/feature/header/component/Lnb.jsx
+/**
+ * @file Lnb.jsx
+ * @description 좌측 도구 선택 바 (Redux 툴바 슬라이스 직접 사용)
+ */
 import { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { IconBtn } from '@/shared/component/button/IconBtn';
-
 import { DropDown } from '@/shared/component/context/DropDown';
-
 import { toArray } from '@/shared/util/to-array';
 
 import styles from './Lnb.module.css';
+
+import { toolbarActions } from '@/feature/toolbar/state/toolbar.slice';
+import { HEADER_ELEMENTS } from '@/feature/toolbar/constant/item';
+import { DROPDOWN_SECTION } from '@/feature/toolbar/constant/section';
 import {
     selectSectionActive,
     selectSidebarOpen,
-} from '@/feature/header/state/header.selector';
-import { setSidebarOpen } from '@/feature/header/state/header.slice';
-import { HEADER_ELEMENTS } from '@/feature/header/constant/item';
-import { DROPDOWN_SECTION } from '@/feature/header/constant/section';
+} from '@/feature/toolbar/state/toolbar.selector';
 
-function Lnb({ onCommand }) {
+function Lnb() {
     const dispatch = useDispatch();
+
+    const { toggleSidebar, setTool } = toolbarActions;
+
     const openKey = useSelector(selectSidebarOpen);
     const sectionActive = useSelector(selectSectionActive);
 
@@ -27,16 +32,20 @@ function Lnb({ onCommand }) {
             const has = Array.isArray(hasItems)
                 ? hasItems.length > 0
                 : !!hasItems;
+
+            // 드롭다운 항목이 없는 경우: 즉시 도구 선택 실행
             if (!has) {
-                onCommand?.(key); // 아이템 없는 섹션은 즉시 실행
+                // 💡 Redux: onCommand 대신 setTool 액션 사용
+                dispatch(setTool(key));
                 return;
             }
-            dispatch(setSidebarOpen(openKey === key ? null : key));
+
+            // 드롭다운 항목이 있는 경우: 사이드바 열기/닫기 토글
+            dispatch(toggleSidebar(key));
         },
-        [dispatch, onCommand, openKey]
+        [dispatch, toggleSidebar, setTool] // setTool 추가
     );
 
-    // tool fallback 제거: 'shape' 아이콘/active는 sectionActive.shape 있을 때만
     const getSectionIcon = useCallback(
         (sec) => {
             if (sec.key === 'shape') {
@@ -47,11 +56,11 @@ function Lnb({ onCommand }) {
                         ...HEADER_ELEMENTS.SHAPE_ITEM,
                     ];
                     const it = candidates.find((x) => x.key === activeKey);
+                    // 💡 activeKey는 toolState의 'tool' 값과 동일하므로, 해당 도구의 아이콘을 가져옴
                     if (it?.icon) return it.icon;
                 }
-                return sec.icon; // 아무 것도 선택 안 됐으면 기본 섹션 아이콘
+                return sec.icon;
             }
-            // file/transform/history 등은 고정 아이콘
             return sec.icon;
         },
         [sectionActive]
@@ -60,12 +69,13 @@ function Lnb({ onCommand }) {
     const isActiveRow = useCallback(
         (sec) => {
             if (sec.key === 'shape') {
+                // openKey는 sidebarOpen 상태, sectionActive.shape는 tool 상태
                 return openKey === 'shape' || Boolean(sectionActive?.shape);
             }
             if (sec.key === 'file') {
-                return openKey === 'file'; // 파일은 열렸을 때만 active
+                return openKey === 'file';
             }
-            // transform/history는 active 없음
+
             return false;
         },
         [openKey, sectionActive]
@@ -73,10 +83,12 @@ function Lnb({ onCommand }) {
 
     const onSelectItem = useCallback(
         (itemKey) => {
-            onCommand?.(itemKey);
-            dispatch(setSidebarOpen(null)); // 선택 후 닫기
+            // 💡 Redux: onCommand 대신 setTool 액션 사용
+            // onCommand 대신 setTool 액션을 디스패치하고, 사이드바를 닫음
+            dispatch(setTool(itemKey));
+            dispatch(toggleSidebar(null)); // 사이드바 닫기 (toggleSidebar(null) 또는 setSidebarOpen(null))
         },
-        [onCommand, dispatch]
+        [dispatch, setTool, toggleSidebar]
     );
 
     const sections = useMemo(() => DROPDOWN_SECTION, []);
@@ -84,28 +96,26 @@ function Lnb({ onCommand }) {
     return (
         <nav className={styles.wrap} aria-label="Toolbar">
             {sections.map((sec) => {
-                const active = isActiveRow(sec);
-                const icon = getSectionIcon(sec);
-                const items = toArray(sec.items);
-
                 return (
                     <div className={styles.row} key={sec.key}>
                         <IconBtn
-                            className={`${styles.btn} ${active ? styles.btnActive : ''}`}
+                            className={`${styles.btn} ${isActiveRow(sec) ? styles.btnActive : ''}`}
                             title={sec.label}
-                            icon={icon}
-                            onClick={() => toggle(sec.key, items)}
+                            icon={getSectionIcon(sec)}
+                            // 💡 toggle 함수 내에서 Redux 액션을 직접 디스패치
+                            onClick={() => toggle(sec.key, toArray(sec.items))}
                         />
 
-                        {openKey === sec.key && items.length > 0 && (
-                            <DropDown
-                                items={items}
-                                onSelect={onSelectItem}
-                                active={sectionActive?.[sec.key]}
-                                open
-                                side="right"
-                            />
-                        )}
+                        {openKey === sec.key &&
+                            toArray(sec.items).length > 0 && (
+                                <DropDown
+                                    items={toArray(sec.items)}
+                                    onSelect={onSelectItem}
+                                    active={sectionActive?.[sec.key]}
+                                    open
+                                    side="right"
+                                />
+                            )}
                     </div>
                 );
             })}

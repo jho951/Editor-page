@@ -39,4 +39,4 @@ const OverlayCanvas = forwardRef(function OverlayCanvas(
     return <canvas ref={ref} className="layer-overlay" />;
 });
 
-export default OverlayCanvas;
+export { OverlayCanvas };

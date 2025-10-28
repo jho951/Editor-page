@@ -1,5 +1,5 @@
 import { replaceAll } from '@/feature/canvas/state/canvas.slice';
-import { parseVectorJson } from '../../header/util/transform';
+import { parseVectorJson } from '../../toolbar/util/transform';
 
 async function ImportExcel(file, dispatch) {
     const fd = new FormData();

@@ -1,242 +1,163 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+
+import { VectorCanvas } from '@/feature/canvas/component/vector/VectorCanvas';
+import { HitmapCanvas } from '@/feature/canvas/component/hitmap/HitmapCanvas';
+import { OverlayCanvas } from '@/feature/canvas/component/overlay/OverlayCanvas';
+
+import { renderVector } from '@/feature/canvas/service/render-vector';
+import { renderHitmap } from '@/feature/canvas/service/render-hitmap';
+import { renderOverlay } from '@/feature/canvas/service/render-overlay';
+
+import { pickIdAt } from '@/feature/canvas/util/picking';
+import { setCanvasSize } from '@/feature/canvas/util/setup';
+
 import {
     setFocus,
     clearFocus,
-    addShape,
     moveShape,
     resizeShape,
-    deleteFocused,
     updateText,
-    historyStart,
-    redo,
+    addShape,
+    deleteFocused,
     undo,
+    redo,
 } from '@/feature/canvas/state/canvas.slice';
 
-import { TextEditorOverlay } from '../../../shared/component/textarea/TextEditorOverlay';
-import { useStableSize } from '../hook/useStableSize';
-import { setCanvasSize } from '../../../feature/canvas/util/setup';
-
-import { useCanvasHotkeys } from '../hook/useCanvasHotkeys';
-import { useStageInteractions } from '../hook/useStageInteractions';
 import styles from './Canvas.module.css';
-import PolygonTool from '../../../Polygon';
-import { renderVector } from '../service/render-vector';
-import { renderHitmap } from '../service/render-hitmap';
-import { renderOverlay } from '../service/render-overlay';
-import { setTool, setView } from '@/feature/header/state/header.slice';
+import { selectViewport } from '@/feature/viewport/state/viewport.selector';
 
-let __pick = 1000;
-const nextPickId = () => ++__pick;
-
+/**
+ * 3-레이어 구조:
+ * 1) Vector: 완성 도형 렌더 (pointer-events:none)
+ * 2) Hitmap: RGB 픽 버퍼 (비가시, pointer-events:none)
+ * 3) Overlay: 핸들/마키/가이드 및 모든 상호작용 (pointer-events:auto)
+ */
 function CanvasStage() {
     const dispatch = useDispatch();
 
-    const view = useSelector((s) => s.header.view);
-    const tool = useSelector((s) => s.header.tool);
-    const shapes = useSelector((s) => s.canvas.shapes);
+    // Store states
+    const shapes = useSelector((s) => s.canvas.items);
     const focusId = useSelector((s) => s.canvas.focusId);
-    const canvasBg = useSelector((s) => s.header.canvasBg);
+    const tool = useSelector((s) => s.canvas.tool);
+    const rawView = useSelector(selectViewport);
+    const view = rawView ?? { scale: 1, tx: 0, ty: 0 };
 
-    const starPoints = useSelector((s) => s.header.starPoints);
-    const polygonSides = useSelector((s) => s.header.polygonSides);
-    const starInnerRatio = useSelector((s) => s.header.starInnerRatio);
-
-    const ovRef = useRef(null);
+    // DOM refs
+    const wrapRef = useRef(null);
     const vecRef = useRef(null);
     const hitRef = useRef(null);
-    const textRef = useRef(null);
-    const wrapRef = useRef(null);
+    const ovRef = useRef(null);
 
-    const viewRef = useRef({ scale: 1, tx: 0, ty: 0 });
-    const toolRef = useRef(tool);
-    const focusRef = useRef(focusId);
-    const shapesRef = useRef(shapes);
-    const editingRef = useRef(false);
-    const editingIdRef = useRef(null);
+    // Resize (DPR + CSS size 동기화)
+    const doResize = useCallback(() => {
+        const wrap = wrapRef.current;
+        if (!wrap) return;
+        const rect = wrap.getBoundingClientRect();
 
-    const [editingId, setEditingId] = useState(null);
-    const { size } = useStableSize(wrapRef, { w: 640, h: 420 });
+        setCanvasSize(vecRef.current, rect.width, rect.height);
+        setCanvasSize(hitRef.current, rect.width, rect.height);
+        setCanvasSize(ovRef.current, rect.width, rect.height);
 
-    useEffect(() => {
-        shapesRef.current = shapes;
-    }, [shapes]);
+        const ctxV = vecRef.current?.getContext('2d');
+        const ctxH = hitRef.current?.getContext('2d');
+        const ctxO = ovRef.current?.getContext('2d');
 
-    useEffect(() => {
-        focusRef.current = focusId;
-    }, [focusId]);
-
-    useEffect(() => {
-        toolRef.current = tool;
-    }, [tool, polygonSides, starPoints, starInnerRatio]);
-
-    useEffect(() => {
-        if (!view) return;
-        viewRef.current = { ...viewRef.current, ...view };
-        requestAnimationFrame(renderAllOnce);
-    }, [view]);
-
-    function renderAllOnce() {
-        try {
-            const vctx = vecRef.current?.getContext('2d');
-            const hctx = hitRef.current?.getContext('2d');
-            const octx = ovRef.current?.getContext('2d');
-
-            if (vctx)
-                renderVector(vctx, shapesRef.current, viewRef.current, {
-                    editingId: editingIdRef.current,
-                });
-            if (hctx) renderHitmap(hctx, shapesRef.current, viewRef.current);
-            if (octx) {
-                const fid = focusRef.current;
-                const f = shapesRef.current.find((s) => s.id === fid);
-                renderOverlay(octx, f, viewRef.current);
-            }
-        } catch (e) {
-            console.error(e);
+        if (ctxV) renderVector(ctxV, shapes, view);
+        if (ctxH) renderHitmap(ctxH, shapes, view);
+        if (ctxO) {
+            const focused = Array.isArray(shapes)
+                ? shapes.find((s) => s.id === focusId) || null
+                : null;
+            renderOverlay(ctxO, focused, view);
         }
-    }
+    }, [shapes, view, focusId]);
 
     useEffect(() => {
-        renderAllOnce();
-    }, [shapes, focusId]);
+        const ro = new ResizeObserver(doResize);
+        if (wrapRef.current) ro.observe(wrapRef.current);
+        doResize();
+        return () => ro.disconnect();
+    }, [doResize]);
 
-    useCanvasHotkeys({
-        dispatch,
-        focusRef,
-        editingRef,
-        actions: { historyStart, deleteFocused, undo, redo },
-    });
+    // Rerender on state change
+    useEffect(() => {
+        const ctx = vecRef.current?.getContext('2d');
+        if (ctx) renderVector(ctx, shapes, view);
+    }, [shapes, view]);
 
-    const beginTextEdit = useCallback((shape) => {
-        setEditingId(shape.id);
-        editingRef.current = true;
-        requestAnimationFrame(renderAllOnce);
+    useEffect(() => {
+        const ctx = hitRef.current?.getContext('2d');
+        if (ctx) renderHitmap(ctx, shapes, view);
+    }, [shapes, view]);
+
+    useEffect(() => {
+        const ctx = ovRef.current?.getContext('2d');
+        if (!ctx) return;
+        const focused = Array.isArray(shapes)
+            ? shapes.find((s) => s.id === focusId) || null
+            : null;
+        renderOverlay(ctx, focused, view);
+    }, [focusId, shapes, view]);
+
+    // Pointer events (Overlay에서만 처리)
+    const onPointerDown = useCallback(
+        (evt) => {
+            const id = pickIdAt(hitRef.current, evt.clientX, evt.clientY);
+            if (tool === 'select') {
+                if (id) dispatch(setFocus(id));
+                else dispatch(clearFocus());
+            }
+            // 드래그/리사이즈/팬/프리드로우 등은 필요 시 여기서 상태 세팅
+        },
+        [dispatch, tool]
+    );
+
+    const onPointerMove = useCallback(
+        (evt) => {
+            // 드래그/리사이즈/가이드 업데이트 로직 연결 지점
+            // 예시)
+            // if (dragging) dispatch(moveShape({ id: focusId, dx, dy }));
+        },
+        [dispatch]
+    );
+
+    const onPointerUp = useCallback(() => {
+        // 드래그 종료/커밋 처리
     }, []);
 
-    const endTextEdit = useCallback(
-        (commit = true) => {
-            const id = editingIdRef.current ?? editingId;
-            const val = textRef.current?.value ?? '';
-            if (commit && id != null) {
-                dispatch(historyStart());
-                dispatch(updateText({ id, text: val }));
+    // 키보드 단축키 예시(undo/redo)
+    const onKeyDown = useCallback(
+        (evt) => {
+            if ((evt.metaKey || evt.ctrlKey) && evt.key.toLowerCase() === 'z') {
+                evt.preventDefault();
+                if (evt.shiftKey) dispatch(redo());
+                else dispatch(undo());
             }
-            editingRef.current = false;
-            editingIdRef.current = null;
-            setEditingId(null);
-            requestAnimationFrame(() => requestAnimationFrame(renderAllOnce));
         },
-        [dispatch, editingId]
+        [dispatch]
     );
-
-    useEffect(() => {
-        if (editingId != null && focusId !== editingId) {
-            endTextEdit(true);
-        }
-    }, [editingId, focusId, endTextEdit]);
-
-    useEffect(() => {
-        editingIdRef.current = editingId;
-    }, [editingId]);
-
-    const editingShape = useMemo(
-        () => shapes.find((v) => v.id === editingId) || null,
-        [shapes, editingId]
-    );
-
-    useStageInteractions({
-        ovRef,
-        hitRef,
-        viewRef,
-        toolRef,
-        shapesRef,
-        focusRef,
-        polygonSides,
-        starPoints,
-        starInnerRatio,
-        dispatch,
-        actions: {
-            setView,
-            setTool,
-            setFocus,
-            clearFocus,
-            historyStart,
-            addShape,
-            moveShape,
-            resizeShape,
-        },
-        beginTextEdit,
-    });
-
-    useEffect(() => {
-        const { w, h } = size;
-        if (!vecRef.current || !hitRef.current || !ovRef.current) return;
-        setCanvasSize(vecRef.current, w, h, { alpha: true });
-        setCanvasSize(hitRef.current, w, h, {
-            alpha: false,
-            willRead: true,
-        });
-        setCanvasSize(ovRef.current, w, h, { alpha: true });
-        requestAnimationFrame(renderAllOnce);
-    }, [size.w, size.h, size]);
 
     return (
-        <main>
-            <div
-                className={styles.wrap}
-                ref={wrapRef}
-                style={{ background: canvasBg }}
-            >
-                <canvas ref={vecRef} className="layer-vector" />
-                <canvas ref={hitRef} className="layer-hitmap" />
-                <canvas ref={ovRef} className="layer-overlay" />
-
-                {editingId != null && editingShape && (
-                    <TextEditorOverlay
-                        shape={editingShape}
-                        view={viewRef.current}
-                        textareaRef={textRef}
-                        onCommit={(text) => {
-                            dispatch(historyStart());
-                            dispatch(updateText({ id: editingId, text }));
-                            endTextEdit(false);
-                        }}
-                        onCancel={() => endTextEdit(false)}
-                    />
-                )}
-
-                {/* 자유다각형: tool === 'polygon'일 때만 최상단 오버레이로 활성화 */}
-                {tool === 'polygon' && size.w > 0 && size.h > 0 && (
-                    <PolygonTool
-                        width={size.w}
-                        height={size.h}
-                        view={viewRef.current}
-                        onCommit={(pts) => {
-                            const id =
-                                (crypto.randomUUID && crypto.randomUUID()) ||
-                                String(Date.now());
-                            const pickId = nextPickId();
-                            dispatch(historyStart());
-                            dispatch(
-                                addShape({
-                                    id,
-                                    type: 'polygon',
-                                    points: pts,
-                                    stroke: '#333',
-                                    strokeWidth: 2,
-                                    fill: '#fff',
-                                    pickId,
-                                })
-                            );
-
-                            dispatch(setFocus(id));
-                        }}
-                        onCancel={() => {
-                            dispatch(setTool('select'));
-                        }}
-                    />
-                )}
+        <main className={styles.stage} onKeyDown={onKeyDown} tabIndex={0}>
+            <div className={styles.wrap} ref={wrapRef}>
+                <VectorCanvas
+                    ref={vecRef}
+                    className="layer-vector"
+                    aria-hidden
+                />
+                <HitmapCanvas
+                    ref={hitRef}
+                    className="layer-hitmap"
+                    aria-hidden
+                />
+                <OverlayCanvas
+                    ref={ovRef}
+                    className="layer-overlay"
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                />
             </div>
         </main>
     );

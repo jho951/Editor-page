@@ -1,13 +1,11 @@
-import {
-    selectCanvasBg,
-    selectView,
-} from '@/feature/header/state/header.selector';
+import { selectBackground } from '@/feature/toolbar/state/toolbar.selector';
 import { selectShapes } from '../state/canvas.selector';
+import { selectViewport } from '@/feature/viewport/state/viewport.selector';
 
 function takeSnapshot(rootState) {
     const shapes = selectShapes(rootState);
-    const bg = selectCanvasBg(rootState);
-    const view = selectView(rootState);
+    const bg = selectBackground(rootState);
+    const view = selectViewport(rootState);
 
     return {
         canvas: { width: 1920, height: 1080, background: bg },

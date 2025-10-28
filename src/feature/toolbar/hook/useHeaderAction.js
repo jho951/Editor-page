@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { saveDrawingById } from '../../document/api/async';
-import { setCanvasBg, setTool, setView } from '../state/header.slice';
+
 import { markDirty, setModal } from '@/feature/document/state/document.slice';
 import {
     historyStart,
@@ -11,12 +11,18 @@ import {
     updateShapeStyle,
 } from '@/feature/canvas/state/canvas.slice';
 
-import { selectSidebarOpen, selectView } from '../state/header.selector';
+import {
+    selectBackground,
+    selectSidebarOpen,
+    selectTool,
+    selectView,
+} from '../state/toolbar.selector';
 
 import { selectCurrent } from '@/feature/document/state/document.selector';
 import { selectFocusId } from '@/feature/canvas/state/canvas.selector';
 
 import { clamp } from '@/shared/util/clamp';
+import { selectViewport } from '@/feature/viewport/state/viewport.selector';
 
 function useHeaderAction() {
     const dispatch = useDispatch();
@@ -28,7 +34,7 @@ function useHeaderAction() {
     const setZoom = useCallback(
         (next) => {
             const clamped = clamp(0.125, next, 8);
-            dispatch(setView({ ...view, scale: clamped }));
+            dispatch(selectViewport({ ...view, scale: clamped }));
         },
         [dispatch, view]
     );
@@ -55,7 +61,7 @@ function useHeaderAction() {
 
     // ── Tool
     const handleSetTool = useCallback(
-        (name) => dispatch(setTool(name)),
+        (name) => dispatch(selectTool(name)),
         [dispatch]
     );
 
@@ -96,7 +102,7 @@ function useHeaderAction() {
     const onPickCanvasBg = useCallback(
         (e) => {
             const val = e.target.value;
-            dispatch(setCanvasBg(val));
+            dispatch(selectBackground(val));
             dispatch(markDirty());
         },
         [dispatch]

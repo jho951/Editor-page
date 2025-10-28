@@ -1,5 +1,5 @@
-import { IconBtn } from '@/shared/component/button/IconBtn';
 import { useScrollLock } from '@/shared/hook';
+import { IconBtn } from '@/shared/component/button/IconBtn';
 
 import styles from './DropDown.module.css';
 

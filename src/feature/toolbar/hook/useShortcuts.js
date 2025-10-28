@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { eventToCombo, isTypingTarget } from '../util/keymap';
-import { KEYMAP } from '../constant/keymap';
+import { KEYMAP } from '../../header/constant/keymap';
 
 /**
  * @param {{ run:(cmd:string)=>void, blockInInputs?: string[] }} props

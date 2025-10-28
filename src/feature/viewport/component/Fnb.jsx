@@ -1,55 +1,67 @@
-// src/feature/canvas/component/DynamicIslandZoomBar.jsx
+/**
+ * @file Fnb.jsx
+ * @description 하단 플로팅 + 다이내믹-아일랜드형 줌 바 (Redux 직접 사용, Props 제거)
+ */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Icon } from '@/shared/component/icon/Icon';
 import { clamp } from '@/shared/util/clamp';
-import { selectView } from '@/feature/header/state/header.selector';
+
+import { viewportActions } from '@/feature/viewport/state/viewport.slice';
+import { selectViewport } from '@/feature/viewport/state/viewport.selector';
+
 import styles from './Fnb.module.css';
 
-/**
- * @param {{
- *   onCommand: (cmd: string|{type:string, value?:any}) => void,
- *   autocloseMs?: number,
- *   position?: 'br'|'bl'|'bc'
- * }} props
- */
-function Fnb({ onCommand, autocloseMs = 2400, position = 'br' }) {
-    const scale = useSelector((s) => selectView(s).scale);
+function Fnb() {
+    // Redux Hooks
+    const { scale } = useSelector(selectViewport);
+    const dispatch = useDispatch();
+    const { zoomIn, zoomOut, zoomTo, rotateLeft, rotateRight, fitToScreen } =
+        viewportActions;
+
+    const autocloseMs = 2400;
     const percent = Math.round(scale * 100);
 
-    // ── 상태
-    const [phase, setPhase] = useState('collapsed'); // collapsed | expanding | expanded | collapsing
+    const [phase, setPhase] = useState('collapsed');
     const expanded = phase === 'expanding' || phase === 'expanded';
 
-    // ── 길이(확장 상태에서만 사용)
     const [barW, setBarW] = useState(() => {
         const saved = Number(localStorage.getItem('island:w'));
+        // NOTE: clamp 함수가 util 폴더에 있으므로 그대로 사용
         return Number.isFinite(saved) ? clamp(saved, 300, 720) : 380;
     });
     useEffect(() => {
         localStorage.setItem('island:w', String(barW));
     }, [barW]);
 
-    // ── 맵핑
+    // 줌 스케일 <-> 슬라이더 값 변환 로직
     const toSlider = useCallback(
         (sc) => Math.round((clamp(sc, 0.125, 8) * 1000) / 8),
         []
     );
     const fromSlider = useCallback((v) => clamp((v * 8) / 1000, 0.125, 8), []);
 
-    // ── 공통 액션
-    const minus = useCallback(() => onCommand?.('out'), [onCommand]);
-    const plus = useCallback(() => onCommand?.('in'), [onCommand]);
-    const fit = useCallback(() => onCommand?.('fit'), [onCommand]);
-    const rotL = useCallback(() => onCommand?.('rotate-left'), [onCommand]);
-    const rotR = useCallback(() => onCommand?.('rotate-right'), [onCommand]);
+    const minus = useCallback(() => dispatch(zoomOut()), [dispatch, zoomOut]);
+    const plus = useCallback(() => dispatch(zoomIn()), [dispatch, zoomIn]);
+    const fit = useCallback(
+        () => dispatch(fitToScreen()),
+        [dispatch, fitToScreen]
+    );
+    const rotL = useCallback(
+        () => dispatch(rotateLeft()),
+        [dispatch, rotateLeft]
+    );
+    const rotR = useCallback(
+        () => dispatch(rotateRight()),
+        [dispatch, rotateRight]
+    );
+    // -----------------------------------------------------------
 
-    // ── 확장/축소 제어
+    // 자동 닫기 (Dynamic Island) 로직
     const timer = useRef(null);
     const open = useCallback(() => {
         if (phase === 'collapsed' || phase === 'collapsing')
             setPhase('expanding');
-        // expanding → expanded 전이(짧은 딜레이 후)
         requestAnimationFrame(() => {
             setPhase('expanded');
             touch();
@@ -59,7 +71,6 @@ function Fnb({ onCommand, autocloseMs = 2400, position = 'br' }) {
     const close = useCallback(() => {
         if (!expanded) return setPhase('collapsed');
         setPhase('collapsing');
-        // CSS 애니메이션 길이와 맞춤
         setTimeout(() => setPhase('collapsed'), 160);
     }, [expanded]);
 
@@ -68,7 +79,7 @@ function Fnb({ onCommand, autocloseMs = 2400, position = 'br' }) {
         timer.current = setTimeout(close, autocloseMs);
     }, [autocloseMs, close]);
 
-    // ── 바깥 클릭 시 닫기
+    // 외부 클릭 감지 및 닫기
     const rootRef = useRef(null);
     useEffect(() => {
         function onDocDown(e) {
@@ -80,53 +91,41 @@ function Fnb({ onCommand, autocloseMs = 2400, position = 'br' }) {
         return () => document.removeEventListener('mousedown', onDocDown);
     }, [expanded, close]);
 
-    // ── 휠 줌: 접힘 상태에서도 확장 유도
+    // 마우스 휠 이벤트 (줌 인/아웃)
     const onWheel = useCallback(
         (e) => {
             e.preventDefault();
             open();
-            onCommand?.(e.deltaY > 0 ? 'out' : 'in');
+            dispatch(e.deltaY > 0 ? zoomOut() : zoomIn());
         },
-        [onCommand, open]
+        [dispatch, zoomOut, zoomIn, open]
     );
 
-    // ── 슬라이더
+    // 슬라이더 값 변경 이벤트 (줌 투 특정 스케일)
     const sliderValue = useMemo(() => toSlider(scale), [scale, toSlider]);
     const onSlider = useCallback(
         (e) => {
-            onCommand?.({
-                type: 'zoom-to',
-                value: fromSlider(Number(e.target.value || 0)),
-            });
+            const nextScale = fromSlider(Number(e.target.value || 0));
+            // zoomTo 액션은 {payload}를 받으므로, slice 정의에 맞게 객체 형태로 전달합니다.
+            dispatch(zoomTo({ scale: nextScale }));
             touch();
         },
-        [fromSlider, onCommand, touch]
+        [fromSlider, dispatch, zoomTo, touch]
     );
 
-    // ── 트랙 드래그(확장 시)
+    // 트랙 클릭/드래그 이벤트 (줌 투 특정 스케일)
     const trackRef = useRef(null);
     const dragging = useRef(false);
+
     const setZoomFromClientX = useCallback(
         (clientX) => {
             const rect = trackRef.current?.getBoundingClientRect();
             if (!rect) return;
             const ratio = clamp((clientX - rect.left) / rect.width, 0, 1);
             const next = 0.125 + (8 - 0.125) * ratio;
-            onCommand?.({ type: 'zoom-to', value: next });
+            dispatch(zoomTo({ scale: next })); // zoomTo 액션 사용
         },
-        [onCommand]
-    );
-
-    const onTrackDown = useCallback(
-        (e) => {
-            if (!expanded) return open();
-            if (e.button !== 0) return;
-            dragging.current = true;
-            setZoomFromClientX(e.clientX);
-            window.addEventListener('mousemove', onTrackMove);
-            window.addEventListener('mouseup', onTrackUp, { once: true });
-        },
-        [expanded, open, setZoomFromClientX]
+        [dispatch, zoomTo]
     );
 
     const onTrackMove = useCallback(
@@ -143,24 +142,25 @@ function Fnb({ onCommand, autocloseMs = 2400, position = 'br' }) {
         window.removeEventListener('mousemove', onTrackMove);
     }, [onTrackMove]);
 
+    const onTrackDown = useCallback(
+        (e) => {
+            if (!expanded) return open();
+            if (e.button !== 0) return;
+            dragging.current = true;
+            setZoomFromClientX(e.clientX);
+            window.addEventListener('mousemove', onTrackMove);
+            window.addEventListener('mouseup', onTrackUp, { once: true });
+        },
+        [expanded, open, setZoomFromClientX, onTrackMove, onTrackUp]
+    );
+
     const onDouble = useCallback(() => {
         fit();
         touch();
     }, [fit, touch]);
 
-    // ── 리사이즈 그립(확장 시)
+    // 바 폭 조절 (Grip) 로직
     const rs = useRef({ resizing: false, startX: 0, startW: 0 });
-    const onGripDown = useCallback(
-        (e) => {
-            if (!expanded) return;
-            if (e.button !== 0) return;
-            rs.current = { resizing: true, startX: e.clientX, startW: barW };
-            window.addEventListener('mousemove', onGripMove);
-            window.addEventListener('mouseup', onGripUp, { once: true });
-        },
-        [expanded, barW]
-    );
-
     const onGripMove = useCallback(
         (e) => {
             const info = rs.current;
@@ -170,21 +170,26 @@ function Fnb({ onCommand, autocloseMs = 2400, position = 'br' }) {
         },
         [touch]
     );
-
     const onGripUp = useCallback(() => {
         rs.current.resizing = false;
         window.removeEventListener('mousemove', onGripMove);
     }, [onGripMove]);
+    const onGripDown = useCallback(
+        (e) => {
+            if (!expanded) return;
+            if (e.button !== 0) return;
+            rs.current = { resizing: true, startX: e.clientX, startW: barW };
+            window.addEventListener('mousemove', onGripMove);
+            window.addEventListener('mouseup', onGripUp, { once: true });
+        },
+        [expanded, barW, onGripMove, onGripUp]
+    );
 
-    // ── 클래스/스타일
-    const posClass =
-        position === 'bl'
-            ? styles.bl
-            : position === 'bc'
-              ? styles.bc
-              : styles.br;
+    // 하단 오른쪽 ('br') 고정 클래스 사용
+    const posClass = styles.br;
     const cls = `${styles.island} ${posClass} ${styles[phase]}`;
 
+    // docked: false (플로팅 바) 렌더링만 남김
     return (
         <div
             ref={rootRef}
@@ -193,7 +198,6 @@ function Fnb({ onCommand, autocloseMs = 2400, position = 'br' }) {
             onMouseEnter={open}
             onWheel={onWheel}
         >
-            {/* 좌측 아이콘(접힘 시 점/아이콘처럼 보이는 부분) */}
             <button
                 className={styles.btn}
                 title="축소"
@@ -204,8 +208,6 @@ function Fnb({ onCommand, autocloseMs = 2400, position = 'br' }) {
             >
                 −
             </button>
-
-            {/* 트랙/슬라이더(확장 시 노출, 접힘 시 캡슐 중앙 점처럼 보임) */}
             <div
                 ref={trackRef}
                 className={styles.track}
@@ -236,7 +238,6 @@ function Fnb({ onCommand, autocloseMs = 2400, position = 'br' }) {
                     }}
                 />
             </div>
-
             <button
                 className={styles.btn}
                 title="확대"
@@ -261,7 +262,6 @@ function Fnb({ onCommand, autocloseMs = 2400, position = 'br' }) {
                 <Icon name="fit" size={14} />
             </button>
 
-            {/* 확장 시에만 보이는 보조 액션(회전/그립) */}
             {expanded && (
                 <>
                     <div className={styles.sep} />

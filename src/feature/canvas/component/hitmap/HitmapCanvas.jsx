@@ -28,4 +28,4 @@ const HitmapCanvas = forwardRef(function HitmapCanvas(
     return <canvas ref={ref} className="layer-hitmap" />;
 });
 
-export default HitmapCanvas;
+export { HitmapCanvas };

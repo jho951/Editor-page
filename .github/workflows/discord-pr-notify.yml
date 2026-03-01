@@ -1,0 +1,47 @@
+name: Notify Discord on PR
+
+on:
+  pull_request:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Discord webhook env
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "❌ DISCORD_WEBHOOK_URL is EMPTY. Check your GitHub Actions secret."
+            exit 1
+          fi
+          echo "✅ DISCORD_WEBHOOK_URL is set. (length: ${#DISCORD_WEBHOOK_URL})"
+
+      - name: Send message to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          repo="${{ github.repository }}"
+          pr_number="${{ github.event.pull_request.number }}"
+          pr_title="${{ github.event.pull_request.title }}"
+          pr_url="${{ github.event.pull_request.html_url }}"
+          author="${{ github.event.pull_request.user.login }}"
+
+          content="🔔 새로운 PR 알림\n"
+          content+="📦 Repository: ${repo}\n"
+          content+="🔢 PR: #${pr_number}\n"
+          content+="✏️ 제목: ${pr_title}\n"
+          content+="👤 작성자: ${author}\n"
+          content+="🔗 링크: ${pr_url}"
+
+          # 줄바꿈을 \n 으로 바꿔서 JSON에 안전하게 넣기
+          json_content=$(printf '%s' "$content" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+
+          payload="{\"content\": ${json_content}}"
+
+          echo "📤 Sending payload to Discord..."
+          curl -sS -H "Content-Type: application/json" \
+               -X POST \
+               -d "$payload" \
+               "$DISCORD_WEBHOOK_URL"

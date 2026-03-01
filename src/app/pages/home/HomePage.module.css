@@ -1,0 +1,162 @@
+.page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 40px;
+}
+
+.title {
+    font-size: var(--font-title);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 40px;
+    color: var(--color-text);
+}
+
+/* 섹션 공통 스타일 */
+.section {
+    margin-bottom: 48px;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    min-height: 32px;
+}
+
+.sectionHeaderLeft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    font-size: var(--font-s);
+    font-weight: 600;
+    color: var(--color-primary);
+    gap: 0.5rem;
+}
+
+/* 최근 방문 / 즐겨찾기 그리드 */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+.empty {
+    grid-column: 1 / -1;
+    padding: 32px;
+    border: 1px dashed rgba(0,0,0,0.1);
+    border-radius: 12px;
+    text-align: center;
+    color: rgba(0,0,0,0.4);
+    font-size: var(--font-xs);
+}
+
+/* --- ✅ 템플릿 플리킹(배너) 영역 핵심 스타일 --- */
+
+.templateContainer {
+    width: 100%;
+    margin: 16px -40px 0; /* 상단 여백 및 부모 패딩 상쇄를 위한 네거티브 마진 */
+    padding: 0 40px;
+    overflow: hidden;
+
+    /* 맥북 터치패드 이전/다음 페이지 이동 제스처 방지 핵심 */
+    overscroll-behavior-x: none;
+    touch-action: pan-y;
+}
+
+.flickingViewport {
+    width: 100%;
+    cursor: grab;
+    /* 하드웨어 가속으로 제스처 반응 속도 향상 */
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+.flickingViewport:active {
+    cursor: grabbing;
+}
+
+
+.templateContainer {
+    /* 노션처럼 좌우 끝까지 닿는 느낌 */
+    margin: 0 -40px;
+    padding: 0 40px;
+    position: relative;
+}
+
+/* 가로 스크롤 영역 */
+.snapRow {
+    display: flex;
+    gap: 12px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    scroll-snap-type: x mandatory;     /* ✅ 카드가 딱딱 붙는 느낌 */
+    scroll-padding-left: 40px;
+    padding-bottom: 10px;
+
+    overscroll-behavior-x: contain;    /* ✅ history swipe로 튀는 걸 크게 줄임 */
+    -webkit-overflow-scrolling: touch;
+
+    /* 노션 느낌: 스크롤바 숨김 */
+    scrollbar-width: none;            /* firefox */
+}
+.snapRow::-webkit-scrollbar {
+    display: none;                    /* chrome/safari */
+}
+
+/* 각 카드 패널 */
+.snapPanel {
+    flex: 0 0 280px;                  /* 카드 폭 (노션 느낌) */
+    scroll-snap-align: start;
+    scroll-snap-stop: always;         /* 빠르게 휙휙할 때도 스냅 */
+    user-select: none;
+}
+
+/* 좌우 페이드(노션 느낌) */
+.templateContainer::before,
+.templateContainer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 28px;
+    pointer-events: none;
+    z-index: 2;
+}
+.templateContainer::before {
+    left: 0;
+    background: linear-gradient(to right, var(--color-bg, #fff), rgba(255,255,255,0));
+}
+.templateContainer::after {
+    right: 0;
+    background: linear-gradient(to left, var(--color-bg, #fff), rgba(255,255,255,0));
+}
+
+/* 다크모드면 배경 페이드도 어둡게 */
+[data-theme="dark"] .templateContainer::before {
+    background: linear-gradient(to right, var(--color-bg, #111), rgba(17,17,17,0));
+}
+[data-theme="dark"] .templateContainer::after {
+    background: linear-gradient(to left, var(--color-bg, #111), rgba(17,17,17,0));
+}
+
+/* 모바일 */
+@media (max-width: 768px) {
+    .templateContainer {
+        margin: 0 -20px;
+        padding: 0 20px;
+    }
+
+    .snapPanel {
+        flex-basis: 240px;
+    }
+}

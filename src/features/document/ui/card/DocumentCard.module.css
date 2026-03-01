@@ -1,0 +1,137 @@
+.card {
+    width: 100%;
+    min-width: 10rem;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+
+.cardFrame {
+    position: relative;
+    border-radius: 12px;
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Hover 효과: 노션 특유의 부드러운 들림 현상 */
+.card:hover .cardFrame {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    border-color: var(--color-border-heavy);
+}
+
+.cardTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 16px 16px 12px;
+}
+
+.cardTitle {
+    font-size: var(--font-base);
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 2px;
+    line-height: 1.4;
+}
+
+.subTitle {
+    font-size: var(--font-xxs);
+    color: var(--color-text);
+    opacity: 0.5;
+}
+
+.cardDots {
+    font-size: var(--font-md);
+    color: var(--color-text);
+    opacity: 0.3;
+    line-height: 1;
+}
+
+/* 프리뷰 영역 */
+.preview {
+    flex: 1;
+    background: var(--color-surface);
+    margin: 0 12px 12px;
+    border-radius: 8px;
+    min-height: 120px;
+    overflow: hidden;
+    border: 1px solid var(--color-border-light);
+}
+
+.coverImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 스켈레톤 디자인 */
+.skeleton {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.previewLine, .previewLineShort {
+    height: 8px;
+    background: var(--color-gray);
+    border-radius: 4px;
+}
+
+.previewLineShort {
+    width: 60%;
+}
+
+/* 하단 컬러 악센트 바 */
+.accentBar {
+    height: 4px;
+    width: 100%;
+    background:  var(--color-primary);
+    opacity: 0.8;
+}
+
+/* 리스트 뷰 대응 */
+.cardList {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.cardList .cardFrame {
+    flex-direction: row;
+    align-items: center;
+    min-height: 60px;
+    padding: 8px 16px;
+}
+
+.cardList .preview {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    margin: 0 16px 0 0;
+    flex: none;
+}
+
+.cardList .cardTop {
+    padding: 0;
+    flex: 1;
+}
+
+.cardList .accentBar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+}

@@ -1,0 +1,295 @@
+.page {
+  height: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.listOnlyPane {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.listHead {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 0 8px;
+}
+
+.listTitle {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.listHint {
+  margin: 0;
+  padding: 0 0 12px;
+  font-size: var(--font-xs);
+  color: #7e7c78;
+  opacity: 0.7;
+}
+
+.listOnly {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.listOnlyEmpty {
+  display: flex;
+}
+
+.item {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item:hover {
+  background: #f4f4f3;
+}
+
+.itemMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.itemTitle {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemTime {
+  font-size: var(--font-xxs);
+  color: #8e8c88;
+  padding-left: 22px;
+}
+
+.empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-xs);
+  color: #8b8985;
+  text-align: center;
+}
+
+.detailOnlyPane {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.detailTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.detailActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backBtn {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+  font-size: var(--font-xxs);
+}
+
+.backBtn:hover {
+  background: #f5f5f4;
+}
+
+.actionBtn {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+  font-size: var(--font-xxs);
+}
+
+.actionBtn:hover {
+  background: #f5f5f4;
+}
+
+.detailHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detailTitle {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+
+.detailMeta {
+  margin-top: 8px;
+  font-size: var(--font-xs);
+  color: #8d8b87;
+}
+
+.detailDesc {
+  margin-top: 14px;
+  font-size: var(--font-xs);
+  line-height: 1.6;
+  color: #5f5e5b;
+}
+
+.status {
+  margin-top: 16px;
+  font-size: var(--font-xs);
+  color: #6f6d69;
+}
+
+.docBody {
+  margin-top: 16px;
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: auto;
+}
+
+.blockWrap {
+  width: 100%;
+}
+
+.blockRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.blockLine {
+  margin: 0;
+  font-size: var(--font-xs);
+  line-height: 1.7;
+  color: #292826;
+  white-space: pre-wrap;
+  flex: 1;
+}
+
+.blockHeading1 {
+  margin: 6px 0 2px;
+  font-size: 2.8rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: #1f1e1b;
+}
+
+.blockHeading2 {
+  margin: 5px 0 2px;
+  font-size: 2.4rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: #23221f;
+}
+
+.blockHeading3 {
+  margin: 4px 0 2px;
+  font-size: 2rem;
+  line-height: 1.4;
+  font-weight: 600;
+  color: #2b2a27;
+}
+
+.blockBullet {
+  width: 14px;
+  margin-top: 2px;
+  font-size: var(--font-xs);
+  line-height: 1.7;
+  color: #63615d;
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.blockNumber {
+  min-width: 18px;
+  margin-top: 2px;
+  font-size: var(--font-xs);
+  line-height: 1.7;
+  color: #63615d;
+  text-align: right;
+  flex: 0 0 auto;
+}
+
+.todoBox {
+  width: 14px;
+  height: 14px;
+  margin-top: 6px;
+  border: 1.5px solid #b7b5b1;
+  border-radius: 4px;
+  background: #fff;
+  flex: 0 0 auto;
+}
+
+.todoBoxChecked {
+  background: #2383e2;
+  border-color: #2383e2;
+  position: relative;
+}
+
+.todoBoxChecked::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  width: 5px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.blockChecked {
+  color: #8f8d89;
+  text-decoration: line-through;
+}
+
+.emptyDetail {
+  margin: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #8a8884;
+  font-size: var(--font-xs);
+}

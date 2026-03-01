@@ -1,0 +1,98 @@
+
+html {
+    font-size: 62.5%;
+}
+
+body {
+    height: 100%;
+    color: var(--color-text);
+    font-size: var(--font-base);
+    line-height: 1.6;
+    text-rendering: optimizeSpeed;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    visibility: visible;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+}
+
+/* ------------------------------
+ * 💾 기본 콘텐츠 태그 스타일
+ * ------------------------------ */
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+/* ------------------------------
+ * 📦 Form Elements Reset
+ * ------------------------------ */
+input,
+button,
+textarea,
+select {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    outline: none;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+/* ------------------------------
+ * 🧭 Interactive Elements
+ * ------------------------------ */
+button {
+    cursor: pointer;
+    background: none;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ------------------------------
+ * 📑 List, Table, Blockquotes
+ * ------------------------------ */
+ul,
+ol {
+    list-style: none;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+blockquote,
+q {
+    quotes: none;
+}
+
+blockquote::before,
+blockquote::after,
+q::before,
+q::after {
+    content: '';
+}
+
+main {
+    position: relative;
+    z-index: calc(var(--base-z-index));
+}

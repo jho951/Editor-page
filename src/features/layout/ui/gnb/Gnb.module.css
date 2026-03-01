@@ -1,0 +1,100 @@
+.gnbWrap {
+    width: 100%;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--header-padding);
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.btnContainer{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap:var(--base-gap);
+}
+
+.favoriteBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    color: #666;
+}
+
+.favoriteBtn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.favoriteBtn.active {
+    /* 즐겨찾기 활성화 시 효과 */
+}
+
+.workspaceBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.avatar {
+    width: 28px;
+    height: 28px;
+    background: #efefef;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-xs);
+    font-weight: 600;
+}
+
+.gnbLeft{ margin-right:auto; display:flex; align-items:center; gap:var(--base-gap); }
+.gnbRight{ display:flex; align-items:center; gap: 4px; }
+.saveBtn{ min-height: 34px; padding: 0 12px; }
+.saveIconBtn{
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.saveIcon{
+    font-size: var(--font-base);
+    line-height: 1;
+}
+.trashBtn{
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.backIconBtn{
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.backIcon{
+    font-size: var(--font-base);
+    line-height: 1;
+}
+.deleteActionBtn{
+    min-height: 34px;
+    padding: 0 10px;
+}
+.menuBtn{ min-height: 34px; min-width: 34px; padding: 0 8px; }

@@ -1,0 +1,165 @@
+:root {
+    --base-width: calc(100vw - var(--base-padding));
+    --base-max-width: 120rem;
+
+    --base-border: rgba(var(--color-black-rgb), 0.05);
+    --base-radius: 2.4rem;
+
+    --base-padding: 2rem;
+
+    --base-blur: 4px;
+    --base-z-index: 100;
+    --base-gap: 1rem;
+
+    --base-shadow:
+        0 0.1rem 0.4rem rgba(var(--color-black-rgb), 0.1),
+        inset 0 0.1rem 0.1rem rgba(var(--color-bg-rgb), 0.5);
+
+    --base-gradient: linear-gradient(
+        to bottom,
+        rgba(var(--color-bg-gray-rgb), 0.6),
+        rgba(var(--color-bg-secondary-gray-rgb), 0.7),
+        rgba(var(--color-bg-third-gray-rgb), 0.8)
+    );
+
+    --ele-border-radius: 9999px;
+
+    --header-max-width: 100rem;
+    --header-height: 8rem;
+    --header-padding: 0 3rem;
+    --header-offset: 7rem;
+
+    --header-background: linear-gradient(
+        to bottom,
+        rgba(var(--color-white-rgb), 0.2),
+        rgba(var(--color-bg-gray-rgb), 0.3),
+        rgba(var(--color-surface-rgb), 0.4)
+    );
+
+    --main-background: linear-gradient(
+        to bottom,
+        var(--color-primary) 0%,
+        var(--color-bg-gray) 20%,
+        rgba(var(--color-bg-secondary-gray-rgb), 0.5) 50%,
+        var(--color-bg-brown) 70%,
+        var(--color-bg-blue) 100%
+    );
+
+    --side-width: 23rem;
+
+    /* 1rem = 10px 기준 (html: 62.5%) */
+    --font-xxs: 1.2rem;   /* 12px */
+    --font-xs: 1.4rem;    /* 14px */
+    --font-base: 1.6rem;  /* 16px */
+    --font-md: 1.8rem;    /* 18px */
+    --font-lg: 2rem;      /* 20px */
+    --font-xl: 2.2rem;    /* 22px */
+    --font-2xl: 2.4rem;   /* 24px */
+    --font-3xl: 2.8rem;   /* 28px */
+    --font-title: 3.6rem; /* 36px */
+
+    /* Backward aliases */
+    --font-s: var(--font-xs);
+    --font-m: var(--font-base);
+    --font-l: var(--font-md);
+}
+
+.sr-only {
+    position: absolute;
+    width: 0.1rem;
+    height: 0.1rem;
+    border: 0;
+    opacity: 0;
+    visibility: hidden;
+    padding: 0;
+    margin: -0.1rem;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.focusable:focus-visible {
+    outline: 0.1rem solid var(--color-primary);
+    color: var(--color-text);
+    outline-offset: 0.4rem;
+    border-radius: 0.6rem;
+}
+
+:where(:focus-visible) {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* 캔버스 기본 */
+canvas {
+    display: block;
+    background: red;
+}
+
+.canvas-stage-wrap {
+    isolation: isolate;
+    position: relative;
+    overflow: hidden;
+    min-height: 320px;
+    background: var(--color-primary);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* 필요 시 한 화면 채우기 */
+.fill-viewport {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ───────── 3 레이어 공통 ───────── */
+.layer-vector,
+.layer-hitmap,
+.layer-overlay {
+    position: absolute;
+    inset: 0;
+    display: block;
+}
+
+/* 벡터: 렌더 전용(이벤트 없음) */
+.layer-vector {
+    pointer-events: none;
+    will-change: transform;
+    z-index: calc(var(--base-z-index) + 1);
+}
+
+/* 히트맵: 비가시 + 이벤트 없음 */
+.layer-hitmap {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    image-rendering: pixelated;
+    z-index: calc(var(--base-z-index) + 2);
+}
+
+.layer-overlay {
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    will-change: transform;
+    z-index: calc(var(--base-z-index) + 3);
+}
+
+.rotated{
+    transform: rotate(180deg);
+}
+
+.no-drag{
+    user-select: none;
+    user-drag: none;
+    -webkit-user-select: none; /* 사파리(Safari) 지원 */
+    -moz-user-select: none;    /* 파이어폭스(Firefox) 지원 */
+    -ms-user-select: none;     /* IE 10+ 지원 */
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+}

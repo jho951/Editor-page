@@ -1,0 +1,23 @@
+.wrap {
+    width: 100%;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: var(--side-width) 1fr;
+
+    background-color: var(--color-bg);
+    overflow: hidden;
+}
+
+.main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+
+.content {
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}

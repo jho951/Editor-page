@@ -1,0 +1,98 @@
+.lnbWrap {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 10px;
+    position: relative;
+
+    border-right: 1px solid var(--color-border);
+
+    padding: 12px;
+    overflow: hidden;
+}
+
+.topRow {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.logoBtn{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+}
+
+.treeArea {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-right: 2px;
+}
+
+.trashPane {
+    flex: 0 0 auto;
+    margin-bottom: 6px;
+}
+
+.trashBlock {
+    width: 100%;
+    border: 0;
+    border-radius: 8px;
+    padding: 6px 8px;
+    min-height: 34px;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    color: var(--color-text, #111827);
+    display: flex;
+    align-items: center;
+}
+
+.trashBlock:hover {
+    background: var(--color-surface-2, #f3f4f6);
+}
+
+.trashBlockActive {
+    background: var(--color-surface-3, #e5e7eb);
+}
+
+.trashLeft {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.trashIconSlot {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.12);
+    mix-blend-mode: difference;
+    flex: 0 0 auto;
+}
+
+.trashTitle {
+    font-size: var(--font-xs);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

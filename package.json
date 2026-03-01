@@ -1,44 +1,43 @@
 {
-    "name": "drawer",
-    "version": "0.1.0",
-    "private": true,
-    "proxy": "http://localhost:8080",
-    "dependencies": {
-        "@craco/craco": "^7.1.0",
-        "@reduxjs/toolkit": "^2.9.0",
-        "axios": "^1.12.2",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
-        "react-redux": "^9.2.0",
-        "react-router": "6.22",
-        "react-router-dom": "6.22",
-        "react-scripts": "5.0.1"
-    },
-    "scripts": {
-        "start": "craco start",
-        "build": "craco build",
-        "test": "craco test",
-        "eject": "react-scripts eject"
-    },
-    "devDependencies": {
-        "eslint": "^8.57.1",
-        "eslint-config-prettier": "^10.1.8",
-        "eslint-import-resolver-alias": "^1.1.2",
-        "eslint-plugin-import": "^2.32.0",
-        "eslint-plugin-react": "^7.37.5",
-        "eslint-plugin-react-hooks": "^5.2.0",
-        "prettier": "^3.6.2"
-    },
-    "browserslist": {
-        "production": [
-            ">0.2%",
-            "not dead",
-            "not op_mini all"
-        ],
-        "development": [
-            "last 1 chrome version",
-            "last 1 firefox version",
-            "last 1 safari version"
-        ]
-    }
+  "name": "drawer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@jho951/ui-components": "^0.1.4",
+    "@reduxjs/toolkit": "^2.11.0",
+    "axios": "^1.12.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-redux": "^9.2.0",
+    "react-router": "6.22",
+    "react-router-dom": "^7.11.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-router-dom": "^5.3.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^5.4.0",
+    "vite-tsconfig-paths": "^5.1.4"
+  },
+  "overrides": {}
 }

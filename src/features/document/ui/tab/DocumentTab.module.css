@@ -1,0 +1,28 @@
+.documentSwitch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.documentLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+}
+
+.documentIcon {
+    font-size: var(--font-base);
+    line-height: 1;
+}
+
+.documentText {
+    font-weight: 600;
+}
+
+.documentSwitchLabel {
+    font-size: var(--font-xxs);
+    opacity: 0.8;
+}

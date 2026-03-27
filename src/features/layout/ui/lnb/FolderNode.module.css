@@ -1,0 +1,144 @@
+.node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.row {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  background: transparent;
+  color: var(--color-text, #111827);
+  border-radius: var(--space-8);
+  padding: var(--space-6) var(--space-8);
+  padding-left: calc(var(--space-8) + var(--level, 0) * var(--space-12));
+  min-height: var(--space-34);
+  cursor: pointer;
+}
+
+.left {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+  flex: 1;
+}
+
+.right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: 0 0 auto;
+}
+
+.nodeIcon {
+  flex: 0 0 auto;
+  opacity: 1;
+  color: currentColor;
+}
+
+.iconSlot {
+  width: var(--size-20);
+  height: var(--size-20);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.12);
+  mix-blend-mode: difference;
+  flex: 0 0 auto;
+}
+
+.iconSlot:empty::before {
+  content: attr(data-fallback);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.row:hover {
+  background: var(--color-surface-2, #f3f4f6);
+}
+
+.active {
+  background: var(--color-surface-3, #e5e7eb);
+}
+
+.label {
+  font-size: var(--font-xs);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-24);
+  height: var(--size-24);
+  padding: var(--space-0);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.row:hover .actions {
+  opacity: 1;
+}
+
+.deleteBtn {
+  opacity: 0;
+  width: var(--size-24);
+  min-width: var(--size-24);
+  min-height: var(--size-24);
+  padding: var(--space-0) var(--space-6);
+  transition: opacity 120ms ease;
+}
+
+.row:hover .deleteBtn,
+.row:focus-within .deleteBtn,
+.active .deleteBtn {
+  opacity: 1;
+}
+
+.chevron {
+  width: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-xs);
+  color: rgba(0, 0, 0, 0.45);
+  transform: rotate(0deg);
+  transform-origin: center;
+  transition: transform 140ms ease;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.deleteText {
+  font-size: var(--font-xxs);
+  font-weight: 600;
+  color: #d14a4a;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.children {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.empty {
+  color: #6b7280;
+}

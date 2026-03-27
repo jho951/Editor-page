@@ -1,0 +1,86 @@
+.lnbWrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: var(--lnb-padding);
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(255, 251, 245, 0.88), rgba(244, 237, 227, 0.84));
+    border-right: 1px solid rgba(61, 53, 45, 0.08);
+    gap: var(--lnb-gap);
+}
+
+.topRow {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-8);
+}
+
+.logoBtn {
+    display: inline-flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: var(--lnb-logo-size);
+    height: var(--lnb-logo-size);
+    padding: var(--space-0);
+}
+
+.treeArea {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-right: var(--space-4);
+}
+
+.trashPane {
+    flex: 0 0 auto;
+    margin-bottom: var(--space-6);
+}
+
+.trashBlock {
+    width: 100%;
+    border: 1px solid transparent;
+    border-radius: 18px;
+    padding: var(--space-10) var(--space-12);
+    min-height: var(--lnb-item-min-height);
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.trashBlockActive {
+    background: rgba(110, 141, 116, 0.12);
+    border-color: rgba(110, 141, 116, 0.18);
+}
+
+.trashLeft {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-10);
+    min-width: 0;
+}
+
+.trashIconSlot {
+    width: var(--lnb-icon-size);
+    height: var(--lnb-icon-size);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.trashTitle {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

@@ -1,0 +1,97 @@
+.gnbWrap {
+    width: 100%;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--gnb-padding);
+    flex-shrink: 0;
+    gap: var(--gnb-gap);
+}
+
+.favoriteBtn,
+.trashBtn,
+.backIconBtn,
+.menuBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--gnb-button-height);
+    height: var(--gnb-button-height);
+    padding: var(--space-0) var(--space-10);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(61, 53, 45, 0.08);
+    box-shadow: 0 10px 22px rgba(92, 78, 59, 0.05);
+    color: rgba(61, 53, 45, 0.76);
+}
+
+.favoriteBtn:hover,
+.trashBtn:hover,
+.backIconBtn:hover,
+.menuBtn:hover,
+.shareBtn:hover,
+.deleteActionBtn:hover {
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.workspaceBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.avatar {
+    width: var(--size-30);
+    height: var(--size-30);
+    background: linear-gradient(135deg, rgba(110, 141, 116, 0.9), rgba(215, 163, 124, 0.9));
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.gnbLeft {
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-10);
+}
+
+.gnbRight {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+.saveBtn {
+    min-height: var(--gnb-button-height);
+    padding: var(--space-0) var(--space-14);
+}
+
+.shareBtn,
+.deleteActionBtn {
+    min-height: var(--gnb-button-height);
+    padding: var(--space-0) var(--space-14);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(61, 53, 45, 0.08);
+    box-shadow: 0 10px 22px rgba(92, 78, 59, 0.05);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-6);
+}
+
+.shareBtnActive {
+    background: rgba(110, 141, 116, 0.12);
+    border-color: rgba(110, 141, 116, 0.18);
+}
+
+.backIcon {
+    font-size: var(--font-base);
+    line-height: 1;
+}

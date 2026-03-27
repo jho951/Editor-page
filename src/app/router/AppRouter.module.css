@@ -1,0 +1,26 @@
+.wrap {
+    width: 100%;
+    height: var(--size-app-height);
+    display: grid;
+    grid-template-columns: var(--side-width) 1fr;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.8), transparent 28%),
+        linear-gradient(180deg, #f8f4ed 0%, var(--color-bg) 42%, #efe8de 100%);
+    overflow: hidden;
+}
+
+.main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    padding: var(--layout-main-padding);
+}
+
+
+.content {
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    padding: var(--layout-content-padding);
+}

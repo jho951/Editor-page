@@ -1,71 +1,85 @@
-그림판 벡터
-# Getting Started with Create React App
+# Editor Page
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 빠른 시작
 
-## Available Scripts
+```bash
+npm install
+npm run dev
+```
 
-In the project directory, you can run:
+기본 개발 서버 주소: `http://localhost:5173`
 
-### `npm start`
+## 구조
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- `src` 아래에 실행 코드를 모읍니다. 루트에는 설정 파일과 문서만 둡니다.
+- `src/app`: 앱 진입부, 라우터, 전역 조립
+- `src/assets`: 전역 스타일, 폰트, 아이콘
+- `src/features`: 기능 단위 모듈
+- `src/shared`: 공통 UI, util, hooks
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 페이지 레이어 규칙
 
-### `npm test`
+- `src/app/pages`는 라우트 엔트리만 둡니다.
+- 페이지 파일은 가능한 한 `return <SomeFeatureView />;` 수준의 얇은 래퍼로 유지합니다.
+- 실제 화면 구현, 상태, 페이지별 스타일은 `src/features/*/ui/*View.tsx`로 둡니다.
+- 예시:
+  - `src/app/pages/home/HomePage.tsx`
+  - `src/features/home/ui/HomeView.tsx`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 스타일 규칙
 
-### `npm run build`
+- spacing, padding, height, 기본 폰트 같은 전역 토큰은 `src/assets/styles/class.css`에서 관리합니다.
+- 기본 폰트는 `--base-font: 'Pretendard', sans-serif;`를 사용합니다.
+- 화면 CSS에서는 하드코딩 값보다 `--space-*`, `--control-height-*`, `--layout-*` 같은 변수를 우선 사용합니다.
+- 컴포넌트/화면 전용 스타일은 각 feature의 `*.module.css`에 둡니다.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### TypeScript 설정
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- `tsconfig.json`: 프로젝트 참조 진입점입니다.
+- `tsconfig.app.json`: 브라우저에서 실행되는 앱 코드용입니다.
+  - `src`를 포함합니다.
+  - DOM 타입과 React JSX 설정을 사용합니다.
+  - `@app`, `@assets`, `@features`, `@shared` alias를 정의합니다.
+- `tsconfig.node.json`: Node 환경에서 실행되는 설정 파일용입니다.
+  - 현재는 `vite.config.ts`를 대상으로 합니다.
+  - Node 타입을 사용합니다.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 문서
 
-### `npm run eject`
+- [REQUIREMENT.md](./docs/REQUIREMENT.md): text-only block editor 저장 정책 요약
+- [SAVE_MODEL.md](./docs/SAVE_MODEL.md): queue + transactions + 409 conflict 설계
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 개발 환경
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+[`.env`](.env.example)
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+실제 API로 연결 시 `VITE_ENABLE_REMOTE_DOCS=true`로 수정합니다.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## API 연동 기준
 
-## Learn More
+- 기본 API base URL은 `/api` 입니다.
+- 개발 서버에서 백엔드가 있으면 Vite proxy가 `http://localhost:8080` 으로 전달합니다.
+- 문서 목록 계약:
+  - `GET /api/pages?deleted=false`
+- 응답 포맷은 배열 자체 또는 아래 래퍼 구조를 허용합니다.
+  - `{ data }`
+  - `{ items }`
+  - `{ rows }`
+  - `{ data: { items | rows | data } }`
+- 서버가 없거나 응답이 실패하면 로컬 mock catalog로 자동 fallback 됩니다.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 인증 흐름
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```text
+3000/signin
+-> 8080/auth/sso/start
+-> GitHub
+-> 8080/auth/github/callback
+-> 5173/auth/callback
+```
 
-### Code Splitting
+프론트는 아래 규칙을 따릅니다.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- GitHub `code` 또는 access token을 직접 처리하지 않습니다.
+- `/auth/callback` 에서 `ticket` 을 받습니다.
+- `POST /auth/exchange` 후 `GET /auth/me` 로 로그인 상태를 확정합니다.

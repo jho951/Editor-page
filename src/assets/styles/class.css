@@ -1,0 +1,196 @@
+:root {
+    --width: calc(100vw - var(--base-padding));
+    --max-width: 120rem;
+
+    --base-border: rgba(var(--color-black-rgb), 0.05);
+    --base-radius: 2.4rem;
+
+    --base-padding: 2rem;
+
+    --base-blur: 4px;
+    --base-z-index: 100;
+    --base-gap: 1rem;
+
+    --space-0: 0;
+    --space-2: 2px;
+    --space-4: 4px;
+    --space-6: 6px;
+    --space-8: 8px;
+    --space-10: 10px;
+    --space-12: 12px;
+    --space-14: 14px;
+    --space-16: 16px;
+    --space-18: 18px;
+    --space-20: 20px;
+    --space-22: 22px;
+    --space-24: 24px;
+    --space-26: 26px;
+    --space-28: 28px;
+    --space-30: 30px;
+    --space-32: 32px;
+    --space-34: 34px;
+    --space-36: 36px;
+    --space-44: 44px;
+    --space-48: 48px;
+
+    --size-14: 14px;
+    --size-16: 16px;
+    --size-20: 20px;
+    --size-24: 24px;
+    --size-30: 30px;
+    --size-32: 32px;
+    --size-36: 36px;
+    --size-42: 42px;
+    --size-44: 44px;
+    --size-48: 48px;
+    --size-app-height: 100vh;
+
+    --control-height-xs: var(--size-24);
+    --control-height-sm: var(--size-30);
+    --control-height-md: var(--size-36);
+    --control-height-lg: var(--size-42);
+    --control-height-xl: var(--size-44);
+    --control-height-2xl: var(--size-48);
+
+    --layout-main-padding: var(--space-16) var(--space-18) var(--space-18) var(--space-0);
+    --layout-content-padding: var(--space-28) var(--space-34) var(--space-48);
+    --layout-section-padding: var(--space-22);
+    --layout-section-padding-mobile: var(--space-18);
+    --layout-panel-padding: var(--space-18);
+    --layout-panel-padding-lg: var(--space-22);
+    --layout-editor-padding: var(--space-26);
+
+    --lnb-padding: var(--space-18) var(--space-14) var(--space-16) var(--space-18);
+    --lnb-background: linear-gradient(180deg, rgba(var(--color-grad-start-rgb), 0.88), rgba(var(--color-grad-end-rgb), 0.84));
+    --lnb-gap: var(--space-14);
+    --lnb-logo-size: var(--size-48);
+    --lnb-item-min-height: var(--control-height-xl);
+    --lnb-icon-size: var(--size-24);
+
+    --gnb-padding: var(--space-0) var(--space-10) var(--space-14) var(--space-6);
+    --gnb-gap: var(--space-12);
+    --gnb-button-height: var(--control-height-lg);
+
+    --base-shadow:
+        0 0.1rem 0.4rem rgba(var(--color-black-rgb), 0.1),
+        inset 0 0.1rem 0.1rem rgba(var(--color-bg-rgb), 0.5);
+
+    --base-gradient: linear-gradient(
+        to bottom,
+        rgba(var(--color-bg-gray-rgb), 0.6),
+        rgba(var(--color-bg-secondary-gray-rgb), 0.7),
+        rgba(var(--color-bg-third-gray-rgb), 0.8)
+    );
+
+    --ele-border-radius: 9999px;
+
+    --header-max-width: 100rem;
+    --header-height: 8rem;
+    --header-padding: 0 3rem;
+    --header-offset: 7rem;
+
+    --header-background: linear-gradient(
+        to bottom,
+        rgba(var(--color-white-rgb), 0.2),
+        rgba(var(--color-bg-gray-rgb), 0.3),
+        rgba(var(--color-surface-rgb), 0.4)
+    );
+
+    --main-background: linear-gradient(
+        to bottom,
+        var(--color-primary) 0%,
+        var(--color-bg-gray) 20%,
+        rgba(var(--color-bg-secondary-gray-rgb), 0.5) 50%,
+        var(--color-bg-brown) 70%,
+        var(--color-bg-blue) 100%
+    );
+
+    --side-width: 23rem;
+
+    --base-font: 'Pretendard', sans-serif;
+
+    --font-xxs: 1.2rem;
+    --font-xs: 1.4rem;
+    --font-base: 1.6rem;
+    --font-md: 1.8rem;
+    --font-lg: 2rem;
+    --font-xl: 2.2rem;
+    --font-2xl: 2.4rem;
+    --font-3xl: 2.8rem;
+    --font-title: 3.6rem;
+
+    --font-s: var(--font-xs);
+    --font-m: var(--font-base);
+    --font-l: var(--font-md);
+}
+
+.sr-only {
+    position: absolute;
+    width: 0.1rem;
+    height: 0.1rem;
+    border: 0;
+    opacity: 0;
+    visibility: hidden;
+    padding: 0;
+    margin: -0.1rem;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.focusable:focus-visible {
+    outline: 0.1rem solid var(--color-primary);
+    color: var(--color-text);
+    outline-offset: 0.4rem;
+    border-radius: 0.6rem;
+}
+
+:where(:focus-visible) {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.rotated{
+    transform: rotate(180deg);
+}
+
+.no-drag{
+    user-select: none;
+    user-drag: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+}
+
+.h-app {
+    height: var(--size-app-height);
+}
+
+.pad-layout-main {
+    padding: var(--layout-main-padding);
+}
+
+.pad-layout-content {
+    padding: var(--layout-content-padding);
+}
+
+.title {
+    font-size: clamp(var(--font-2xl), 4vw, var(--font-title));
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.desc {
+    font-size:clamp(var(--font-xs), 4vw, var(--font-s));
+    opacity: 0.7;
+}
+
+
+.page {
+    max-width: var(--max-width);
+    margin: 0 auto;
+}

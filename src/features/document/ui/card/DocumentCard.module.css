@@ -1,0 +1,157 @@
+.card {
+    width: 100%;
+    min-width: 10rem;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+
+.cardFrame {
+    position: relative;
+    border-radius: 24px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(251, 246, 239, 0.9));
+    border: 1px solid rgba(61, 53, 45, 0.08);
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow:
+        0 10px 24px rgba(92, 78, 59, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.card:hover .cardFrame {
+    transform: translateY(-4px);
+    box-shadow:
+        0 18px 34px rgba(92, 78, 59, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    border-color: rgba(61, 53, 45, 0.14);
+}
+
+.cardTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 18px 18px 12px;
+    gap: 12px;
+}
+
+.titleArea {
+    display: grid;
+    gap: 4px;
+}
+
+.cardTitle {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--color-heading);
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+}
+
+.subTitle {
+    font-size: 11px;
+    color: rgba(61, 53, 45, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.cardDots {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(61, 53, 45, 0.06);
+    color: rgba(61, 53, 45, 0.42);
+    line-height: 1;
+    flex: 0 0 auto;
+}
+
+.preview {
+    flex: 1;
+    background:
+        linear-gradient(140deg, color-mix(in srgb, var(--accent, #d7a37c) 18%, white) 0%, rgba(255, 252, 247, 0.9) 72%);
+    margin: 0 14px 14px;
+    border-radius: 20px;
+    min-height: 148px;
+    overflow: hidden;
+    border: 1px solid rgba(61, 53, 45, 0.06);
+}
+
+.coverImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.skeleton {
+    height: 100%;
+    padding: 22px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+}
+
+.previewLine,
+.previewLineShort {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(61, 53, 45, 0.1);
+}
+
+.previewLineShort {
+    width: 62%;
+}
+
+.accentBar {
+    height: 5px;
+    width: 100%;
+    background: color-mix(in srgb, var(--accent, var(--color-primary)) 72%, #fff);
+    opacity: 0.95;
+}
+
+.cardList {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    padding: 0;
+}
+
+.cardList .cardFrame {
+    flex-direction: row;
+    align-items: center;
+    min-height: 96px;
+    padding: 14px;
+    border-radius: 22px;
+}
+
+.cardList .preview {
+    width: 82px;
+    height: 64px;
+    min-height: 64px;
+    margin: 0 16px 0 0;
+    flex: none;
+}
+
+.cardList .cardTop {
+    padding: 0;
+    flex: 1;
+    align-items: center;
+}
+
+.cardList .accentBar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 6px;
+    height: 100%;
+}

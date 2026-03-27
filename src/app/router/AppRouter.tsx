@@ -1,33 +1,41 @@
+/** 공통 레이아웃 안에서 중첩 라우트를 렌더링하는 라우터 셸 컴포넌트입니다. */
+
 import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-
 import type { AppDispatch } from "@app/store/store.ts";
+import { useTheme } from "@app/provider/ThemeProvider.tsx";
 
-import {Lnb} from "@features/layout/ui/lnb/Lnb.tsx";
-import {Gnb} from "@features/layout/ui/gnb/Gnb.tsx";
-import { layoutActions } from "@features/layout/state/layout.slice.ts";
 import {
-    selectSidebarActiveKey,
-    selectRecentDocIds,
-    selectPinnedDocIds,
     selectLastLocation,
-} from "@features/layout/state/layout.selector.ts";
-import {findDocById} from "@features/document/lib/catalog.ts";
-import {shortcutsActions} from "@features/shortcuts/state/shortcuts.slice.ts";
-import type {LnbActiveKey} from "@features/layout/ui/lnb/Lnb.types.ts";
+    selectPinnedDocIds,
+    selectRecentDocIds,
+    selectSidebarActiveKey,
+} from "@features/layout/index.ts";
+import {findDocById} from "@features/document/index.ts";
+import { selectAuthUser } from "@features/auth/index.ts";
+import type {LnbActiveKey} from "@features/layout/index.ts";
+import { Gnb, Lnb, layoutActions } from "@features/layout/index.ts";
+import { shortcutsActions, selectShortcutPending } from "@features/shortcuts/index.ts";
 
-import styles from './AppRouter.module.css'
+import styles from '@app/router/AppRouter.module.css'
 
+/**
+ * 현재 경로를 LNB 활성 키로 변환합니다.
+ *
+ * @param pathname 현재 브라우저 경로 문자열입니다.
+ * @returns 경로에 해당하는 LNB 활성 키를 반환합니다.
+ */
 function pathToActiveKey(pathname: string): LnbActiveKey {
     if (pathname === "/") return "home";
     if (pathname.startsWith("/documents")) return "allDocs";
-    if (pathname.startsWith("/templates")) return "template";
     if (pathname.startsWith("/shared")) return "shared";
     if (pathname.startsWith("/delete")) return "trash";
     if (pathname.startsWith("/doc/")) {
+
         const parts = pathname.split("/");
+
         const id = parts[2];
         return `folder:${id}` as LnbActiveKey;
     }
@@ -36,39 +44,53 @@ function pathToActiveKey(pathname: string): LnbActiveKey {
     return "home";
 }
 
+/**
+ * LNB 활성 키를 실제 경로로 변환합니다.
+ *
+ * @param key 변환 또는 조회에 사용할 키 값입니다.
+ * @returns 라우터 이동에 사용할 경로 문자열을 반환합니다.
+ */
 function activeKeyToPath(key: LnbActiveKey): string {
     if (key === "home") return "/";
     if (key === "allDocs") return "/documents";
     if (key === "newDocument") return "/new";
     if (key === "shared") return "/shared";
-    if (key === "template") return "/templates";
     if (key === "trash") return "/delete";
     if (key === "settings") return "/settings";
     if (String(key).startsWith("folder:")) return `/doc/${String(key).slice("folder:".length)}`;
     return "/";
 }
 
-
+/**
+ * 공통 레이아웃과 페이지 라우팅 상태를 연결하는 라우터 셸입니다.
+ * @returns 렌더링할 React 엘리먼트를 반환합니다.
+ */
 function AppRouter() {
+
     const dispatch = useDispatch<AppDispatch>();
+
     const location = useLocation();
+
     const navigate = useNavigate();
+    const { toggleTheme } = useTheme();
 
     useEffect(() => {
-        if (location.pathname.startsWith("/doc/") && location.pathname.endsWith("/canvas")) {
-            dispatch(shortcutsActions.setScope("canvas"));
-        } else {
-            dispatch(shortcutsActions.setScope("text"));
-        }
-    }, [location.pathname, dispatch]);
+        dispatch(shortcutsActions.setScope(location.pathname.startsWith("/doc/") ? "text" : "global"));
+    }, [dispatch, location.pathname]);
 
     const activeKey = useSelector(selectSidebarActiveKey);
+
     const recentIds = useSelector(selectRecentDocIds);
+
     const pinnedIds = useSelector(selectPinnedDocIds);
+
     const lastLocation = useSelector(selectLastLocation);
+
+    const user = useSelector(selectAuthUser);
 
     const recentDocs = recentIds
         .map((id) => {
+
             const doc = findDocById(id);
             return doc ? { id: doc.id, title: doc.title } : null;
         })
@@ -76,17 +98,50 @@ function AppRouter() {
 
     const pinnedDocs = pinnedIds
         .map((id) => {
+
             const doc = findDocById(id);
             return doc ? { id: doc.id, title: doc.title } : null;
         })
         .filter(Boolean) as { id: string; title: string }[];
 
+    const pendingShortcut = useSelector(selectShortcutPending);
+
     useEffect(() => {
+
         const nextKey = pathToActiveKey(location.pathname);
         if (nextKey !== activeKey) {
             dispatch(layoutActions.setActiveKey(nextKey));
         }
     }, [location.pathname, activeKey, dispatch]);
+
+    useEffect(() => {
+        if (!pendingShortcut) return;
+
+        switch (pendingShortcut.command) {
+            case "open-search":
+                navigate("/documents");
+                dispatch(shortcutsActions.consumeShortcut(pendingShortcut.id));
+                return;
+            case "show-shortcuts":
+                dispatch(shortcutsActions.consumeShortcut(pendingShortcut.id));
+                return;
+            case "toggle-theme":
+                toggleTheme();
+                dispatch(shortcutsActions.consumeShortcut(pendingShortcut.id));
+                return;
+            case "close-overlay":
+                dispatch(shortcutsActions.consumeShortcut(pendingShortcut.id));
+                return;
+            case "save-page":
+            case "new-page":
+                if (!location.pathname.startsWith("/doc/")) {
+                    dispatch(shortcutsActions.consumeShortcut(pendingShortcut.id));
+                }
+                return;
+            default:
+                return;
+        }
+    }, [dispatch, location.pathname, navigate, pendingShortcut, toggleTheme]);
 
     return (
         <div className={styles.wrap}>
@@ -100,10 +155,10 @@ function AppRouter() {
                 pinnedDocs={pinnedDocs}
                 lastLocation={lastLocation}
                 onOpenDoc={(docId) => navigate(`/doc/${docId}`)}
-                onResumeLast={(loc) => navigate(`/doc/${loc.docId}/${loc.mode}`)}
+                onResumeLast={(loc) => navigate(`/doc/${loc.docId}`)}
             />
             <div className={styles.main}>
-                <Gnb profile="YiJangHo" />
+                <Gnb profile={user?.name || user?.email || "U"} />
 
                 <main className={styles.content}>
                     <Outlet />

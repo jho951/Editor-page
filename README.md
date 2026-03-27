@@ -1,37 +1,85 @@
-0고해상도 디스플레이(예: Retina)에서는 물리적인 픽셀 수가 더 많습니다. window.devicePixelRatio는 하나의 CSS 픽셀을 그리는 데 필요한 물리적 픽셀의 수를 나타냅니다. 예를 들어, devicePixelRatio가 2인 경우 1개의 CSS 픽셀을 위해 4개(가로 2 x 세로 2)의 물리적 픽셀을 사용합니다.
-만약 캔버스 그리기 영역(내부 픽셀)의 크기와 CSS 크기가 동일하면, 고해상도 디스플레이에서 픽셀이 부족해져 브라우저가 이미지를 강제로 확대합니다. 이 과정에서 이미지가 흐릿해 보이거나 깨지는 현상이 발생합니다.
+# Editor Page
 
+## 빠른 시작
 
-모니터의 DPR(Device Pixel Ratio)이 4인 경우, 캔버스에 이미지를 렌더링할 때 DPR이 1일 때보다 16배의 메모리를 사용합니다.
-이는 메모리 사용량이 CSS 픽셀의 제곱에 비례하여 증가하기 때문입니다.
-계산 방법
-메모리 사용량은 가로 픽셀 수 × 세로 픽셀 수 × 픽셀당 바이트 수로 결정됩니다.
-DPR이 1일 때:
-캔버스 크기: 100x100 (CSS 픽셀)
-캔버스 내부 픽셀 크기: 100x100
-총 픽셀 수: 10,000픽셀
-DPR이 4일 때:
-캔버스 크기: 100x100 (CSS 픽셀)
-캔버스 내부 픽셀 크기: 400x400 (DPR을 곱함)
-총 픽셀 수: 160,000픽셀
-메모리 증가율: (4 x 4) = 16배
+```bash
+npm install
+npm run dev
+```
 
+기본 개발 서버 주소: `http://localhost:5173`
 
-# src
+## 구조
 
-이 디렉토리는 애플리케이션의 모든 소스 코드를 포함합니다.
+- `src` 아래에 실행 코드를 모읍니다. 루트에는 설정 파일과 문서만 둡니다.
+- `src/app`: 앱 진입부, 라우터, 전역 조립
+- `src/assets`: 전역 스타일, 폰트, 아이콘
+- `src/features`: 기능 단위 모듈
+- `src/shared`: 공통 UI, util, hooks
 
-본 프로젝트는 **Notion-like 서비스**를 목표로 하며,
-아래와 같은 아키텍처 원칙을 따릅니다.
+### 페이지 레이어 규칙
 
-## Directory Overview
+- `src/app/pages`는 라우트 엔트리만 둡니다.
+- 페이지 파일은 가능한 한 `return <SomeFeatureView />;` 수준의 얇은 래퍼로 유지합니다.
+- 실제 화면 구현, 상태, 페이지별 스타일은 `src/features/*/ui/*View.tsx`로 둡니다.
+- 예시:
+  - `src/app/pages/home/HomePage.tsx`
+  - `src/features/home/ui/HomeView.tsx`
 
-- `app/`        : 애플리케이션 진입부 및 조립 레이어
-- `features/`   : 핵심 기능 단위 (document, editor, canvas 등)
-- `entities/`   : 전역 도메인 모델
-- `shared/`     : 진짜 공통 UI / util / hooks
-- `types/`      : cross-feature 전역 타입
-- `global.d.ts` : 전역 타입 선언
+### 스타일 규칙
 
-## Dependency Rule
+- spacing, padding, height, 기본 폰트 같은 전역 토큰은 `src/assets/styles/class.css`에서 관리합니다.
+- 기본 폰트는 `--base-font: 'Pretendard', sans-serif;`를 사용합니다.
+- 화면 CSS에서는 하드코딩 값보다 `--space-*`, `--control-height-*`, `--layout-*` 같은 변수를 우선 사용합니다.
+- 컴포넌트/화면 전용 스타일은 각 feature의 `*.module.css`에 둡니다.
 
+### TypeScript 설정
+
+- `tsconfig.json`: 프로젝트 참조 진입점입니다.
+- `tsconfig.app.json`: 브라우저에서 실행되는 앱 코드용입니다.
+  - `src`를 포함합니다.
+  - DOM 타입과 React JSX 설정을 사용합니다.
+  - `@app`, `@assets`, `@features`, `@shared` alias를 정의합니다.
+- `tsconfig.node.json`: Node 환경에서 실행되는 설정 파일용입니다.
+  - 현재는 `vite.config.ts`를 대상으로 합니다.
+  - Node 타입을 사용합니다.
+
+## 문서
+
+- [REQUIREMENT.md](./docs/REQUIREMENT.md): text-only block editor 저장 정책 요약
+- [SAVE_MODEL.md](./docs/SAVE_MODEL.md): queue + transactions + 409 conflict 설계
+
+## 개발 환경
+
+[`.env`](.env.example)
+
+실제 API로 연결 시 `VITE_ENABLE_REMOTE_DOCS=true`로 수정합니다.
+
+## API 연동 기준
+
+- 기본 API base URL은 `/api` 입니다.
+- 개발 서버에서 백엔드가 있으면 Vite proxy가 `http://localhost:8080` 으로 전달합니다.
+- 문서 목록 계약:
+  - `GET /api/pages?deleted=false`
+- 응답 포맷은 배열 자체 또는 아래 래퍼 구조를 허용합니다.
+  - `{ data }`
+  - `{ items }`
+  - `{ rows }`
+  - `{ data: { items | rows | data } }`
+- 서버가 없거나 응답이 실패하면 로컬 mock catalog로 자동 fallback 됩니다.
+
+## 인증 흐름
+
+```text
+3000/signin
+-> 8080/auth/sso/start
+-> GitHub
+-> 8080/auth/github/callback
+-> 5173/auth/callback
+```
+
+프론트는 아래 규칙을 따릅니다.
+
+- GitHub `code` 또는 access token을 직접 처리하지 않습니다.
+- `/auth/callback` 에서 `ticket` 을 받습니다.
+- `POST /auth/exchange` 후 `GET /auth/me` 로 로그인 상태를 확정합니다.

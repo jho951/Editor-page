@@ -10,61 +10,79 @@
 
 .cardFrame {
     position: relative;
-    border-radius: 12px;
-    background: var(--color-white);
-    border: 1px solid var(--color-border);
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 24px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(251, 246, 239, 0.9));
+    border: 1px solid rgba(61, 53, 45, 0.08);
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 100%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow:
+        0 10px 24px rgba(92, 78, 59, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
 
-/* Hover 효과: 노션 특유의 부드러운 들림 현상 */
 .card:hover .cardFrame {
     transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
-    border-color: var(--color-border-heavy);
+    box-shadow:
+        0 18px 34px rgba(92, 78, 59, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    border-color: rgba(61, 53, 45, 0.14);
 }
 
 .cardTop {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    padding: 16px 16px 12px;
+    padding: 18px 18px 12px;
+    gap: 12px;
+}
+
+.titleArea {
+    display: grid;
+    gap: 4px;
 }
 
 .cardTitle {
-    font-size: var(--font-base);
+    font-size: 17px;
     font-weight: 700;
-    color: var(--color-text);
-    margin-bottom: 2px;
-    line-height: 1.4;
+    color: var(--color-heading);
+    line-height: 1.35;
+    letter-spacing: -0.02em;
 }
 
 .subTitle {
-    font-size: var(--font-xxs);
-    color: var(--color-text);
-    opacity: 0.5;
+    font-size: 11px;
+    color: rgba(61, 53, 45, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .cardDots {
-    font-size: var(--font-md);
-    color: var(--color-text);
-    opacity: 0.3;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(61, 53, 45, 0.06);
+    color: rgba(61, 53, 45, 0.42);
     line-height: 1;
+    flex: 0 0 auto;
 }
 
-/* 프리뷰 영역 */
 .preview {
     flex: 1;
-    background: var(--color-surface);
-    margin: 0 12px 12px;
-    border-radius: 8px;
-    min-height: 120px;
+    background:
+        linear-gradient(140deg, color-mix(in srgb, var(--accent, #d7a37c) 18%, white) 0%, rgba(255, 252, 247, 0.9) 72%);
+    margin: 0 14px 14px;
+    border-radius: 20px;
+    min-height: 148px;
     overflow: hidden;
-    border: 1px solid var(--color-border-light);
+    border: 1px solid rgba(61, 53, 45, 0.06);
 }
 
 .coverImg {
@@ -73,52 +91,53 @@
     object-fit: cover;
 }
 
-/* 스켈레톤 디자인 */
 .skeleton {
-    padding: 20px;
+    height: 100%;
+    padding: 22px 20px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    justify-content: center;
+    gap: 12px;
 }
 
-.previewLine, .previewLineShort {
-    height: 8px;
-    background: var(--color-gray);
-    border-radius: 4px;
+.previewLine,
+.previewLineShort {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(61, 53, 45, 0.1);
 }
 
 .previewLineShort {
-    width: 60%;
+    width: 62%;
 }
 
-/* 하단 컬러 악센트 바 */
 .accentBar {
-    height: 4px;
+    height: 5px;
     width: 100%;
-    background:  var(--color-primary);
-    opacity: 0.8;
+    background: color-mix(in srgb, var(--accent, var(--color-primary)) 72%, #fff);
+    opacity: 0.95;
 }
 
-/* 리스트 뷰 대응 */
 .cardList {
     width: 100%;
     background: transparent;
     border: 0;
     cursor: pointer;
-    padding: 4px 0;
+    padding: 0;
 }
 
 .cardList .cardFrame {
     flex-direction: row;
     align-items: center;
-    min-height: 60px;
-    padding: 8px 16px;
+    min-height: 96px;
+    padding: 14px;
+    border-radius: 22px;
 }
 
 .cardList .preview {
-    width: 40px;
-    height: 40px;
-    min-height: 40px;
+    width: 82px;
+    height: 64px;
+    min-height: 64px;
     margin: 0 16px 0 0;
     flex: none;
 }
@@ -126,12 +145,13 @@
 .cardList .cardTop {
     padding: 0;
     flex: 1;
+    align-items: center;
 }
 
 .cardList .accentBar {
     position: absolute;
     left: 0;
     top: 0;
-    width: 4px;
+    width: 6px;
     height: 100%;
 }

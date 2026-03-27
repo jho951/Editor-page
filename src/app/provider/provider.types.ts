@@ -1,3 +1,7 @@
+/**
+ * provider 관련 타입을 정의합니다.
+ */
+
 import React from "react";
 
 export type Theme = "light" | "dark";
@@ -11,9 +15,3 @@ export interface ThemeContextValue {
 export type ProvidersProps = {
     children: React.ReactNode;
 };
-
-export interface MenuConfig {
-    x: number;
-    y: number;
-    items: { label: string; onClick: () => void; danger?: boolean }[];
-}

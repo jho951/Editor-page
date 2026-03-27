@@ -4,16 +4,25 @@ import { Menu } from "@jho951/ui-components";
 import { useAppDispatch, useAppSelector } from "@app/store/hooks.ts";
 import { uiActions } from "@features/ui/state/ui.slice.ts";
 
+/**
+ * 전역 컨텍스트 메뉴를 표시하는 호스트 컴포넌트입니다.
+ * @returns 렌더링할 React 엘리먼트를 반환합니다.
+ */
 function ContextMenuHost(): React.ReactElement | null {
+
   const dispatch = useAppDispatch();
+
   const menu = useAppSelector((s) => s.ui.contextMenu);
+
   const menuRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     if (!menu.open || !menuRef.current) return;
 
     const rect = menuRef.current.getBoundingClientRect();
+
     const screenW = window.innerWidth;
+
     const screenH = window.innerHeight;
     let x = menu.x - rect.width;
     let y = menu.y;

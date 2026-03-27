@@ -1,8 +1,12 @@
+/**
+ * 왼쪽 탐색 영역 전체를 렌더링합니다.
+ */
+
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "@app/store/store.ts";
 import { useNavigate } from "react-router-dom";
 
-import { layoutActions } from "@features/layout/state/layout.slice.ts";
+import { createChildPage, layoutActions, movePageToTrashRemote } from "@features/layout/state/layout.slice.ts";
 import type { LnbActiveKey, LnbProps } from "@features/layout/ui/lnb/Lnb.types.ts";
 import { selectFolders, selectLnbOpenFolderIds } from "@features/layout/state/layout.selector.ts";
 import { FolderNode } from "@features/layout/ui/lnb/FolderNode.tsx";
@@ -11,13 +15,22 @@ import { Button, Divider, Icon } from "@jho951/ui-components";
 
 import styles from "./Lnb.module.css";
 
+/**
+ * 왼쪽 탐색 영역과 페이지 트리를 렌더링합니다.
+ *
+ * @param props 컴포넌트에 전달된 props 객체입니다.
+ * @returns 렌더링할 React 엘리먼트를 반환합니다.
+ */
 function Lnb({ activeKey = "home", onNavigate }: LnbProps) {
+
     const navigate = useNavigate();
 
     const dispatch = useDispatch<AppDispatch>();
+
     const toggleFolder = (id: string) => dispatch(layoutActions.toggleFolderOpen(id));
 
     const openFolderIds = useSelector(selectLnbOpenFolderIds);
+
     const folders = useSelector(selectFolders);
 
     const go = (key: LnbActiveKey) => {
@@ -26,21 +39,19 @@ function Lnb({ activeKey = "home", onNavigate }: LnbProps) {
     };
 
     const addChild = (parentId: string) => {
-        const action = dispatch(layoutActions.addChildPage({ parentId })) as unknown as {
-            payload?: { childId?: string };
-        };
+        dispatch(createChildPage({ parentId })).then((action) => {
+            if (!createChildPage.fulfilled.match(action)) return;
 
-        const newId = action?.payload?.childId;
-        if (!newId) return;
+            const newId = action.payload.childId;
 
-        const newKey = `folder:${newId}` as LnbActiveKey;
-        go(newKey);
-
-        navigate(`/doc/${newId}/text`);
+            const newKey = `folder:${newId}` as LnbActiveKey;
+            go(newKey);
+            navigate(`/doc/${newId}`);
+        });
     };
 
     const moveToTrash = (pageId: string) => {
-        dispatch(layoutActions.movePageToTrash({ pageId }));
+        void dispatch(movePageToTrashRemote({ pageId }));
         if (activeKey === (`folder:${pageId}` as LnbActiveKey)) {
             navigate("/");
             go("home");

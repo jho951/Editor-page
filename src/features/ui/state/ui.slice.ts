@@ -1,3 +1,7 @@
+/**
+ * ui 상태 로직을 관리합니다.
+ */
+
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 export type ContextMenuItem = {
@@ -24,10 +28,16 @@ export interface UiState {
   contextMenu: ContextMenuState;
 }
 
+/**
+ * UI slice의 초기 상태입니다.
+ */
 const initialState: UiState = {
   contextMenu: { open: false, x: 0, y: 0, items: [] },
 };
 
+/**
+ * UI 상태 reducer를 정의하는 slice입니다.
+ */
 const uiSlice = createSlice({
   name: "ui",
   initialState,
@@ -41,5 +51,12 @@ const uiSlice = createSlice({
   },
 });
 
+/**
+ * UI slice 액션 모음입니다.
+ */
 export const uiActions = uiSlice.actions;
+
+/**
+ * UI slice reducer입니다.
+ */
 export const uiReducer = uiSlice.reducer;

@@ -1,9 +1,11 @@
-import type { EditorMode } from "@features/layout/api/pages.ts";
+/**
+ * txn 관련 타입을 정의합니다.
+ */
 
-/** ULID/UUID 같은 문자열이면 string으로 충분 */
 export type TxnId = string;
 export type PageId = string;
 export type ParentId = string;
+export type PageEditorMode = "text";
 
 export type TxnOp =
     | PageCreateOp
@@ -17,7 +19,7 @@ export type PageCreateOp = {
     parentId: ParentId;
     position: "first" | "last" | { afterId: string };
     title: string;
-    mode: EditorMode;
+    mode: PageEditorMode;
 };
 
 export type PageRenameOp = {

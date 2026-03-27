@@ -1,0 +1,153 @@
+.page {
+  height: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.listOnlyPane {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.listHead {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: var(--space-0) var(--space-0) var(--space-8);
+}
+
+.listTitle {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.listHint {
+  margin: 0;
+  padding: var(--space-0) var(--space-0) var(--space-12);
+  font-size: var(--font-xs);
+  color: #7e7c78;
+  opacity: 0.7;
+}
+
+.listOnly {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.listOnlyEmpty {
+  display: flex;
+}
+
+.item {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: var(--space-8) var(--space-10);
+  border-radius: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.item:hover {
+  background: #f4f4f3;
+}
+
+.itemMain {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.itemTitle {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemTime {
+  font-size: var(--font-xxs);
+  color: #8e8c88;
+  padding-left: var(--space-22);
+}
+
+.empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-xs);
+  color: #8b8985;
+  text-align: center;
+}
+
+.detailOnlyPane {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.detailHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.detailTitle {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+
+.detailMeta {
+  margin-top: var(--space-8);
+  font-size: var(--font-xs);
+  color: #8d8b87;
+}
+
+.detailDesc {
+  margin-top: var(--space-14);
+  font-size: var(--font-xs);
+  line-height: 1.6;
+  color: #5f5e5b;
+}
+
+.docBody {
+  margin-top: var(--space-16);
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow: auto;
+}
+
+.emptyDetail {
+  margin: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  color: #8a8884;
+  font-size: var(--font-xs);
+}

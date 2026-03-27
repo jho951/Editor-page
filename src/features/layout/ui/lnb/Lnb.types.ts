@@ -1,4 +1,6 @@
-import type {EditorMode} from "@features/layout/api/pages.ts";
+/**
+ * Lnb 관련 타입을 정의합니다.
+ */
 
 export type DocRef = {
     id: string;
@@ -9,7 +11,6 @@ export type DocRef = {
 
 export type LastLocation = {
     docId: string;
-    mode: EditorMode;
 };
 
 export type PageKey =
@@ -17,7 +18,6 @@ export type PageKey =
     | "allDocs"
     | "shared"
     | "newDocument"
-    | "template"
     | "trash"
     | "settings";
 
@@ -32,7 +32,6 @@ export type FolderItem = {
     key?: LnbActiveKey;
 
     docId?: string;
-    mode?: EditorMode;
 
     label: string;
     icon?: string;
@@ -52,9 +51,6 @@ export type LnbProps = {
     onNavigate?: (key: LnbActiveKey) => void;
     collapsed?: boolean;
     onToggleCollapsed?: () => void;
-
-    mode?: EditorMode;
-    onChangeMode?: (mode: EditorMode) => void;
 
     pinnedDocs?: DocRef[];
     recentDocs?: DocRef[];

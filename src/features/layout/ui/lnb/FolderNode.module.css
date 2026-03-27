@@ -1,7 +1,7 @@
 .node {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-4);
 }
 
 .row {
@@ -14,17 +14,17 @@
   border: 0;
   background: transparent;
   color: var(--color-text, #111827);
-  border-radius: 8px;
-  padding: 6px 8px;
-  padding-left: calc(8px + var(--level, 0) * 12px);
-  min-height: 34px;
+  border-radius: var(--space-8);
+  padding: var(--space-6) var(--space-8);
+  padding-left: calc(var(--space-8) + var(--level, 0) * var(--space-12));
+  min-height: var(--space-34);
   cursor: pointer;
 }
 
 .left {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-8);
   min-width: 0;
   flex: 1;
 }
@@ -32,7 +32,7 @@
 .right {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-4);
   flex: 0 0 auto;
 }
 
@@ -43,8 +43,8 @@
 }
 
 .iconSlot {
-  width: 20px;
-  height: 20px;
+  width: var(--size-20);
+  height: var(--size-20);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -82,9 +82,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
+  width: var(--size-24);
+  height: var(--size-24);
+  padding: var(--space-0);
   opacity: 0;
   transition: opacity 120ms ease;
 }
@@ -95,10 +95,10 @@
 
 .deleteBtn {
   opacity: 0;
-  width: 24px;
-  min-width: 24px;
-  min-height: 24px;
-  padding: 0 6px;
+  width: var(--size-24);
+  min-width: var(--size-24);
+  min-height: var(--size-24);
+  padding: var(--space-0) var(--space-6);
   transition: opacity 120ms ease;
 }
 
@@ -135,7 +135,7 @@
 .children {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-2);
   min-width: 0;
 }
 

@@ -1,25 +1,25 @@
+/**
+ * 애플리케이션 전체 reducer를 결합합니다.
+ */
+
 import { combineReducers } from "@reduxjs/toolkit";
 
-import { layoutReducer } from "@features/layout/state/layout.slice.ts";
-import { shortcutsReducer } from "@features/shortcuts/state/shortcuts.slice.ts";
+import { layoutReducer } from "@features/layout/index.ts";
+import { shortcutsReducer } from "@features/shortcuts/index.ts";
+import { authReducer } from "@features/auth/index.ts";
+import { editorReducer } from "@features/editor/index.ts";
 
 import { uiReducer } from "@features/ui/state/ui.slice.ts";
-import { editorReducerRTK } from "@features/editor/state/editor.slice.ts";
 
-import { canvasReducer } from "@features/canvas/state/canvas.slice.ts";
-import { documentReducer } from "@features/document/model/document.slice.ts";
-import {toolbarReducer} from "@features/canvas/state/toolbar.slice.ts";
-
+/**
+ * root Reducer reducer입니다.
+ */
 const rootReducer = combineReducers({
   layout: layoutReducer,
   shortcut: shortcutsReducer,
-
+  auth: authReducer,
+  editor: editorReducer,
   ui: uiReducer,
-  editor: editorReducerRTK,
-
-  canvas: canvasReducer,
-  document: documentReducer,
-    toolbar: toolbarReducer,
 });
 
 export { rootReducer };

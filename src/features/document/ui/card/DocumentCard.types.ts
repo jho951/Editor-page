@@ -1,23 +1,12 @@
-import type {DocEditor} from "@features/document/ui/documents.mock.ts";
-import type {DocKind} from "@features/document/ui/grid/DocumentGrid.types.ts";
-import type {DocumentsViewMode} from "@features/document/ui/tab/DocumentTab.types.ts";
+/**
+ * Document Card 관련 타입을 정의합니다.
+ */
 
-export interface DocCardItem {
-    id: string;
-    title: string;
-    accent: string;
-    kind: DocKind;
-    editor?: DocEditor;
-}
+import type { DocCardItem } from "@features/document/model/document.types.ts";
+import type {DocumentsViewMode} from "@features/document/ui/tab/DocumentTab.types.ts";
 
 export interface DocumentCardProps {
     item: DocCardItem;
     onClick?: (id: string) => void;
     variant?: DocumentsViewMode
 }
-
-
-export type TemplateItem = DocumentCardProps['item'] & {
-    coverUrl?: string;
-    subTitle?: string;
-};

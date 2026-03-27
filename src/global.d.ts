@@ -3,7 +3,11 @@ declare module '*.module.css' {
     export default classes;
 }
 interface ImportMetaEnv {
+    readonly VITE_GATEWAY_BASE_URL?: string;
     readonly VITE_API_BASE_URL?: string;
+    readonly VITE_SSO_BASE_URL?: string;
+    readonly VITE_SITE_URL?: string;
+    readonly VITE_START_FRONTEND_URL?: string;
 }
 
 interface ImportMeta {
@@ -17,4 +21,8 @@ declare type IconElement = {
 declare interface IconData {
     vb: string;
     g: IconElement[];
+}
+
+declare interface Window {
+    __APP_STORE__?: import("@app/store/store").store;
 }

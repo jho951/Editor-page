@@ -1,18 +1,33 @@
-
-html {
-    font-size: 62.5%;
+/* ------------------------------
+ * 🧼 Global Reset with :where()
+ * ------------------------------ */
+:where(*, *::before, *::after) {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
+/* ------------------------------
+ * 🔤 Root: REM 기반 폰트 크기
+ * ------------------------------ */
+html {
+    font-size: 62.5%;
+    scroll-behavior: smooth;
+}
+
+/* ------------------------------
+ * 💡 기본 설정
+ * ------------------------------ */
 body {
-    height: 100%;
     color: var(--color-text);
-    font-size: var(--font-base);
+    font-size: 1.6rem;
+    font-family: var(--base-font), serif;
     line-height: 1.6;
     text-rendering: optimizeSpeed;
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-    visibility: visible;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: color 0.3s ease;
+    visibility: visible;
 }
 
 body::before {
@@ -20,6 +35,15 @@ body::before {
     position: fixed;
     inset: 0;
     z-index: 0;
+
+    background: linear-gradient(
+            to bottom,
+            var(--color-primary) 0%,
+            var(--color-bg-gray) 20%,
+            rgba(var(--color-bg-secondary-gray-rgb), 0.5) 50%,
+            var(--color-bg-brown) 70%,
+            var(--color-bg-blue) 100%
+    );
 }
 
 /* ------------------------------
@@ -49,20 +73,13 @@ select {
     outline: none;
 }
 
-input[type='number']::-webkit-outer-spin-button,
-input[type='number']::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-}
-
 /* ------------------------------
  * 🧭 Interactive Elements
  * ------------------------------ */
 button {
     cursor: pointer;
     background: none;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
 }
-
 a {
     text-decoration: none;
     color: inherit;
@@ -79,12 +96,10 @@ table {
     border-collapse: collapse;
     border-spacing: 0;
 }
-
 blockquote,
 q {
     quotes: none;
 }
-
 blockquote::before,
 blockquote::after,
 q::before,
@@ -92,7 +107,10 @@ q::after {
     content: '';
 }
 
-main {
-    position: relative;
-    z-index: calc(var(--base-z-index));
+/* ------------------------------
+ * 🔒 Accessibility: focus-visible
+ * ------------------------------ */
+:where(:focus-visible) {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 }

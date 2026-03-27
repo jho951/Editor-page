@@ -10,8 +10,11 @@ import axios, {
 } from 'axios';
 
 import { endpoints } from './endpoints.ts';
+import { shouldBlockAutoAuthBeforeExchange } from './auth-flow.ts';
 import { getAuthToken, readAccessTokenFromPayload, setAccessToken } from './token.ts';
 import type { HttpError } from './client.types.ts';
+
+axios.defaults.withCredentials = true;
 
 /** gateway 요청에 사용할 기본 base URL입니다. */
 export const GATEWAY_BASE_URL: string =
@@ -95,7 +98,10 @@ function shouldSkipRefresh(config: RetryableConfig | undefined): boolean {
 async function refreshAccessToken(): Promise<string> {
     if (!refreshPromise) {
         refreshPromise = http
-            .post<unknown>(endpoints.authRefresh, {}, { skipAuthRefresh: true } as AxiosRequestConfig)
+            .post<unknown>(endpoints.authRefresh, {}, {
+                skipAuthRefresh: true,
+                withCredentials: true,
+            } as AxiosRequestConfig)
             .then((payload) => {
                 const token = readAccessTokenFromPayload(payload);
                 if (!token) {
@@ -116,6 +122,10 @@ async function onRejected(client: AxiosInstance, err: unknown): Promise<AxiosRes
     const error = err as AxiosError;
     const config = error.config as RetryableConfig | undefined;
     const status = error.response?.status;
+
+    if (shouldBlockAutoAuthBeforeExchange()) {
+        return Promise.reject(normalizeHttpError(err));
+    }
 
     if (status === 401 && config && !config._retry && !shouldSkipRefresh(config)) {
         config._retry = true;

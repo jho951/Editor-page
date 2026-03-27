@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@app/store/hooks.ts";
 import { bootstrapAuth, selectAuthInitialized, selectAuthStatus } from "@features/auth/index.ts";
+import { shouldBlockAutoAuthBeforeExchange } from "@shared/api/auth-flow.ts";
 import type { AuthBootstrapProps } from "@app/provider/AuthBootstrap.types.ts";
 
 /**
@@ -19,6 +20,7 @@ function AuthBootstrap({ children }: AuthBootstrapProps): React.ReactElement {
 
   useEffect(() => {
     if (initialized || status === "loading") return;
+    if (shouldBlockAutoAuthBeforeExchange()) return;
     void dispatch(bootstrapAuth());
   }, [dispatch, initialized, status]);
 

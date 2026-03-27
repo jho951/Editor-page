@@ -3,6 +3,7 @@
  */
 
 import { api } from "@shared/api/client.ts";
+import { markExchangeTicketSucceeded } from "@shared/api/auth-flow.ts";
 import { endpoints } from "@shared/api/endpoints.ts";
 import { clearAccessToken, readAccessTokenFromPayload, setAccessToken } from "@shared/api/token.ts";
 
@@ -141,14 +142,17 @@ export function buildStartFrontendRootUrl(): string {
  * 인증 관련 API 호출 집합입니다.
  */
 export const authApi = {
-  me: (): Promise<AuthUser> => api.get<AuthUser>(endpoints.authMe),
+  me: (): Promise<AuthUser> => api.get<AuthUser>(endpoints.authMe, { withCredentials: true }),
   exchange: async (body: ExchangeTicketBody): Promise<void> => {
-    const response = await api.post<unknown, ExchangeTicketBody>(endpoints.authExchange, body);
+    const response = await api.post<unknown, ExchangeTicketBody>(endpoints.authExchange, body, {
+      withCredentials: true,
+    });
+    markExchangeTicketSucceeded(body.ticket);
     const token = readAccessTokenFromPayload(response);
-    if (!token) {
-      throw new Error("exchange response does not contain access token");
+    // Support both legacy token-payload exchange and cookie-only (204 No Content) exchange.
+    if (token) {
+      setAccessToken(token);
     }
-    setAccessToken(token);
   },
   logout: async (): Promise<void> => {
     try {

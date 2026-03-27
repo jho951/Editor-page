@@ -1,8 +1,4 @@
-/**
- * SSO 콜백 티켓을 처리하고 로그인 후 이동을 마무리합니다.
- */
-
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useAppDispatch, useAppSelector } from "@app/store/hooks.ts";
@@ -13,6 +9,20 @@ import {
     selectAuthError,
     selectIsAuthenticated,
 } from "@features/auth/index.ts";
+
+const EXCHANGE_GUARD_KEY_PREFIX = "auth.exchange_ticket.once:";
+
+function markExchangeAttempted(ticket: string): boolean {
+    if (typeof window === "undefined") return true;
+    const key = `${EXCHANGE_GUARD_KEY_PREFIX}${ticket}`;
+    try {
+        if (window.sessionStorage.getItem(key) === "1") return false;
+        window.sessionStorage.setItem(key, "1");
+        return true;
+    } catch {
+        return true;
+    }
+}
 
 /**
  * 인증 콜백 티켓을 처리하고 후속 이동을 수행합니다.
@@ -35,6 +45,8 @@ function AuthCallbackView(): React.ReactElement {
 
     const authError = params.get("error");
 
+    const processedTicketsRef = useRef<Set<string>>(new Set());
+
     useEffect(() => {
         if (!ticket) {
 
@@ -44,6 +56,10 @@ function AuthCallbackView(): React.ReactElement {
             return () => window.clearTimeout(timeoutId);
         }
 
+        if (processedTicketsRef.current.has(ticket)) return;
+        if (!markExchangeAttempted(ticket)) return;
+
+        processedTicketsRef.current.add(ticket);
         void dispatch(exchangeSsoTicket({ ticket }));
     }, [dispatch, nextPath, ticket]);
 

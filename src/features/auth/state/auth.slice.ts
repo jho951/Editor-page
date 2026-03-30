@@ -32,28 +32,18 @@ function normalizeAuthError(error: unknown): RejectValue {
   return { anonymous: false, message: e instanceof Error ? e.message : "auth request failed" };
 }
 
-async function loadAuthUserWithRefreshFallback(): Promise<AuthUser> {
-  try {
-    return await authApi.me();
-  } catch (error) {
-    const httpError = error as HttpError;
-    if (httpError?.status !== 401) {
-      throw error;
-    }
-
-    await authApi.refresh();
-    return await authApi.me();
-  }
+async function loadAuthUser(): Promise<AuthUser> {
+  return await authApi.me();
 }
 
 /**
  * 현재 로그인 사용자를 초기화하는 thunk입니다.
  */
 export const bootstrapAuth = createAsyncThunk<AuthUser, void, { rejectValue: RejectValue }>(
-  "auth/bootstrap",
+    "auth/bootstrap",
   async (_arg, { rejectWithValue }) => {
     try {
-      return await loadAuthUserWithRefreshFallback();
+      return await loadAuthUser();
     } catch (error) {
       return rejectWithValue(normalizeAuthError(error));
     }

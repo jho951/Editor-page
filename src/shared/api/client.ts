@@ -50,8 +50,6 @@ type RetryableConfig = InternalAxiosRequestConfig & {
     skipAuthRefresh?: boolean;
 };
 
-let refreshPromise: Promise<void> | null = null;
-
 function normalizeHttpError(err: unknown): HttpError {
     const e = err as { response?: { status?: number; data?: unknown }; message?: string };
     const status = e.response?.status;
@@ -66,48 +64,10 @@ function normalizeHttpError(err: unknown): HttpError {
     return norm;
 }
 
-function shouldSkipRefresh(config: RetryableConfig | undefined): boolean {
-    if (!config) return false;
-    if (config.skipAuthRefresh) return true;
-
-    const requestUrl = config.url ?? '';
-    return requestUrl.includes(endpoints.authRefresh);
-}
-
 function isAuthFlowRequest(config: RetryableConfig | undefined): boolean {
     if (!config) return false;
     const requestUrl = config.url ?? '';
-    return requestUrl.includes(endpoints.authMe);
-}
-
-function redirectToSignIn(): void {
-    if (typeof window === 'undefined') return;
-    if (window.location.pathname === '/signin') return;
-
-    const next = `${window.location.pathname}${window.location.search}`;
-    const signInUrl = new URL('/signin', window.location.origin);
-    signInUrl.searchParams.set('next', next || '/');
-    window.location.replace(signInUrl.toString());
-}
-
-function handleRefreshFailure(): void {
-    redirectToSignIn();
-}
-
-async function refreshSession(): Promise<void> {
-    if (!refreshPromise) {
-        refreshPromise = http
-            .post<unknown>(endpoints.authRefresh, {}, {
-                skipAuthRefresh: true,
-                withCredentials: true,
-            } as AxiosRequestConfig)
-            .then(() => undefined)
-            .finally(() => {
-                refreshPromise = null;
-            });
-    }
-
-    return refreshPromise;
+    return requestUrl.includes(endpoints.authMe) || requestUrl.includes(endpoints.authRefresh);
 }
 
 /** 공통 요청 인터셉터를 적용합니다. */
@@ -120,22 +80,9 @@ async function onRejected(client: AxiosInstance, err: unknown): Promise<AxiosRes
     const config = error.config as RetryableConfig | undefined;
     const status = error.response?.status;
 
-    // auth 상태 확인 구간의 401 처리는 각 호출부(thunk)에서 제어합니다.
+    // auth 상태 확인 구간과 일반 요청의 401은 호출부에서 anonymous 처리합니다.
     if (status === 401 && isAuthFlowRequest(config)) {
         return Promise.reject(normalizeHttpError(err));
-    }
-
-    if (status === 401 && config && !config._retry && !shouldSkipRefresh(config)) {
-        config._retry = true;
-
-        try {
-            await refreshSession();
-
-            return client.request(config);
-        } catch {
-            handleRefreshFailure();
-            return Promise.reject(normalizeHttpError(err));
-        }
     }
 
     return Promise.reject(normalizeHttpError(err));

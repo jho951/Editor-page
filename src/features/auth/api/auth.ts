@@ -2,6 +2,7 @@
  * SSO 시작, 콜백 복귀 경로 저장, 인증 관련 API 호출을 제공합니다.
  */
 
+import type { AxiosRequestConfig } from "axios";
 import { api } from "@shared/api/client.ts";
 import { markExchangeTicketSucceeded } from "@shared/api/auth-flow.ts";
 import { endpoints } from "@shared/api/endpoints.ts";
@@ -143,6 +144,14 @@ export function buildStartFrontendRootUrl(): string {
  */
 export const authApi = {
   me: (): Promise<AuthUser> => api.get<AuthUser>(endpoints.authMe, { withCredentials: true }),
+  refresh: async (): Promise<void> => {
+    const response = await api.post<unknown>(endpoints.authRefresh, {}, {
+      withCredentials: true,
+      skipAuthRefresh: true,
+    } as AxiosRequestConfig);
+    const token = readAccessTokenFromPayload(response);
+    setAccessToken(token);
+  },
   exchange: async (body: ExchangeTicketBody): Promise<void> => {
     const response = await api.post<unknown, ExchangeTicketBody>(endpoints.authExchange, body, {
       withCredentials: true,

@@ -3,6 +3,7 @@ const API_V1 = "/v1";
 
 export const endpoints = {
   documentsBase: API_V1,
+  documents: `${API_V1}/documents`,
   workspaces: `${API_V1}/workspaces`,
   workspaceById: (id: string) => `${API_V1}/workspaces/${encodeURIComponent(id)}`,
   workspaceDocuments: (workspaceId: string) =>

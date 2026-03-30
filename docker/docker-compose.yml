@@ -1,0 +1,25 @@
+services:
+  editor-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: dev
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_PROXY_TARGET: "http://host.docker.internal:8080"
+      VITE_PORT: "5173"
+    volumes:
+      - ../:/app
+      - editor_node_modules:/app/node_modules
+
+  editor-prod:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+    ports:
+      - "8081:80"
+
+volumes:
+  editor_node_modules:

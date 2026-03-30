@@ -30,8 +30,16 @@ export type UpdatePageVisibilityBody = {
   version: number;
 };
 
+export type ListDocumentsItem = {
+  id?: string | number;
+  title?: string;
+  name?: string;
+};
+
 type GlobalResponse<T> = {
   data?: T;
+  items?: T;
+  rows?: T;
 };
 
 type CreateDocumentRequest = {
@@ -59,8 +67,11 @@ function normalizeParentId(parentId: string | null | undefined): string | null |
 }
 
 function unwrapEnvelope<T>(payload: T | GlobalResponse<T>): T {
-  if (payload && typeof payload === "object" && "data" in (payload as GlobalResponse<T>)) {
-    return (payload as GlobalResponse<T>).data as T;
+  if (payload && typeof payload === "object") {
+    const envelope = payload as GlobalResponse<T>;
+    if (envelope.data !== undefined) return envelope.data;
+    if (envelope.items !== undefined) return envelope.items;
+    if (envelope.rows !== undefined) return envelope.rows;
   }
   return payload as T;
 }
@@ -75,6 +86,14 @@ type MoveDocumentRequest = {
  * 페이지 생성과 갱신을 처리하는 API 집합입니다.
  */
 export const pagesApi = {
+  listDocuments: async (): Promise<ListDocumentsItem[]> => {
+    const response = await documentsApi.get<ListDocumentsItem[] | GlobalResponse<ListDocumentsItem[]>>(
+      endpoints.documents
+    );
+
+    const unwrapped = unwrapEnvelope<ListDocumentsItem[]>(response);
+    return Array.isArray(unwrapped) ? unwrapped : [];
+  },
   getPage: async (id: string): Promise<CreatePageResponse> => {
     const response = await documentsApi.get<GlobalResponse<CreatePageResponse> | CreatePageResponse>(
       endpoints.documentById(id)

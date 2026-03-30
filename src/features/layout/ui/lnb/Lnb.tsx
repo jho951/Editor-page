@@ -2,11 +2,12 @@
  * 왼쪽 탐색 영역 전체를 렌더링합니다.
  */
 
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "@app/store/store.ts";
 import { useNavigate } from "react-router-dom";
 
-import { createChildPage, layoutActions, movePageToTrashRemote } from "@features/layout/state/layout.slice.ts";
+import { createChildPage, fetchLnbDocuments, layoutActions, movePageToTrashRemote } from "@features/layout/state/layout.slice.ts";
 import type { LnbActiveKey, LnbProps } from "@features/layout/ui/lnb/Lnb.types.ts";
 import { selectFolders, selectLnbOpenFolderIds } from "@features/layout/state/layout.selector.ts";
 import { FolderNode } from "@features/layout/ui/lnb/FolderNode.tsx";
@@ -32,6 +33,10 @@ function Lnb({ activeKey = "home", onNavigate }: LnbProps) {
     const openFolderIds = useSelector(selectLnbOpenFolderIds);
 
     const folders = useSelector(selectFolders);
+
+    useEffect(() => {
+        void dispatch(fetchLnbDocuments());
+    }, [dispatch]);
 
     const go = (key: LnbActiveKey) => {
         onNavigate?.(key);

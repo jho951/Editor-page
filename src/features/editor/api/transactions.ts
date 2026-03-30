@@ -5,7 +5,6 @@
 import { DOCUMENTS_API_BASE_URL, documentsApi } from "@shared/api/client.ts";
 import type { HttpError } from "@shared/api/client.types.ts";
 import { endpoints } from "@shared/api/endpoints.ts";
-import { getAuthToken } from "@shared/api/token.ts";
 import { MOCK_EDITOR_DOCUMENTS } from "@features/editor/model/editor.mock.ts";
 import type {
   EditorConflictItem,
@@ -623,18 +622,14 @@ export const editorTransactionsApi = {
       ? `${DOCUMENTS_API_BASE_URL}${path}`
       : `${window.location.origin}${DOCUMENTS_API_BASE_URL}${path}`;
 
-    const token = getAuthToken();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
     void fetch(url, {
       method: "POST",
       keepalive: true,
+      credentials: "include",
       headers,
       body: JSON.stringify(toGatewayTransactionPayload(payload)),
     }).catch(() => undefined);

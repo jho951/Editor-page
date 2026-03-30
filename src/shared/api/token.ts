@@ -5,6 +5,16 @@ import type { AuthTokenProvider } from "./token.types.ts";
 const ACCESS_TOKEN_KEY = "auth.access_token";
 
 let provider: AuthTokenProvider = () => null;
+let inMemoryAccessToken: string | null = null;
+
+function removeLegacyStoredToken(): void {
+    if (typeof window === "undefined") return;
+    try {
+        window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+    } catch {
+        // ignore storage failures
+    }
+}
 
 /**
  * 전달된 토큰 문자열에서 Bearer 접두어를 제거해 정규화합니다.
@@ -56,13 +66,9 @@ export const readAccessTokenFromPayload = (payload: unknown): string | null => {
  * @returns 반환값이 없습니다.
  */
 export const setAccessToken = (value: string | null | undefined): void => {
-    if (typeof window === "undefined") return;
     const normalized = normalizeAccessToken(value);
-    if (!normalized) {
-        window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-        return;
-    }
-    window.localStorage.setItem(ACCESS_TOKEN_KEY, normalized);
+    inMemoryAccessToken = normalized;
+    removeLegacyStoredToken();
 };
 
 /**
@@ -71,8 +77,8 @@ export const setAccessToken = (value: string | null | undefined): void => {
  * @returns 저장된 토큰 문자열 또는 null을 반환합니다.
  */
 export const getStoredAccessToken = (): string | null => {
-    if (typeof window === "undefined") return null;
-    return normalizeAccessToken(window.localStorage.getItem(ACCESS_TOKEN_KEY));
+    removeLegacyStoredToken();
+    return null;
 };
 
 /**
@@ -81,8 +87,8 @@ export const getStoredAccessToken = (): string | null => {
  * @returns 반환값이 없습니다.
  */
 export const clearAccessToken = (): void => {
-    if (typeof window === "undefined") return;
-    window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+    inMemoryAccessToken = null;
+    removeLegacyStoredToken();
 };
 
 /**
@@ -100,4 +106,4 @@ export const attachAuthTokenProvider = (fn: unknown): void => {
  * @returns 인증 토큰 문자열 또는 `null`을 반환합니다.
  */
 export const getAuthToken = (): string | null =>
-    normalizeAccessToken(provider()) ?? getStoredAccessToken();
+    normalizeAccessToken(provider()) ?? inMemoryAccessToken;

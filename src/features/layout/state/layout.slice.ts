@@ -6,7 +6,7 @@ import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/tool
 import type { LnbActiveKey, FolderItem } from "@features/layout/ui/lnb/Lnb.types.ts";
 import { initialState, type OpenFolderMap } from "@features/layout/state/layout.initial.ts";
 import { generateId } from "@shared/lib/id.ts";
-import { pagesApi } from "@features/layout/api/pages.ts";
+import { pagesApi, type ListDocumentsItem } from "@features/layout/api/pages.ts";
 import { upsertCatalogItem } from "@features/document/index.ts";
 
 /**
@@ -84,6 +84,37 @@ function hasPageId(nodes: FolderItem[], pageId: string): boolean {
     }
     return false;
 }
+
+function toFolderNode(item: ListDocumentsItem): FolderItem | null {
+    const id = item.id == null ? "" : String(item.id);
+    if (!id) return null;
+
+    const label = String(item.title ?? item.name ?? "제목 없음");
+    return {
+        id,
+        docId: id,
+        key: `folder:${id}` as LnbActiveKey,
+        label,
+    };
+}
+
+/**
+ * LNB 문서 목록을 `/v1/documents`에서 조회합니다.
+ */
+export const fetchLnbDocuments = createAsyncThunk<
+    FolderItem[],
+    void,
+    { rejectValue: string }
+>("layout/fetchLnbDocuments", async (_arg, { rejectWithValue }) => {
+    try {
+        const items = await pagesApi.listDocuments();
+        return items
+            .map((item) => toFolderNode(item))
+            .filter((item): item is FolderItem => item !== null);
+    } catch (error) {
+        return rejectWithValue(error instanceof Error ? error.message : "fetch documents failed");
+    }
+});
 
 /**
  * 레이아웃 상태와 관련 reducer를 정의하는 slice입니다.
@@ -233,6 +264,30 @@ const layoutSlice = createSlice({
         setLastLocation(state, action: PayloadAction<{ docId: string } | null>) {
             state.lastLocation = action.payload;
         },
+    },
+    extraReducers: (builder) => {
+        builder.addCase(fetchLnbDocuments.fulfilled, (state, action) => {
+            const nextChildren = action.payload;
+            const myFolderIndex = state.folders.findIndex((item) => item.id === "my");
+
+            if (myFolderIndex >= 0) {
+                state.folders[myFolderIndex] = {
+                    ...state.folders[myFolderIndex],
+                    children: nextChildren,
+                };
+                return;
+            }
+
+            state.folders = [
+                {
+                    id: "my",
+                    label: "개인 페이지",
+                    icon: "folder",
+                    children: nextChildren,
+                },
+                ...state.folders,
+            ];
+        });
     },
 });
 

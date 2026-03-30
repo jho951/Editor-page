@@ -9,6 +9,31 @@ npm run dev
 
 기본 개발 서버 주소: `http://localhost:5173`
 
+## Docker 실행
+
+개발 모드(핫리로드):
+
+```bash
+./scripts/run.docker.sh dev up
+```
+
+- 주소: `http://localhost:5173`
+- 컨테이너 내부 Vite 프록시 `/api` 대상: `http://host.docker.internal:8080`
+
+배포 모드(정적 빌드 + Nginx):
+
+```bash
+./scripts/run.docker.sh prod up
+```
+
+- 주소: `http://localhost:8081`
+
+로컬 실행:
+
+```bash
+./scripts/run.local.sh dev
+```
+
 ## 구조
 
 - `src` 아래에 실행 코드를 모읍니다. 루트에는 설정 파일과 문서만 둡니다.

@@ -77,8 +77,7 @@
 }
 
 .trashTitle {
-    font-size: 13px;
-    font-weight: 600;
+    font-size: var(--font-xs);
     line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;

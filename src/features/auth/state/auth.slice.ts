@@ -54,6 +54,7 @@ export const exchangeSsoTicket = createAsyncThunk<AuthUser, { ticket: string }, 
   async ({ ticket }, { rejectWithValue }) => {
     try {
       await authApi.exchange({ ticket });
+      await authApi.refresh();
       return await authApi.me();
     } catch (error) {
       return rejectWithValue(normalizeAuthError(error));

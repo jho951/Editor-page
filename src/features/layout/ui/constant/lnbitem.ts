@@ -21,12 +21,5 @@ export const DEFAULT_FOLDER: FolderItem[] = [
         children: [
             { id: "documents", key: "allDocs", label: "Documents", icon: "star" },
         ]
-    },
-
-    {
-        id: "sharedRoot",
-        label: "공유",
-        icon: "users",
-        children: [{ id: "shared", key: "shared", label: "Shared", icon: "users" }],
-    },
+    }
 ];

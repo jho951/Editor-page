@@ -25,6 +25,7 @@ export const endpoints = {
   blockById: (id: string) => `${API_V1}/admin/blocks/${encodeURIComponent(id)}`,
   blockMove: (id: string) => `${API_V1}/admin/blocks/${encodeURIComponent(id)}/move`,
   authSsoStart: `${API_V1}/auth/sso/start`,
+  authExchange: `${API_V1}/auth/exchange`,
   authRefresh: `${API_V1}/auth/refresh`,
   authMe: `${API_V1}/auth/me`,
   authLogout: `${API_V1}/auth/logout`,

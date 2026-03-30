@@ -20,6 +20,7 @@ export {
   buildSsoStartUrl,
   buildStartFrontendSignInUrl,
   consumePostLoginRedirect,
+  exchangeAuthTicket,
   normalizeNextPath,
   readNextFromSearchParams,
   resolveNextPathFromParams,

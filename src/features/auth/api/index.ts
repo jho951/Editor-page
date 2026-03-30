@@ -7,6 +7,7 @@ export {
     buildSsoStartUrl,
     buildStartFrontendSignInUrl,
     consumePostLoginRedirect,
+    exchangeAuthTicket,
     storePostLoginRedirect,
 } from "./auth.ts";
 export type { AuthUser } from "./auth.ts";

@@ -200,6 +200,25 @@ export function buildSsoStartUrl(nextPath: string): string {
 }
 
 /**
+ * SSO callback ticket 을 서버 세션으로 교환합니다.
+ *
+ * @param ticket 로그인 콜백에서 전달된 ticket 문자열입니다.
+ * @returns 완료 시 void 를 반환합니다.
+ */
+export async function exchangeAuthTicket(ticket: string): Promise<void> {
+  const normalizedTicket = ticket.trim();
+  if (!normalizedTicket) {
+    throw new Error("ticket is required");
+  }
+
+  await api.post<void>(
+    endpoints.authExchange,
+    { ticket: normalizedTicket },
+    { withCredentials: true } as AxiosRequestConfig,
+  );
+}
+
+/**
  * 시작 프론트엔드의 로그인 페이지 URL을 생성합니다.
  *
  * @param nextPath 로그인 후 돌아갈 경로 문자열입니다.

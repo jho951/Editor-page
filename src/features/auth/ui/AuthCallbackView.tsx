@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from "@app/store/hooks.ts";
 import {
     buildSsoStartUrl,
     consumePostLoginRedirect,
+    exchangeAuthTicket,
     resolveNextPathFromParams,
     bootstrapAuth,
     selectAuthError,
@@ -31,11 +32,32 @@ function AuthCallbackView(): React.ReactElement {
     }, [params]);
 
     const authError = params.get("error");
+    const ticket = params.get("ticket")?.trim() ?? "";
 
     useEffect(() => {
         if (authError) return;
-        void dispatch(bootstrapAuth());
-    }, [authError, dispatch]);
+
+        let cancelled = false;
+
+        const completeAuth = async () => {
+            if (!ticket) {
+                void dispatch(bootstrapAuth());
+                return;
+            }
+
+            await exchangeAuthTicket(ticket);
+
+            if (cancelled) return;
+
+            void dispatch(bootstrapAuth());
+        };
+
+        void completeAuth();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [authError, dispatch, ticket]);
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -46,6 +68,16 @@ function AuthCallbackView(): React.ReactElement {
         return (
             <div style={{ padding: 24 }}>
                 <p>SSO 로그인 실패: {authError}</p>
+                <button type="button" onClick={() => window.location.replace(buildSsoStartUrl(nextPath))}>
+                    다시 로그인
+                </button>
+            </div>
+        );
+    }
+    if (!ticket) {
+        return (
+            <div style={{ padding: 24 }}>
+                <p>로그인 처리에 필요한 ticket 이 없습니다.</p>
                 <button type="button" onClick={() => window.location.replace(buildSsoStartUrl(nextPath))}>
                     다시 로그인
                 </button>

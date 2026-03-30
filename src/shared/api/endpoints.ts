@@ -24,7 +24,7 @@ export const endpoints = {
   // Backward-compatible aliases for older imports.
   blockById: (id: string) => `${API_V1}/admin/blocks/${encodeURIComponent(id)}`,
   blockMove: (id: string) => `${API_V1}/admin/blocks/${encodeURIComponent(id)}/move`,
-  authSsoStart: `/auth/sso/start`,
+  authSsoStart: `${API_V1}/auth/sso/start`,
   authRefresh: `${API_V1}/auth/refresh`,
   authMe: `${API_V1}/auth/me`,
   authLogout: `${API_V1}/auth/logout`,

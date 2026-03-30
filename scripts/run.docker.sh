@@ -2,16 +2,19 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COMPOSE_FILE="$ROOT_DIR/docker/docker-compose.yml"
+DEV_COMPOSE_FILE="$ROOT_DIR/docker/docker-compose.dev.yml"
+PROD_COMPOSE_FILE="$ROOT_DIR/docker/docker-compose.prod.yml"
 
 MODE="${1:-dev}"
 ACTION="${2:-up}"
 
 case "$MODE" in
   dev)
+    COMPOSE_FILE="$DEV_COMPOSE_FILE"
     SERVICE="editor-dev"
     ;;
   prod)
+    COMPOSE_FILE="$PROD_COMPOSE_FILE"
     SERVICE="editor-prod"
     ;;
   *)

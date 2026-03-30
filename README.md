@@ -19,6 +19,7 @@ npm run dev
 
 - 주소: `http://localhost:5173`
 - 컨테이너 내부 Vite 프록시 `/api` 대상: `http://host.docker.internal:8080`
+- `editor-dev` 전용 compose 파일(`docker/docker-compose.dev.yml`)로 독립 실행
 
 배포 모드(정적 빌드 + Nginx):
 
@@ -27,6 +28,7 @@ npm run dev
 ```
 
 - 주소: `http://localhost:8081`
+- `editor-prod` 전용 compose 파일(`docker/docker-compose.prod.yml`)로 독립 실행
 
 로컬 실행:
 
@@ -108,3 +110,4 @@ npm run dev
 - GitHub `code` 또는 access token을 직접 처리하지 않습니다.
 - `/auth/callback` 에서 `ticket` 을 받습니다.
 - `POST /auth/exchange` 후 `GET /auth/me` 로 로그인 상태를 확정합니다.
+- 연동 계약 문서: [docs/AUTH_REDIRECT_CONTRACT.md](./docs/AUTH_REDIRECT_CONTRACT.md)

@@ -11,12 +11,9 @@ import axios, {
 
 import { endpoints } from './endpoints.ts';
 import { shouldBlockAutoAuthBeforeExchange } from './auth-flow.ts';
-import { clearAccessToken, getAuthToken, readAccessTokenFromPayload, setAccessToken } from './token.ts';
 import type { HttpError } from './client.types.ts';
 
 axios.defaults.withCredentials = true;
-
-const ACCESS_TOKEN_EXP_SKEW_MS = 30_000;
 
 /** gateway 요청에 사용할 기본 base URL입니다. */
 export const GATEWAY_BASE_URL: string =
@@ -55,7 +52,7 @@ type RetryableConfig = InternalAxiosRequestConfig & {
     skipAuthRefresh?: boolean;
 };
 
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<void> | null = null;
 
 function normalizeHttpError(err: unknown): HttpError {
     const e = err as { response?: { status?: number; data?: unknown }; message?: string };
@@ -79,47 +76,14 @@ function shouldSkipRefresh(config: RetryableConfig | undefined): boolean {
     return requestUrl.includes(endpoints.authRefresh);
 }
 
+function isAuthFlowRequest(config: RetryableConfig | undefined): boolean {
+    if (!config) return false;
+    const requestUrl = config.url ?? '';
+    return requestUrl.includes(endpoints.authMe) || requestUrl.includes(endpoints.authExchange);
+}
+
 function toHeaders(config: InternalAxiosRequestConfig): AxiosHeaders {
     return config.headers instanceof AxiosHeaders ? config.headers : new AxiosHeaders(config.headers);
-}
-
-function setBearerHeader(config: InternalAxiosRequestConfig, token: string): void {
-    const headers = toHeaders(config);
-    headers.set('Authorization', `Bearer ${token}`);
-    config.headers = headers;
-}
-
-function clearBearerHeader(config: InternalAxiosRequestConfig): void {
-    const headers = toHeaders(config);
-    headers.delete('Authorization');
-    config.headers = headers;
-}
-
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-    const payloadPart = parts[1];
-    if (!payloadPart) return null;
-
-    try {
-        const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
-        const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-        const decoded = atob(padded);
-        const parsed = JSON.parse(decoded);
-        return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
-    } catch {
-        return null;
-    }
-}
-
-function isBearerUsable(token: string): boolean {
-    const payload = decodeJwtPayload(token);
-    if (!payload) return true;
-
-    const exp = payload.exp;
-    if (typeof exp !== 'number') return true;
-
-    return exp * 1000 > Date.now() + ACCESS_TOKEN_EXP_SKEW_MS;
 }
 
 function redirectToSignIn(): void {
@@ -133,22 +97,17 @@ function redirectToSignIn(): void {
 }
 
 function handleRefreshFailure(): void {
-    clearAccessToken();
     redirectToSignIn();
 }
 
-async function refreshAccessToken(): Promise<string | null> {
+async function refreshSession(): Promise<void> {
     if (!refreshPromise) {
         refreshPromise = http
             .post<unknown>(endpoints.authRefresh, {}, {
                 skipAuthRefresh: true,
                 withCredentials: true,
             } as AxiosRequestConfig)
-            .then((payload) => {
-                const token = readAccessTokenFromPayload(payload);
-                setAccessToken(token);
-                return token;
-            })
+            .then(() => undefined)
             .finally(() => {
                 refreshPromise = null;
             });
@@ -161,32 +120,15 @@ async function refreshAccessToken(): Promise<string | null> {
 async function applyAuthHeader(config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> {
     const requestConfig = config as RetryableConfig;
     if (shouldSkipRefresh(requestConfig)) {
-        clearBearerHeader(config);
+        const headers = toHeaders(config);
+        headers.delete('Authorization');
+        config.headers = headers;
         return config;
     }
 
-    const token = getAuthToken();
-    if (!token) {
-        clearBearerHeader(config);
-        return config;
-    }
-
-    if (isBearerUsable(token)) {
-        setBearerHeader(config, token);
-        return config;
-    }
-
-    clearAccessToken();
-    clearBearerHeader(config);
-
-    try {
-        const refreshedToken = await refreshAccessToken();
-        if (refreshedToken && isBearerUsable(refreshedToken)) {
-            setBearerHeader(config, refreshedToken);
-        }
-    } catch {
-        handleRefreshFailure();
-    }
+    const headers = toHeaders(config);
+    headers.delete('Authorization');
+    config.headers = headers;
 
     return config;
 }
@@ -200,17 +142,16 @@ async function onRejected(client: AxiosInstance, err: unknown): Promise<AxiosRes
         return Promise.reject(normalizeHttpError(err));
     }
 
+    // auth 상태 확인/교환 구간의 401 처리는 각 호출부(thunk)에서 제어합니다.
+    if (status === 401 && isAuthFlowRequest(config)) {
+        return Promise.reject(normalizeHttpError(err));
+    }
+
     if (status === 401 && config && !config._retry && !shouldSkipRefresh(config)) {
         config._retry = true;
 
         try {
-            const token = await refreshAccessToken();
-
-            if (client === http && token && isBearerUsable(token)) {
-                setBearerHeader(config, token);
-            } else {
-                clearBearerHeader(config);
-            }
+            await refreshSession();
 
             return client.request(config);
         } catch {
@@ -222,8 +163,9 @@ async function onRejected(client: AxiosInstance, err: unknown): Promise<AxiosRes
     return Promise.reject(normalizeHttpError(err));
 }
 
-/** 일반 API 요청만 토큰 기반 Authorization 자동 첨부를 수행합니다. */
+/** API 요청에서 Authorization 헤더를 제거하고 쿠키 기반 호출을 유지합니다. */
 http.interceptors.request.use(applyAuthHeader);
+documentsHttp.interceptors.request.use(applyAuthHeader);
 
 /** 공통 응답 에러를 HttpError 형태로 정규화합니다. */
 http.interceptors.response.use(

@@ -20,6 +20,9 @@ export {
   buildSsoStartUrl,
   buildStartFrontendSignInUrl,
   consumePostLoginRedirect,
+  normalizeNextPath,
+  readNextFromSearchParams,
+  resolveNextPathFromParams,
   storePostLoginRedirect,
 } from "@features/auth/api/auth.ts";
 export type { AuthUser } from "@features/auth/api/auth.ts";

@@ -1,11 +1,12 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useAppDispatch, useAppSelector } from "@app/store/hooks.ts";
 import {
-    buildStartFrontendSignInUrl,
+    buildSsoStartUrl,
     consumePostLoginRedirect,
     exchangeSsoTicket,
+    resolveNextPathFromParams,
     selectAuthError,
     selectIsAuthenticated,
 } from "@features/auth/index.ts";
@@ -39,7 +40,9 @@ function AuthCallbackView(): React.ReactElement {
 
     const error = useAppSelector(selectAuthError);
 
-    const nextPath = params.get("next") || consumePostLoginRedirect();
+    const nextPath = useMemo(() => {
+        return resolveNextPathFromParams(params, consumePostLoginRedirect());
+    }, [params]);
 
     const ticket = params.get("ticket");
 
@@ -49,11 +52,7 @@ function AuthCallbackView(): React.ReactElement {
 
     useEffect(() => {
         if (!ticket) {
-
-            const timeoutId = window.setTimeout(() => {
-                window.location.replace(buildStartFrontendSignInUrl(nextPath));
-            }, 1200);
-            return () => window.clearTimeout(timeoutId);
+            return;
         }
 
         if (processedTicketsRef.current.has(ticket)) return;
@@ -68,29 +67,36 @@ function AuthCallbackView(): React.ReactElement {
         navigate(nextPath, { replace: true });
     }, [isAuthenticated, navigate, nextPath]);
 
-    useEffect(() => {
-        if (!error) return;
-
-        const timeoutId = window.setTimeout(() => {
-            window.location.replace(buildStartFrontendSignInUrl(nextPath));
-        }, 1500);
-
-        return () => window.clearTimeout(timeoutId);
-    }, [error, nextPath]);
-
-    useEffect(() => {
-        if (!authError) return;
-
-        const timeoutId = window.setTimeout(() => {
-            window.location.replace(buildStartFrontendSignInUrl(nextPath));
-        }, 1500);
-
-        return () => window.clearTimeout(timeoutId);
-    }, [authError, nextPath]);
-
-    if (authError) return <span>SSO 로그인 실패: {authError}</span>;
-    if (!ticket) return <span>교환할 ticket이 없습니다. 로그인 페이지로 돌아갑니다.</span>;
-    if (error) return <span>로그인 처리 실패: {error}. 로그인 페이지로 돌아갑니다.</span>;
+    if (authError) {
+        return (
+            <div style={{ padding: 24 }}>
+                <p>SSO 로그인 실패: {authError}</p>
+                <button type="button" onClick={() => window.location.replace(buildSsoStartUrl(nextPath))}>
+                    다시 로그인
+                </button>
+            </div>
+        );
+    }
+    if (!ticket) {
+        return (
+            <div style={{ padding: 24 }}>
+                <p>교환할 ticket이 없습니다.</p>
+                <button type="button" onClick={() => window.location.replace(buildSsoStartUrl(nextPath))}>
+                    로그인 시작
+                </button>
+            </div>
+        );
+    }
+    if (error) {
+        return (
+            <div style={{ padding: 24 }}>
+                <p>로그인 처리 실패: {error}</p>
+                <button type="button" onClick={() => window.location.replace(buildSsoStartUrl(nextPath))}>
+                    다시 로그인
+                </button>
+            </div>
+        );
+    }
     return <span>연결하는 중입니다.</span>;
 }
 

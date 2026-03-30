@@ -18,6 +18,10 @@ function AuthBootstrap({ children }: AuthBootstrapProps): React.ReactElement {
   const status = useAppSelector(selectAuthStatus);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const pathname = window.location.pathname;
+      if (pathname === "/signin" || pathname.startsWith("/auth/")) return;
+    }
     if (initialized || status === "loading") return;
     void dispatch(bootstrapAuth());
   }, [dispatch, initialized, status]);

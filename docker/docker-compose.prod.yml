@@ -1,0 +1,8 @@
+services:
+  editor-prod:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+    ports:
+      - "8081:80"

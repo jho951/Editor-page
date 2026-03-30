@@ -6,12 +6,12 @@ import type { AxiosRequestConfig } from "axios";
 import { api } from "@shared/api/client.ts";
 import { markExchangeTicketSucceeded } from "@shared/api/auth-flow.ts";
 import { endpoints } from "@shared/api/endpoints.ts";
-import { clearAccessToken, readAccessTokenFromPayload, setAccessToken } from "@shared/api/token.ts";
 
 /**
  * 로그인 전 경로를 세션에 저장할 때 사용하는 키입니다.
  */
 const POST_LOGIN_REDIRECT_KEY = "auth.post_login_redirect";
+const NEXT_QUERY_KEYS = ["next", "callbackUrl", "returnUrl", "redirect", "redirectUrl"] as const;
 
 export type AuthUser = {
   id: string;
@@ -69,6 +69,102 @@ function buildCallbackUrl(): string {
   return new URL("/auth/callback", window.location.origin).toString();
 }
 
+function getConfiguredSiteOrigin(): string | null {
+  try {
+    const env = (import.meta as unknown as { env?: { VITE_SITE_URL?: string } }).env;
+    const siteUrl = env?.VITE_SITE_URL;
+    return siteUrl ? new URL(siteUrl).origin : null;
+  } catch {
+    return null;
+  }
+}
+
+function readNextFromSearchParams(params: URLSearchParams): string | null {
+  for (const key of NEXT_QUERY_KEYS) {
+    const value = params.get(key);
+    if (value && value.trim()) return value;
+  }
+  return null;
+}
+
+function decodeCandidates(raw: string): string[] {
+  const candidates = new Set<string>([raw]);
+  let current = raw;
+  for (let i = 0; i < 2; i += 1) {
+    try {
+      const decoded = decodeURIComponent(current);
+      if (!decoded || decoded === current) break;
+      candidates.add(decoded);
+      current = decoded;
+    } catch {
+      break;
+    }
+  }
+  return [...candidates];
+}
+
+function extractPathname(pathWithQueryOrHash: string): string {
+  const questionIndex = pathWithQueryOrHash.indexOf("?");
+  const hashIndex = pathWithQueryOrHash.indexOf("#");
+
+  let endIndex = pathWithQueryOrHash.length;
+  if (questionIndex >= 0) endIndex = Math.min(endIndex, questionIndex);
+  if (hashIndex >= 0) endIndex = Math.min(endIndex, hashIndex);
+
+  return pathWithQueryOrHash.slice(0, endIndex) || "/";
+}
+
+function isAuthOnlyNextPath(pathWithQueryOrHash: string): boolean {
+  const pathname = extractPathname(pathWithQueryOrHash);
+  return pathname === "/signin" || pathname.startsWith("/auth/");
+}
+
+function normalizeNextPath(nextPath: string, depth = 0): string {
+  if (depth > 3) return "/";
+
+  const raw = nextPath.trim();
+  if (!raw) return "/";
+
+  const siteOrigin = getConfiguredSiteOrigin();
+  const windowOrigin = typeof window !== "undefined" ? window.location.origin : null;
+  const baseOrigin = windowOrigin ?? siteOrigin;
+
+  for (const candidate of decodeCandidates(raw)) {
+    if (candidate.startsWith("/") && !candidate.startsWith("//")) {
+      return isAuthOnlyNextPath(candidate) ? "/" : candidate;
+    }
+    if (candidate.startsWith("?")) {
+      const nested = readNextFromSearchParams(new URLSearchParams(candidate.slice(1)));
+      if (nested) return normalizeNextPath(nested, depth + 1);
+      continue;
+    }
+    if (!baseOrigin) continue;
+    try {
+      const asUrl = new URL(candidate, baseOrigin);
+      const nested = readNextFromSearchParams(asUrl.searchParams);
+      if (nested) return normalizeNextPath(nested, depth + 1);
+
+      if (windowOrigin && asUrl.origin === windowOrigin) {
+        const sameOriginPath = `${asUrl.pathname}${asUrl.search}${asUrl.hash}` || "/";
+        return isAuthOnlyNextPath(sameOriginPath) ? "/" : sameOriginPath;
+      }
+      if (siteOrigin && asUrl.origin === siteOrigin) {
+        const sameSitePath = `${asUrl.pathname}${asUrl.search}${asUrl.hash}` || "/";
+        return isAuthOnlyNextPath(sameSitePath) ? "/" : sameSitePath;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return "/";
+}
+
+export function resolveNextPathFromParams(params: URLSearchParams, fallbackPath = "/"): string {
+  const raw = readNextFromSearchParams(params) ?? fallbackPath;
+  return normalizeNextPath(raw);
+}
+
 /**
  * 로그인 성공 후 되돌아갈 경로를 세션 스토리지에 저장합니다.
  *
@@ -100,7 +196,8 @@ export function consumePostLoginRedirect(): string {
  * @returns 브라우저가 이동할 SSO 시작 URL을 반환합니다.
  */
 export function buildSsoStartUrl(nextPath: string): string {
-  storePostLoginRedirect(nextPath);
+  const normalizedNext = normalizeNextPath(nextPath);
+  storePostLoginRedirect(normalizedNext);
 
   if (typeof window === "undefined") return endpoints.authSsoStart;
 
@@ -109,7 +206,7 @@ export function buildSsoStartUrl(nextPath: string): string {
   const url = new URL(endpoints.authSsoStart, base);
 
   const callbackUrl = new URL(buildCallbackUrl());
-  callbackUrl.searchParams.set("next", nextPath || "/");
+  callbackUrl.searchParams.set("next", normalizedNext);
   url.searchParams.set("redirect_uri", callbackUrl.toString());
   return url.toString();
 }
@@ -121,13 +218,15 @@ export function buildSsoStartUrl(nextPath: string): string {
  * @returns 시작 프론트엔드 로그인 URL을 반환합니다.
  */
 export function buildStartFrontendSignInUrl(nextPath: string): string {
-
-  const normalizedNext = nextPath && nextPath.startsWith("/") ? nextPath : "/";
+  const normalizedNext = normalizeNextPath(nextPath);
+  storePostLoginRedirect(normalizedNext);
 
   const url = new URL("/signin", getStartFrontendUrl());
   url.searchParams.set("next", normalizedNext);
   return url.toString();
 }
+
+export { normalizeNextPath, readNextFromSearchParams };
 
 /**
  * 시작 프론트엔드 루트 URL을 생성합니다.
@@ -145,29 +244,18 @@ export function buildStartFrontendRootUrl(): string {
 export const authApi = {
   me: (): Promise<AuthUser> => api.get<AuthUser>(endpoints.authMe, { withCredentials: true }),
   refresh: async (): Promise<void> => {
-    const response = await api.post<unknown>(endpoints.authRefresh, {}, {
+    await api.post<unknown>(endpoints.authRefresh, {}, {
       withCredentials: true,
       skipAuthRefresh: true,
     } as AxiosRequestConfig);
-    const token = readAccessTokenFromPayload(response);
-    setAccessToken(token);
   },
   exchange: async (body: ExchangeTicketBody): Promise<void> => {
-    const response = await api.post<unknown, ExchangeTicketBody>(endpoints.authExchange, body, {
+    await api.post<unknown, ExchangeTicketBody>(endpoints.authExchange, body, {
       withCredentials: true,
     });
     markExchangeTicketSucceeded(body.ticket);
-    const token = readAccessTokenFromPayload(response);
-    // Support both legacy token-payload exchange and cookie-only (204 No Content) exchange.
-    if (token) {
-      setAccessToken(token);
-    }
   },
   logout: async (): Promise<void> => {
-    try {
-      await api.post(endpoints.authLogout, {});
-    } finally {
-      clearAccessToken();
-    }
+    await api.post(endpoints.authLogout, {});
   },
 };

@@ -26,6 +26,13 @@ function AuthBootstrap({ children }: AuthBootstrapProps): React.ReactElement {
     void dispatch(bootstrapAuth());
   }, [dispatch, initialized, status]);
 
+  if (typeof window !== "undefined") {
+    const pathname = window.location.pathname;
+    if (pathname !== "/signin" && !pathname.startsWith("/auth/") && (!initialized || status === "loading")) {
+      return <div style={{ padding: 32 }}>인증 상태를 확인하는 중입니다...</div>;
+    }
+  }
+
   return <>{children}</>;
 }
 

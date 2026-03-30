@@ -31,7 +31,8 @@ editor-page는 아래 쿼리 키를 순서대로 읽습니다.
 
 1. explainpage가 로그인 시작 시 editor 목적지를 `callbackUrl` 또는 `next`로 전달
 2. editor-page가 인증 시작 시 동일 목적지를 세션에 저장
-3. 백엔드 콜백(`ticket`) 후 `/auth/callback`에서 목적지로 이동
+3. 백엔드 콜백에서 세션 쿠키를 설정한 뒤 `/auth/callback`으로 이동
+4. editor-page는 `/auth/callback` 진입 시 `GET /auth/me`로 로그인 상태를 확인하고 목적지로 이동
 
 ## Next.js 예시 (explainpage)
 
@@ -63,3 +64,4 @@ redirect(signInUrl);
 - `VITE_SITE_URL`: editor의 공개 URL과 일치해야 함
 - `VITE_START_FRONTEND_URL`: explainpage의 공개 URL과 일치해야 함
 - 백엔드 OAuth callback 등록 URL에 editor의 `/auth/callback` 포함
+- `/auth/callback` 응답에서 세션 쿠키가 `HttpOnly` 및 `SameSite` 정책에 맞게 내려와야 함

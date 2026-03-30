@@ -1,15 +1,8 @@
-/**
- * SSO 시작, 콜백 복귀 경로 저장, 인증 관련 API 호출을 제공합니다.
- */
-
 import type { AxiosRequestConfig } from "axios";
 import { api } from "@shared/api/client.ts";
-import { markExchangeTicketSucceeded } from "@shared/api/auth-flow.ts";
 import { endpoints } from "@shared/api/endpoints.ts";
 
-/**
- * 로그인 전 경로를 세션에 저장할 때 사용하는 키입니다.
- */
+/** 로그인 전 경로를 세션에 저장할 때 사용하는 키입니다. */
 const POST_LOGIN_REDIRECT_KEY = "auth.post_login_redirect";
 const NEXT_QUERY_KEYS = ["next", "callbackUrl", "returnUrl", "redirect", "redirectUrl"] as const;
 
@@ -21,13 +14,8 @@ export type AuthUser = {
   roles?: string[];
 };
 
-export type ExchangeTicketBody = {
-  ticket: string;
-};
-
 /**
  * SSO 시작 요청에 사용할 기본 서버 주소를 반환합니다.
- *
  * @returns SSO 서버 기본 URL을 반환합니다.
  */
 function getSsoBaseUrl(): string {
@@ -248,12 +236,6 @@ export const authApi = {
       withCredentials: true,
       skipAuthRefresh: true,
     } as AxiosRequestConfig);
-  },
-  exchange: async (body: ExchangeTicketBody): Promise<void> => {
-    await api.post<unknown, ExchangeTicketBody>(endpoints.authExchange, body, {
-      withCredentials: true,
-    });
-    markExchangeTicketSucceeded(body.ticket);
   },
   logout: async (): Promise<void> => {
     await api.post(endpoints.authLogout, {});

@@ -61,21 +61,6 @@ export const bootstrapAuth = createAsyncThunk<AuthUser, void, { rejectValue: Rej
 );
 
 /**
- * SSO 티켓을 사용자 세션으로 교환하는 thunk입니다.
- */
-export const exchangeSsoTicket = createAsyncThunk<AuthUser, { ticket: string }, { rejectValue: RejectValue }>(
-  "auth/exchangeTicket",
-  async ({ ticket }, { rejectWithValue }) => {
-    try {
-      await authApi.exchange({ ticket });
-      return await loadAuthUserWithRefreshFallback();
-    } catch (error) {
-      return rejectWithValue(normalizeAuthError(error));
-    }
-  }
-);
-
-/**
  * 로그아웃을 수행하는 thunk입니다.
  */
 export const logoutAuth = createAsyncThunk<void, void, { rejectValue: string }>(
@@ -121,23 +106,6 @@ const authSlice = createSlice({
       state.status = action.payload?.anonymous ? "anonymous" : "anonymous";
       state.initialized = true;
       state.error = action.payload?.message ?? null;
-    });
-
-    builder.addCase(exchangeSsoTicket.pending, (state) => {
-      state.status = "loading";
-      state.error = null;
-    });
-    builder.addCase(exchangeSsoTicket.fulfilled, (state, action) => {
-      state.user = action.payload;
-      state.status = "authenticated";
-      state.initialized = true;
-      state.error = null;
-    });
-    builder.addCase(exchangeSsoTicket.rejected, (state, action) => {
-      state.user = null;
-      state.status = "anonymous";
-      state.initialized = true;
-      state.error = action.payload?.message ?? "ticket exchange failed";
     });
 
     builder.addCase(logoutAuth.fulfilled, (state) => {

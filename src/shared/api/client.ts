@@ -1,7 +1,6 @@
-/** 공통 HTTP 클라이언트를 생성하고 인증 헤더 및 에러 정규화를 처리합니다. */
+/** 공통 HTTP 클라이언트를 생성하고 쿠키 기반 인증 및 에러 정규화를 처리합니다. */
 
 import axios, {
-    AxiosHeaders,
     type AxiosInstance,
     type AxiosRequestConfig,
     type AxiosError,
@@ -10,7 +9,6 @@ import axios, {
 } from 'axios';
 
 import { endpoints } from './endpoints.ts';
-import { shouldBlockAutoAuthBeforeExchange } from './auth-flow.ts';
 import type { HttpError } from './client.types.ts';
 
 axios.defaults.withCredentials = true;
@@ -79,11 +77,7 @@ function shouldSkipRefresh(config: RetryableConfig | undefined): boolean {
 function isAuthFlowRequest(config: RetryableConfig | undefined): boolean {
     if (!config) return false;
     const requestUrl = config.url ?? '';
-    return requestUrl.includes(endpoints.authMe) || requestUrl.includes(endpoints.authExchange);
-}
-
-function toHeaders(config: InternalAxiosRequestConfig): AxiosHeaders {
-    return config.headers instanceof AxiosHeaders ? config.headers : new AxiosHeaders(config.headers);
+    return requestUrl.includes(endpoints.authMe);
 }
 
 function redirectToSignIn(): void {
@@ -117,19 +111,7 @@ async function refreshSession(): Promise<void> {
 }
 
 /** 공통 요청 인터셉터를 적용합니다. */
-async function applyAuthHeader(config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> {
-    const requestConfig = config as RetryableConfig;
-    if (shouldSkipRefresh(requestConfig)) {
-        const headers = toHeaders(config);
-        headers.delete('Authorization');
-        config.headers = headers;
-        return config;
-    }
-
-    const headers = toHeaders(config);
-    headers.delete('Authorization');
-    config.headers = headers;
-
+async function applyCookieAuth(config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> {
     return config;
 }
 
@@ -138,11 +120,7 @@ async function onRejected(client: AxiosInstance, err: unknown): Promise<AxiosRes
     const config = error.config as RetryableConfig | undefined;
     const status = error.response?.status;
 
-    if (shouldBlockAutoAuthBeforeExchange()) {
-        return Promise.reject(normalizeHttpError(err));
-    }
-
-    // auth 상태 확인/교환 구간의 401 처리는 각 호출부(thunk)에서 제어합니다.
+    // auth 상태 확인 구간의 401 처리는 각 호출부(thunk)에서 제어합니다.
     if (status === 401 && isAuthFlowRequest(config)) {
         return Promise.reject(normalizeHttpError(err));
     }
@@ -163,9 +141,9 @@ async function onRejected(client: AxiosInstance, err: unknown): Promise<AxiosRes
     return Promise.reject(normalizeHttpError(err));
 }
 
-/** API 요청에서 Authorization 헤더를 제거하고 쿠키 기반 호출을 유지합니다. */
-http.interceptors.request.use(applyAuthHeader);
-documentsHttp.interceptors.request.use(applyAuthHeader);
+/** API 요청은 쿠키 기반 인증만 사용합니다. */
+http.interceptors.request.use(applyCookieAuth);
+documentsHttp.interceptors.request.use(applyCookieAuth);
 
 /** 공통 응답 에러를 HttpError 형태로 정규화합니다. */
 http.interceptors.response.use(

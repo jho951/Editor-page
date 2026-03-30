@@ -107,7 +107,8 @@ npm run dev
 
 프론트는 아래 규칙을 따릅니다.
 
-- GitHub `code` 또는 access token을 직접 처리하지 않습니다.
-- `/auth/callback` 에서 `ticket` 을 받습니다.
-- `POST /auth/exchange` 후 `GET /auth/me` 로 로그인 상태를 확정합니다.
+- GitHub 인증 정보를 직접 처리하지 않습니다.
+- `/auth/callback` 에서 세션 쿠키가 이미 설정되어 있다고 가정합니다.
+- `GET /auth/me` 와 `POST /auth/refresh` 로 로그인 상태를 확정합니다.
+- SSO 시작은 `http://localhost:8080/auth/sso/start` 같은 auth 서버 루트 경로를 사용합니다.
 - 연동 계약 문서: [docs/AUTH_REDIRECT_CONTRACT.md](./docs/AUTH_REDIRECT_CONTRACT.md)

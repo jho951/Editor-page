@@ -2,7 +2,7 @@
  * auth 디렉토리의 공개 export를 재노출합니다.
  */
 
-export { authReducer, bootstrapAuth, exchangeSsoTicket, logoutAuth } from "@features/auth/state/auth.slice.ts";
+export { authReducer, bootstrapAuth, logoutAuth } from "@features/auth/state/auth.slice.ts";
 export {
   selectAuthError,
   selectAuthInitialized,

@@ -19,7 +19,8 @@ npm run dev
 
 - 주소: `http://localhost:5173`
 - 컨테이너 내부 Vite 프록시 `/api` 대상: `http://host.docker.internal:8080`
-- `editor-dev` 전용 compose 파일(`docker/docker-compose.dev.yml`)로 독립 실행
+- `editor` 서비스에 dev compose 오버레이(`docker/docker-compose.dev.yml`)를 적용해 실행
+- `up`은 detached 모드로 뜨고, 로그는 `./scripts/run.docker.sh dev logs`로 확인
 
 배포 모드(정적 빌드 + Nginx):
 
@@ -28,7 +29,8 @@ npm run dev
 ```
 
 - 주소: `http://localhost:8081`
-- `editor-prod` 전용 compose 파일(`docker/docker-compose.prod.yml`)로 독립 실행
+- `editor` 서비스에 prod compose 오버레이(`docker/docker-compose.prod.yml`)를 적용해 실행
+- `up`은 detached 모드로 뜨고, 로그는 `./scripts/run.docker.sh prod logs`로 확인
 
 로컬 실행:
 

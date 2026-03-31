@@ -1,5 +1,3 @@
-/** 공통 HTTP 클라이언트를 생성하고 쿠키 기반 인증 및 에러 정규화를 처리합니다. */
-
 import axios, {
     type AxiosInstance,
     type AxiosRequestConfig,
@@ -75,7 +73,7 @@ async function applyCookieAuth(config: InternalAxiosRequestConfig): Promise<Inte
     return config;
 }
 
-async function onRejected(client: AxiosInstance, err: unknown): Promise<AxiosResponse> {
+async function onRejected(_client: AxiosInstance, err: unknown): Promise<AxiosResponse> {
     const error = err as AxiosError;
     const config = error.config as RetryableConfig | undefined;
     const status = error.response?.status;

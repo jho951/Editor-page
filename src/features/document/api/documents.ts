@@ -19,15 +19,14 @@ export const documentsDomainApi = {
     documentsApi.post<unknown, { name: string }>(endpoints.workspaces, body),
   getWorkspace: async (workspaceId: string): Promise<unknown> =>
     documentsApi.get<unknown>(endpoints.workspaceById(workspaceId)),
-  getDocuments: async (workspaceId: string): Promise<unknown> =>
-    documentsApi.get<unknown>(endpoints.workspaceDocuments(workspaceId)),
-  getTrashDocuments: async (workspaceId: string): Promise<unknown> =>
-    documentsApi.get<unknown>(endpoints.workspaceTrashDocuments(workspaceId)),
+  getDocuments: async (_workspaceId: string): Promise<unknown> =>
+    documentsApi.get<unknown>(endpoints.documents),
+  getTrashDocuments: async (_workspaceId: string): Promise<unknown> =>
+    documentsApi.get<unknown>(endpoints.documentsTrash),
   createDocument: async (
-    workspaceId: string,
     body: Record<string, unknown>
   ): Promise<unknown> =>
-    documentsApi.post<unknown, Record<string, unknown>>(endpoints.workspaceDocuments(workspaceId), body),
+    documentsApi.post<unknown, Record<string, unknown>>(endpoints.documents, body),
   getDocument: async (documentId: string): Promise<unknown> =>
     documentsApi.get<unknown>(endpoints.documentById(documentId)),
   getDocumentBlocks: async (documentId: string): Promise<unknown> =>

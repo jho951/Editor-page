@@ -5,7 +5,6 @@
 import { DOCUMENTS_API_BASE_URL, documentsApi } from "@shared/api/client.ts";
 import type { HttpError } from "@shared/api/client.types.ts";
 import { endpoints } from "@shared/api/endpoints.ts";
-import { MOCK_EDITOR_DOCUMENTS } from "@features/editor/model/editor.mock.ts";
 import type {
   EditorConflictItem,
   EditorConflictResponse,
@@ -37,6 +36,15 @@ type GlobalResponse<T> = {
 type RichTextMark = EditorMark;
 
 type RichTextContent = EditorRichTextContent;
+
+function includeVersion(version: number | undefined): { version?: number } {
+  return typeof version === "number" && version > 0 ? { version } : {};
+}
+
+function toGatewayParentRef(parentId: string | null | undefined): string | null {
+  if (!parentId) return null;
+  return parentId.startsWith("root-") ? null : parentId;
+}
 
 type RemoteDocumentResponse = {
   id: string;
@@ -98,7 +106,7 @@ function toGatewayOperation(op: EditorOperation, index: number): GatewayEditorOp
         opId,
         type: "BLOCK_CREATE" as const,
         blockRef: op.blockId,
-        parentRef: op.parentId ?? null,
+        parentRef: toGatewayParentRef(op.parentId),
         afterRef: op.afterBlockId ?? null,
         beforeRef: op.beforeBlockId ?? null,
       };
@@ -108,8 +116,8 @@ function toGatewayOperation(op: EditorOperation, index: number): GatewayEditorOp
         opId,
         type: "BLOCK_REPLACE_CONTENT" as const,
         blockRef: op.blockId,
-        version: op.version,
         content: toRichTextContent(op.content),
+        ...includeVersion(op.version),
       };
 
     case "block.move":
@@ -117,8 +125,8 @@ function toGatewayOperation(op: EditorOperation, index: number): GatewayEditorOp
         opId,
         type: "BLOCK_MOVE" as const,
         blockRef: op.blockId,
-        version: op.version,
-        parentRef: op.parentId ?? null,
+        ...includeVersion(op.version),
+        parentRef: toGatewayParentRef(op.parentId),
         afterRef: op.afterBlockId ?? null,
         beforeRef: op.beforeBlockId ?? null,
       };
@@ -128,7 +136,7 @@ function toGatewayOperation(op: EditorOperation, index: number): GatewayEditorOp
         opId,
         type: "BLOCK_DELETE" as const,
         blockRef: op.blockId,
-        version: op.version,
+        ...includeVersion(op.version),
       };
   }
 }
@@ -177,7 +185,12 @@ function normalizeTransactionSuccess(
       }
     }
 
-    const nextVersion = op.type === "block.create" ? 1 : op.version + 1;
+    const nextVersion =
+      op.type === "block.create"
+        ? 1
+        : typeof op.version === "number" && op.version > 0
+          ? op.version + 1
+          : 1;
     results.push({ blockId: op.blockId, version: nextVersion });
   });
 
@@ -215,23 +228,10 @@ function fromRichTextContent(content: RichTextContent): EditorContent {
   };
 }
 
-// The in-memory store is a local fallback that behaves like a tiny mock server.
-
 /**
  * 에디터 로컬 fallback 문서를 보관하는 메모리 저장소입니다.
  */
-const LOCAL_EDITOR_STORE = new Map<string, EditorDocumentSnapshot>(
-  Object.values(MOCK_EDITOR_DOCUMENTS).map((doc) => [
-    doc.id,
-    {
-      ...doc,
-      blocks: doc.blocks.map((block) => ({
-        ...block,
-        content: { ...block.content },
-      })),
-    },
-  ])
-);
+const LOCAL_EDITOR_STORE = new Map<string, EditorDocumentSnapshot>();
 
 /**
  * 문서 스냅샷을 깊은 복사합니다.
@@ -259,8 +259,6 @@ function getLocalDocument(documentId: string): EditorDocumentSnapshot {
 
   const existing = LOCAL_EDITOR_STORE.get(documentId);
   if (existing) return cloneDocument(existing);
-
-  // New mock documents start with a root and one empty paragraph to match the editor's assumptions.
 
   const rootBlockId = `root-${documentId}`;
   const next: EditorDocumentSnapshot = {
@@ -446,25 +444,28 @@ function localApplyTransactions(
 
   const working = cloneDocument(doc);
   const conflicts: EditorConflictItem[] = [];
+  const resolveLocalParentRef = (parentId: string | null | undefined): string | null =>
+    parentId ?? working.rootBlockId ?? null;
 
-  // This local applier mirrors the server contract so fallback/mock mode behaves like production.
+  // This local applier mirrors the server contract so fallback mode behaves like production.
   for (const op of payload.operations) {
     if (op.type === "block.create") {
 
       const nextBlock = {
         id: op.blockId,
-        parentId: op.parentId,
+        parentId: resolveLocalParentRef(op.parentId),
         orderKey: op.orderKey,
         version: 1,
         content: { ...EMPTY_BLOCK_CONTENT },
       };
       working.blocks.push(nextBlock);
-      positionBlock(working, op.blockId, op.parentId, op.afterBlockId, op.beforeBlockId);
+      positionBlock(working, op.blockId, resolveLocalParentRef(op.parentId), op.afterBlockId, op.beforeBlockId);
       working.version = (working.version ?? 0) + 1;
       continue;
     }
 
-    // Every non-create operation targets an existing visible block and is version-checked.
+    // Non-create operations target an existing block. Temp refs created earlier in the same batch
+    // are allowed to skip version checks because the server resolves them through batch-local refs.
 
     const blockIndex = findBlockIndex(working, op.blockId);
     if (blockIndex < 0) {
@@ -477,7 +478,8 @@ function localApplyTransactions(
     }
 
     const block = working.blocks[blockIndex];
-    if (block.version !== op.version) {
+    const isTempRef = op.blockId.startsWith("tmp:block:");
+    if (!isTempRef && block.version !== op.version) {
       conflicts.push({
         blockId: op.blockId,
         serverVersion: block.version,
@@ -495,7 +497,7 @@ function localApplyTransactions(
 
     if (op.type === "block.move") {
       block.version += 1;
-      positionBlock(working, op.blockId, op.parentId, op.afterBlockId, op.beforeBlockId);
+      positionBlock(working, op.blockId, resolveLocalParentRef(op.parentId), op.afterBlockId, op.beforeBlockId);
       working.version = (working.version ?? 0) + 1;
       continue;
     }

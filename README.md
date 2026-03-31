@@ -73,11 +73,6 @@ npm run dev
   - 현재는 `vite.config.ts`를 대상으로 합니다.
   - Node 타입을 사용합니다.
 
-## 문서
-
-- [REQUIREMENT.md](./docs/REQUIREMENT.md): text-only block editor 저장 정책 요약
-- [SAVE_MODEL.md](./docs/SAVE_MODEL.md): queue + transactions + 409 conflict 설계
-
 ## 개발 환경
 
 [`.env`](.env.example)

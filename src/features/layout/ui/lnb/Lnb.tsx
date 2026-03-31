@@ -51,7 +51,7 @@ function Lnb({ activeKey = "home", onNavigate }: LnbProps) {
         dispatch(createChildPage({ parentId })).then((action) => {
             if (!createChildPage.fulfilled.match(action)) return;
 
-            const newId = action.payload.childId;
+            const newId = action.payload.documentId;
 
             const newKey = `folder:${newId}` as LnbActiveKey;
             go(newKey);

@@ -1,13 +1,10 @@
-/**
- * 페이지 생성 및 갱신 API를 게이트웨이 문서 계약에 맞춰 감쌉니다.
- */
-
 import { documentsApi } from "@shared/api/client.ts";
-import type { HttpError } from "@shared/api/client.types.ts";
 import { endpoints } from "@shared/api/endpoints.ts";
+import type { HttpError } from "@shared/api/client.types.ts";
+import { generateId } from "@jho951/ui-components";
+
 
 export type CreatePageBody = {
-  id: string;
   parentId: string | null;
   title: string;
 };
@@ -52,13 +49,6 @@ type UpdateDocumentRequest = {
   parentId: string | null;
 };
 
-function readWorkspaceId(): string | null {
-  if (typeof import.meta === "undefined") return null;
-
-  const env = (import.meta as unknown as { env?: { VITE_DOCUMENTS_WORKSPACE_ID?: string } }).env;
-  return env?.VITE_DOCUMENTS_WORKSPACE_ID?.trim() || null;
-}
-
 function normalizeParentId(parentId: string | null | undefined): string | null | undefined {
   if (parentId === undefined) return undefined;
   if (!parentId) return null;
@@ -101,19 +91,9 @@ export const pagesApi = {
     return unwrapEnvelope(response);
   },
   createPage: async (body: CreatePageBody): Promise<CreatePageResponse> => {
-    const workspaceId = readWorkspaceId();
-
-    if (!workspaceId) {
-      return {
-        id: body.id,
-        title: body.title,
-        parentId: body.parentId,
-      };
-    }
-
     try {
       const response = await documentsApi.post<GlobalResponse<CreatePageResponse> | CreatePageResponse, CreateDocumentRequest>(
-        endpoints.workspaceDocuments(workspaceId),
+        endpoints.documents,
         {
           parentId: normalizeParentId(body.parentId) ?? null,
           title: body.title,
@@ -126,7 +106,7 @@ export const pagesApi = {
       if (typeof e.status === "number" && ![404, 405, 501].includes(e.status)) throw error;
 
       return {
-        id: body.id,
+        id: generateId(),
         title: body.title,
         parentId: body.parentId,
       };
